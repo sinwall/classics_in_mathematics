@@ -1,0 +1,315 @@
+<html>
+<head>
+<meta charset="utf-8">
+<script>
+MathJax = {
+    tex: {
+        inlineMath: [['$', '$']],
+        macros: {
+            ol: ["\\overline{#1}", 1]
+        }
+    },
+    svg: {
+        fontCache: "global"
+    }
+};
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/src/Three.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+    }
+</script>
+<style>
+.boxed {
+    /* border: solid; */
+    box-shadow: 0 0 0 2px #000 inset;
+}
+.row {
+    position: relative;
+}
+.col {
+    position: relative;
+    float:left;
+}
+</style>
+</head>
+
+<body>
+
+ <div id="page-title" class="row boxed" style="width: 1200px; text-align: center; font-size: 20pt">
+Mathematica Classica per Linguas Figurasque
+    <div id="nav-wrapper">
+    <button id="button-fig-prev">◁</button>
+    <select name="fig" id="select-fig"></select>
+    <button id="button-fig-next">▷</button>
+    </div>
+ </div>
+
+ <div id="page-content" class="row boxed" style="width: 1200px; height:800px;">
+  <div id="page-content-col1" class="col boxed" style="width:32%; height:100%;">
+    <div id="page-content-col1-title" class="row boxed">
+    Column 1
+    <select id="select-lang1"></select>
+    </div>
+    <div id="page-content-col1-body" class="row boxed" style="white-space:break-spaces;">
+    Content 1
+    </div>
+  </div>
+  <div id="page-content-col2" class="col boxed" style="width:32%; height:100%;">
+    <div id="page-content-col2-title" class="row boxed">
+    Column 2
+    <select id="select-lang2"></select>
+    </div>
+    <div id="page-content-col2-body" class="row boxed" style="white-space:break-spaces;">
+    Content 2
+    </div>
+  </div>
+  <div id="page-content-col3" class="col boxed" style="height:100%;">
+    <div id="page-content-col3-title" class="row boxed">
+    Column 3
+    </div>
+    <div id="svg-wrapper" class="row boxed" style="position: relative; width: 400px; height: 400px;">
+    </div>
+    <div class="boxed">
+    Select construction step
+     <button id="button-back">◁</button>
+     <select name="step" id="select-step">
+     </select>
+     <button id="button-forward">▷</button>
+     <input id="check-original" type="checkbox">original</input>
+    </div>
+  </div>
+ </div>
+
+</body>
+
+</html>
+<script type="module">
+
+async function loadRawText(sourcePath) {
+    let result = {}
+    for (let i=0; i<langList.length; i++) {
+        let lang = langList[i];
+        result[lang] = {loaded: false};
+        await new Promise(function (resolve, reject) {
+            let xhr = new XMLHttpRequest();
+            xhr.open("GET", sourcePath + "_" + lang + ".txt")
+            xhr.onload = function () {
+                if ((xhr.status >= 200) && (xhr.status < 400)) {
+                    result[lang] = classifyText(xhr.responseText, lang);
+                    result[lang].loaded = true;
+                }
+                else {
+                    ;
+                    // reject();
+                }
+                resolve();
+            }
+            xhr.send();
+        })
+    }
+    return result;
+}
+
+
+function renderText(textBundle, lang) {
+    let result;
+    if (!textBundle.loaded) { return "Text not prepared"}
+    if (lang == "KOM") {
+        result = (
+            "<b>정리.</b> " + textBundle.theorem + "\n\n" 
+            + "<b>증명.</b> " + textBundle.proof + "\n\n" 
+            + "<b>참고.</b> " + textBundle.remark
+        );
+        result += "\n\n";
+        for (let i=0; i<textBundle.footnotes.length; i++) {
+            result += `<sup>${i+textBundle.footnoteIndex+1}</sup> ${textBundle.footnotes[i]}`;
+            if (i<textBundle.footnotes.length-1) {result += "\n";}
+        }
+    }
+    else {
+        result = textBundle.text;
+    }
+    return result
+}
+
+function classifyText(string, lang=null, footnoteIndex=0) {
+    let result = {footnoteIndex: footnoteIndex};
+    if (lang == "KOM") {
+        string = string.replace("\\\\", "");
+        result.footnotes = []; 
+        string = string.replaceAll(
+            /\\footnote{([^{}]+)}/gs, 
+            function (match, p1, offset, string, groups) {
+                footnoteIndex++; 
+                result.footnotes.push(p1);
+                return `<sup>${footnoteIndex}</sup>`;
+            }
+        )
+        let theorem = [...string.matchAll(/\\begin{theorem}(.+)\\end{theorem}/gs)];
+        result.theorem = theorem[0][1].trim();
+        let proof = [...string.matchAll(/\\begin{proof}(.+)\\end{proof}/gs)];
+        result.proof = proof[0][1].trim();
+        let remark = [...string.matchAll(/\\begin{remark}(.+)\\end{remark}/gs)];
+        result.remark = remark[0][1].trim();
+    }
+    else {
+        // console.log({content: string})
+        // console.log(...string.matchAll(/[\r\n]{6,}/g))
+        result.text = string.replaceAll(/[\r\n]{4,}/g, "\n").split("\n").join("\n\n");
+    }
+    return result;
+}
+
+// function cleanText(string, lang=null) {
+//     let result = string;
+//     if (lang == "KOM") {
+//         result = result.replace("\\\\", "");
+//         result = result.replaceAll(/\\(begin|end){[a-zA-Z]+}/g, "");
+//     }
+//     else {
+//         result = result.split("\n").join("\n\n");
+//     }
+//     return result;
+// }
+
+async function setProposition(index) {
+    document.getElementById("select-fig-"+index).selected = true;
+    geometer.clear();
+    await geometer.loadSource(sourceList[index]);
+    texts = await loadRawText(sourceList[index])
+    for (let j=1; j<=2; j++) {
+        document.getElementById("select-lang"+j).onchange();
+    }
+
+    let selectStep = document.getElementById("select-step");
+    for (let i=selectStep.childNodes.length; i>0; i--) {
+        selectStep.childNodes[0].remove();
+    }
+    for (let i=geometer.stepMin; i<=geometer.stepMax; i++) {
+        let option = document.createElement("option");
+        option.value = i;
+        option.textContent = i;
+        option.setAttribute("id", "select-step-"+i);
+        document.getElementById("select-step").appendChild(option);
+        if (i==geometer.stepMin) {option.selected = true;}
+    };
+    // document.getElementById("check-original").checked = false;
+    if (document.getElementById("check-original").checked) {
+        geometer.toggleOriginal()
+    }
+}
+
+import {Geometer} from "/static/geometer.js"
+
+let sourceList = [
+    "/static/on_spirals/prop02",
+    "/static/on_spirals/prop05",
+    "/static/on_spirals/prop06",
+    "/static/on_spirals/prop07",
+    "/static/on_spirals/prop08",
+    "/static/on_spirals/prop09",
+];
+let langList = [
+    "ELH", "KOC", "KOM"
+];
+let langDetailList = [
+    "그리스어 원본", "우리말(고전학자)", "우리말(수학자)"
+]
+
+let geometer = new Geometer(document.getElementById("svg-wrapper"))
+geometer.domElement.classList.add("boxed")
+let texts;
+
+document.getElementById("button-fig-prev").onclick = async function () {
+    let i = +document.getElementById("select-fig").value;
+    if (i <= 0) { return; }
+    setProposition(i-1);
+};
+document.getElementById("button-fig-next").onclick = async function () {
+    let i = +document.getElementById("select-fig").value;
+    if (i >= sourceList.length-1) { return; }
+    setProposition(i+1);
+};
+document.getElementById("select-fig").onchange = async function () {
+    let i = +document.getElementById("select-fig").value;
+    setProposition(i);
+}
+for (let i=0; i<sourceList.length; i++) {
+    let option = document.createElement("option");
+    option.value = i;
+    option.textContent = sourceList[i];
+    option.setAttribute("id", "select-fig-"+i);
+    document.getElementById("select-fig").appendChild(option);
+}
+for (let j=1; j<=2; j++) {
+    let selectLang = document.getElementById("select-lang"+j);
+    for (let i=0; i<langList.length; i++) {
+        let option = document.createElement("option");
+        option.value = i;
+        option.textContent = langDetailList[i];
+        option.setAttribute("id", "select-lang" + j +"-"+i);
+        selectLang.appendChild(option);
+    }
+    selectLang.onchange = function () {
+        let i = selectLang.value;
+        document.getElementById("page-content-col"+j+"-body").innerHTML = renderText(texts[langList[i]], langList[i]);
+        if (langList[i] == "KOM") {
+            MathJax.typeset()
+        }
+    }
+}
+
+// window.onload = function() {
+document.getElementById("button-back").onclick = function () {
+    geometer.stepBack();
+    document.getElementById("select-step-"+geometer.step).selected = true;
+};
+document.getElementById("button-forward").onclick = function () {
+    geometer.stepForward();
+    document.getElementById("select-step-"+geometer.step).selected = true;
+};
+document.getElementById("select-step").onchange = function () {
+    for (let i=geometer.step; i<this.value; i++) {
+        geometer.stepForward();
+    }
+    for (let i=geometer.step; i>this.value; i--) {
+        geometer.stepBack();
+    }
+}
+document.getElementById("check-original").onchange = function () {
+    geometer.toggleOriginal();
+    document.getElementById("button-back").disabled = !document.getElementById("button-back").disabled;
+    document.getElementById("button-forward").disabled = !document.getElementById("button-forward").disabled;
+    document.getElementById("select-step").disabled = !document.getElementById("select-step").disabled;
+};
+
+
+let idxInit = sourceList.length-1
+document.getElementById("select-lang2-2").selected = true;
+setProposition(idxInit);
+// }
+
+// let html;
+// await new Promise(function (resolve, reject) {
+//     let xhr = new XMLHttpRequest();
+//     xhr.open("GET", ".references/수학고전 번역모임_20240105 업로드_'나선에 관하여'_정리1.htm")
+//     xhr.onload = function () {
+//         if ((xhr.status >= 200) && (xhr.status < 400)) {
+//             html = xhr.responseText;
+//         }
+//         else {
+//             ;
+//             // reject();
+//         }
+//         resolve();
+//     }
+//     xhr.send();
+// })
+// console.log(html);
+</script>

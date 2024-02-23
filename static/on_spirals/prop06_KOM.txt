@@ -1,0 +1,12 @@
+\begin{theorem}
+    한 원과 그 원 안의 현\footnote{원의 지름보다 더 작은 선으로 번역됨}에 대하여 다음 조건을 만족하는 비를 만드는 것이 가능하다.\\
+    - 현의 길이의 절반과 원의 중심에서 현에 내린 수선의 길이의 비보다 원의 중심과 원주 위의 점을 끝 점으로 하는 선분이 주어진 현과 교점을 갖도록 하는 원주 위의 점에 대해서 원주 위의 점과 교점을 잇는 선분의 길이와 원주 위의 점과 현의 한 끝점을 잇는 선분의 길이의 비가 더 작다.
+\end{theorem}
+\begin{proof}
+    중심이 $K$인 원 $\Sigma$ 위에 현 $A\Gamma$가 주어져 있다고 하자. 중심에서 현에 내린 수선의 발을 $\Theta$라 하고, 선분 $\Gamma\Theta$의 길이가 선분 $\Theta$$K$의 길이에 대해서 갖는 비율보다 더 작은 비를 갖는 선분 $Z$, $H$가 주어져 있다고 하자. 원의 중심에서 $\Gamma$가 있는 방향으로 현과 평행한 선분 $KN$를 선분 $N\Gamma$의 연장선이 원과 만나는 점 $B$에 대해 선분 $K\Gamma$의 길이와 선분 $BN$의 길이의 비가 $Z$와 $H$의 비와 같도록 잡고\footnote{$Z$와 $H$의 비가 선분 $K\Gamma$의 길이와 선분 $\Gamma\Lambda$의 길이의 비보다 작으므로 $B$가 반드시 존재한다} $\Gamma$에서의 접선과 선분 $KN$의 교점을 $\Lambda$라 하자. 그러면, 삼각형 $\Gamma\Theta$$K$와 $K\Gamma\Lambda$는 닮음 관계에 있다. 따라서 선분 $\Gamma\Theta$의 길이와 선분 $\Theta$$K$의 길이의 비는 선분 $K\Gamma$의 길이와 선분 $\Gamma\Lambda$의 길이의 비와 같다. 따라서 $Z$와 $H$의 비는 선분 $K\Gamma$의 길이와 선분 $\Gamma\Lambda$의 길이의 비보다 작다. 선분 $K\Gamma$의 길이는 선분 $KB$의 길이와 같고, 선분 $KB$와 선분 $A\Gamma$의 교점을 $E$라 하면, 삼각형 $BKN$은 $BE\Gamma$는 닮음 관계에 있으므로, 선분 $BE$의 길이와 선분 $B\Gamma$의 길이의 원하는 비를 얻는다.
+\end{proof}
+\begin{remark}
+    \begin{align*}
+        &\ol{BE}:\ol{B\Gamma}\\&=\ol{BK}:\ol{BN} (\because \triangle BE\Gamma \sim \triangle BKN)\\&=\ol{K\Gamma}:\ol{BN} (\because \ol{BK}=\ol{K\Gamma})\\&=Z:H<\ol{K\Gamma}:\ol{\Gamma\Lambda}=\ol{\Gamma\Theta}:\ol{\Theta K} (\because \triangle \Gamma\Theta K \sim \triangle K\Gamma\Lambda)
+    \end{align*}
+\end{remark}
