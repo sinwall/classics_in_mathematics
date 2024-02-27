@@ -92,6 +92,7 @@ class StyleSheet {
         this.paramOrig = {};
         this.objStyleTrend = [];
         this.objStyleOrig = [];
+        this.objNames = []
         this.objCaptions = [];
         this.objTypes = [];
         this.nObjs = 0;
@@ -101,6 +102,7 @@ class StyleSheet {
             let line = styleTable[i].trim().split(",");
             let parsed = parseStyle(line);
             if (parsed.type == "hparam") {
+                this[parsed.name] = parsed.valueOrig;
                 this.hparams[parsed.name] = parsed.valueOrig;
                 if (parsed.name == "stepMax") {
                     for (let j=0; j<=parsed.valueOrig; j++) {
@@ -121,15 +123,15 @@ class StyleSheet {
                     this.objStyleTrend[j].push( parsed.styles[j] );
                 }
                 this.objStyleOrig.push( parsed.styleOrig );
+                this.objNames.push (parsed.name );
                 this.objCaptions.push( parsed.caption );
                 this.objTypes.push( parsed.type );
             }
         }
-        this.stepMax = this.hparams.stepMax;
-    }
-
-    get hypParams() {
-        return this.hparams;
+        if (!('centerZ' in this.hparams)) {
+            this.hparams.centerZ = 0;
+            this.centerZ = 0;
+        }
     }
 
     getParams(step=0, original=false) {

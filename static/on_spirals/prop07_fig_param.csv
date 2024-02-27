@@ -1,9 +1,8 @@
 name,caption,type,v_orig,v_00,v_01,v_02,v_03,v_04
 stepMax,,hparam,,4,,,,
-figureScale,,hparam,,5,,,,
-figureCx,,hparam,,0,,,,
-figureCy,,hparam,,0,,,,
-figureCz,,hparam,,0,,,,
+scale,,hparam,,5,,,,
+centerX,,hparam,,0,,,,
+centerY,,hparam,,0,,,,
 radius,,param,,2.,,,,
 angleSecant,,param,0.44,0.5,,,,
 posPerp,,param,,0.5,,,,

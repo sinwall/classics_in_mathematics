@@ -7,7 +7,7 @@ function calculateGeometry(params) {
         ratioLongerLength, ratioLongerPos, ratioShorterLength, ratioShorterPos,
         ratioL, switchIN, ratioAngleI, ratioN, ratioRightEnd, ratioLeftTail
     } = params;
-    let K = origin.clone();
+    let K = origin();
     let A = K.clone()
         .addScaledVector(e_x, -radius*Math.sin(angleSecant*0.5*Math.PI))
         .addScaledVector(e_y, radius*Math.cos(angleSecant*0.5*Math.PI));
@@ -64,11 +64,11 @@ function calculateGeometry(params) {
     let GE = [G, E];
     let EI = [E, I];
     let IG = [I, G];
-    let result = [
+    let result = {
         K, A, G, Q, L, I, N, E,
         Z, H, GQ, QK, KG, GL, AG, GN, IN, KL, KE, GE, EI, IG,
         ABG,
-    ]
+    }
     return result;
 
 }

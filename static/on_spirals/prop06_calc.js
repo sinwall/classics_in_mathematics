@@ -7,7 +7,7 @@ function calculateGeometry(params) {
         ratioLongerLength, ratioLongerPos, ratioShorterLength, ratioShorterPos,
         ratioRightEnd, ratioLeftTail, switchN, ratioBNmagn
     } = params;
-    let K = origin.clone();
+    let K = origin();
     let halfAKG = angleSecant*0.5*Math.PI
     let A = K.clone()
         .addScaledVector(e_x, -radius*Math.sin(halfAKG))
@@ -41,9 +41,6 @@ function calculateGeometry(params) {
     let Z = [longerBottom, longerTop];
     let H = [shorterBottom, shorterTop];
     let GQred = [G, Q]; let KQ = [K, Q];
-    // let bx = B.getComponent(0); let by = B.getComponent(1);
-    // let gx = G.getComponent(0); let gy = G.getComponent(1);
-    // let nx = gx + (gx-bx)*gy/(by-gy);
     let N = K.clone()
         .addScaledVector(e_x, (1-switchN)*radius*ratioRightEnd + switchN*radius*Math.cos(halfBKG)/Math.sin(halfAKG-halfBKG))
     let leftTail = K.clone()
@@ -57,11 +54,11 @@ function calculateGeometry(params) {
     let KB = [K, B];
     let E = B.clone().multiplyScalar(G.getComponent(1)/B.getComponent(1));
     let EBred = [E, B]; let GBblue = [G, B];
-    let result = [
+    let result = {
         K, A, B, G, Q, N, L, E,
         Z, H, KQ, GQred, AG, KN, KG, GL, BN, KB, EBred, GBblue,
         ABG,
-    ]
+    }
     return result;
 
 }

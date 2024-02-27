@@ -166,33 +166,28 @@ class Geometer {
         await this.loadStyle(styleFileName);
         await this.loadGeometryCalculator(calcFileName);
         let style = this.style;
-
-        let figureScale = style.hypParams.figureScale;
         let renderer = this.renderer;
-        // let figureCenter = [style.hypParams.figureCx, style.hypParams.figureCy]
-        // this.figureScale = figureScale;
-        // this.figureCenter = figureCenter;
         
-        this.camera.left = -style.hypParams.figureScale;
-        this.camera.right = style.hypParams.figureScale;
-        this.camera.top = style.hypParams.figureScale;
-        this.camera.bottom = -style.hypParams.figureScale;
+        this.camera.left = -style.scale;
+        this.camera.right = style.scale;
+        this.camera.top = style.scale;
+        this.camera.bottom = -style.scale;
         this.camera.near = 1; this.camera.far = 1000;
-        this.camera.position.set(style.hypParams.figureCx, style.hypParams.figureCy, 10);
-        this.camera.lookAt(style.hypParams.figureCx, style.hypParams.figureCy, 0);
+        this.camera.position.set(style.centerX, style.centerY, style.centerZ+10);
+        this.camera.lookAt(style.centerX, style.centerY, style.centerZ);
         this.camera.updateProjectionMatrix();
 
-        let pixelSize = (2*figureScale) / renderer.getSize().width;
+        let pixelSize = (2*style.scale) / renderer.getSize().width;
 
         this.stepMax = style.stepMax;
         this._objects = []
 
         let objTypes = style.objTypes;
-        let objNames = style.objCaptions;
+        let objCaptions = style.objCaptions;
         let objColors = style.objStyleTrend[0];
         let objSizes = style.objStyleTrend[0];
         for (let i=0; i<style.nObjs; i++) {
-            let gObj = new GeometricEntity(objTypes[i], objNames[i], objColors[i].color, objSizes[i].size, pixelSize);
+            let gObj = new GeometricEntity(objTypes[i], objCaptions[i], objColors[i].color, objSizes[i].size, pixelSize);
             gObj.attachCaption(renderer);
             this._objects.push(gObj);
             this.scene.add(gObj._obj3d)
@@ -210,15 +205,16 @@ class Geometer {
         for (let i=0; i<this._objects.length; i++) {
             let gObj = this._objects[i];
             let sty = objStyles[i];
-            gObj.setData(entityDatas[i]);
+            gObj.setData(entityDatas[this.style.objNames[i]]);
             gObj.setVisibility(sty.visible);
             gObj.setColor(sty.color);
             gObj.setSize(sty.size);
             
             let [cx, cy, cz] = gObj.captionPosition3d.clone().project(this.camera);
             let [dx, dy, dz] = (new THREE.Vector3(
-                this.style.hypParams.figureCx, 
-                this.style.hypParams.figureCy
+                this.style.centerX, 
+                this.style.centerY,
+                this.style.centerZ
             )).project(this.camera);
             let renderSize = this.renderer.getSize();
             gObj.setCaptionPosition(

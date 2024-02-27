@@ -9,7 +9,7 @@ function calculateGeometry(params) {
     } = params;
     angleAKQ *= Math.PI/180;
     angleBKQ *= Math.PI/180;
-    let K = origin.clone();
+    let K = origin();
     let A = K.clone()
         .addScaledVector(e_x, -radiusABGD*Math.sin(angleAKQ))
         .addScaledVector(e_y, radiusABGD*Math.cos(angleAKQ));
@@ -92,11 +92,11 @@ function calculateGeometry(params) {
     let KB = [K, B];
     let IG = [I, G];
     let BE = [B, E];
-    let result = [
+    let result = {
         K, A, B, G, Q, L, C, M, I, N, E,
         Z, H, AG, GQ, QK, GK, GL, KL, CL, GM, IN, KN, CI, KE, GE, IL, KI, CG, KB, IG, BE, 
         ABGD, KLC
-    ]
+    };
     return result;
 }
 

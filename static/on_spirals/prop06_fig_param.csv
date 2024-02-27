@@ -1,8 +1,8 @@
 name,caption,type,v_debug,v_00,v_01,v_02,v_03,v_04,v_05,v_06
 stepMax,,hparam,,6,,,,,,
-figureScale,,hparam,,5,,,,,,
-figureCx,,hparam,,0,,,,,,
-figureCy,,hparam,,0,,,,,,
+scale,,hparam,,5,,,,,,
+centerX,,hparam,,0,,,,,,
+centerY,,hparam,,0,,,,,,
 radius,,param,,2.,,,,,,
 angleSecant,,param,0.5,0.7,,,,,,
 ratioAngleInter,,param,0.5,0.3,,,,,,
@@ -34,5 +34,5 @@ GL,,line,1,0,,1,2b,,1k,
 BN,,line,1,0,,,,,2b,1k
 KB,,line,1,0,,,,,,1
 EBred,,line,,0,,,,,,2r
-BGblue,,line,,0,,,,,,2b
+GBblue,,line,,0,,,,,,2b
 ABG,,circle,,,,,,,,

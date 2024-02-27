@@ -5,7 +5,7 @@ function calculateGeometry(params) {
         radius, angleLeftInit, ratioTangentLeft, ratioTangentRight,
         ratioLongerLength, ratioLongerPos, switchZ
     } = params;
-    let K = origin.clone();
+    let K = origin();
     let B = K.clone().addScaledVector(e_y, radius);
     let A = K.clone()
         .addScaledVector(e_y, radius*Math.cos(angleLeftInit*Math.PI))
@@ -40,13 +40,14 @@ function calculateGeometry(params) {
         .addScaledVector(e_x, Q.getComponent(0)/qyRatio)
         .addScaledVector(e_y, radius);
     Z = Z.addScaledVector(Zafter.sub(Z), switchZ);
+    let KZ = [K, Z];
     let ABG = [K, radius];
 
-    let entityDatas = [
+    let entityDatas = {
         K, A,B,G,D, Z, H, Q,
-        E, DZ, AH, BH, QHred, [K, Z],
+        E, DZ, AH, BH, QHred, KZ,
         ABG, 
-    ];
+    };
     return entityDatas;
 
 }

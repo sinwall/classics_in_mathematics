@@ -1,9 +1,8 @@
 name,caption,type,v_orig,v_00,v_01,v_02,v_03,v_04,v_05,v_06,v_07,v_08,v_09,v_10,v_11,v_12,v_13,v_14,v_15,v_16,v_17,v_18,v_19,v_20
 stepMax,,hparam,,12,,,,,,,,,,,,,,,,,,,,
-figureScale,,hparam,,5,,,,,,,,,,,,,,,,,,,,
-figureCx,,hparam,,0,,,,,,,,,,,,,,,,,,,,
-figureCy,,hparam,,0,,,,,,,,,,,,,,,,,,,,
-figureCz,,hparam,,0,,,,,,,,,,,,,,,,,,,,
+scale,,hparam,,5,,,,,,,,,,,,,,,,,,,,
+centerX,,hparam,,0,,,,,,,,,,,,,,,,,,,,
+centerY,,hparam,,0,,,,,,,,,,,,,,,,,,,,
 radiusABGD,,param,,2.,,,,,,,,,,,,,,,,,,,,
 angleAKQ,,param,47,42,,,,,,,,,,,,,,,,,,,,
 angleBKQ,,param,,36,,,,,,,,,,,,,,,,,,,,
