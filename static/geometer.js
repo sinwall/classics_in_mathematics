@@ -1,11 +1,5 @@
-// import * as THREE from "https://unpkg.com/three@0.160.0/src/Three.js"
 import * as THREE from 'three'
-// import {ColladaLoader} from 'three/addons/loaders/ColladaLoader.js'
-// import {SVGRenderer} from "https://unpkg.com/three@0.160.0/examples/jsm/renderers/SVGRenderer.js"
 import {SVGRenderer} from 'three/addons/renderers/SVGRenderer.js'
-// import {CSS2DRenderer} from 'three/addons/renderers/CSS2DRenderer.js'
-// import {CSS3DRenderer} from 'three/addons/renderers/CSS3DRenderer.js'
-// import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import {StyleSheet} from "./styler.js"
 
 
@@ -164,6 +158,7 @@ class Geometer {
         let styleFileName = sourcePath + "_fig_param.csv";
         let calcFileName = sourcePath + "_calc.js";
         await this.loadStyle(styleFileName);
+        if (!this._loaded) {return;}
         await this.loadGeometryCalculator(calcFileName);
         let style = this.style;
         let renderer = this.renderer;
@@ -192,9 +187,7 @@ class Geometer {
             this._objects.push(gObj);
             this.scene.add(gObj._obj3d)
         }
-        this.build();
-        this.render();
-        this._loaded = true;
+        this.buildAndRenderIfLoaded();
     }
 
     build() {
@@ -222,6 +215,12 @@ class Geometer {
                 renderSize.width*0.5*(cx-dx+1) + this.renderer.domElement.parentNode.offsetLeft
             )
         }
+    }
+
+    buildAndRenderIfLoaded() {
+        if (!this._loaded) {return;}
+        this.build();
+        this.render();
     }
 
     clear() {
@@ -252,23 +251,23 @@ class Geometer {
     }
 
     async loadStyle(fileName) {
-        let style;
-        await new Promise(function (resolve, reject) {
+        let that = this
+        this._loaded = await new Promise(function (resolve, reject) {
             let xhr = new XMLHttpRequest();
             xhr.open("GET", fileName)
             xhr.onload = function () {
                 if ((xhr.status >= 200) && (xhr.status < 400)) {
-                    style = new StyleSheet(xhr.responseText);
-                    resolve();
+                    that.style = new StyleSheet(xhr.responseText);
+                    resolve(true);
                 }
                 else {
                     console.log("rejected;")
-                    reject();
+                    resolve(false);
                 }
             }
             xhr.send();
         })
-        this.style = style;
+        console.log(this._loaded)
     }
     
     render() {
@@ -279,20 +278,17 @@ class Geometer {
         if (this.step <= this.stepMin) {return;}
         if (this.original) {return;}
         this.step--;
-        this.build();
-        this.render();
+        this.buildAndRenderIfLoaded();
     }
     stepForward() {
         if (this.step >= this.stepMax) {return;}
         if (this.original) {return;}
         this.step++;
-        this.build();
-        this.render();
+        this.buildAndRenderIfLoaded();
     }
     toggleOriginal() {
         this.original = !this.original;
-        this.build();
-        this.render();
+        this.buildAndRenderIfLoaded();
     }
 }
 
