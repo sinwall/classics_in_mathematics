@@ -36,6 +36,28 @@ MathJax = {
     position: relative;
     float:left;
 }
+.text-col-body{
+    height:80%;
+    overflow-y: scroll;
+}
+.text-col-foot{
+    height:15%;
+    overflow-y: scroll;
+}
+.unselectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+.multilayer {
+    position: relative;
+}
+.language-layer {
+    position: absolute;
+}
 </style>
 </head>
 
@@ -56,18 +78,20 @@ Mathematica Classica per Linguas Figurasque
     Column 1
     <select id="select-lang1"></select>
     </div>
-    <div id="page-content-col1-body" class="row boxed" style="white-space:break-spaces;">
+    <div id="page-content-col1-body" class="row boxed text-col-body" style="white-space:break-spaces; ">
     Content 1
     </div>
+    <div id="page-content-col1-foot" class="row text-col-foot boxed" style="white-space:break-spaces;"></div>
   </div>
   <div id="page-content-col2" class="col boxed" style="width:32%; height:100%;">
     <div id="page-content-col2-title" class="row boxed">
     Column 2
     <select id="select-lang2"></select>
     </div>
-    <div id="page-content-col2-body" class="row boxed" style="white-space:break-spaces;">
+    <div id="page-content-col2-body" class="row boxed text-col-body" style="white-space:break-spaces;">
     Content 2
     </div>
+    <div id="page-content-col2-foot" class="row text-col-foot boxed" style="white-space:break-spaces;"></div>
   </div>
   <div id="page-content-col3" class="col boxed" style="height:100%;">
     <div id="page-content-col3-title" class="row boxed">
@@ -90,81 +114,139 @@ Mathematica Classica per Linguas Figurasque
 
 </html>
 <script type="module">
+// import {readFileSync} from 'fs'
 
-async function loadRawText(sourcePath) {
-    let result = {}
-    for (let i=0; i<langList.length; i++) {
-        let lang = langList[i];
-        result[lang] = {loaded: false};
-        await new Promise(function (resolve, reject) {
-            let xhr = new XMLHttpRequest();
-            xhr.open("GET", sourcePath + "_" + lang + ".txt")
-            xhr.onload = function () {
-                if ((xhr.status >= 200) && (xhr.status < 400)) {
-                    result[lang] = classifyText(xhr.responseText, lang);
-                    result[lang].loaded = true;
-                }
-                else {
-                    ;
-                    // reject();
-                }
-                resolve();
+async function loadRawTextJson(sourcePath) {
+    let result;
+    await new Promise(function (resolve, reject) {
+        let xhr = new XMLHttpRequest();
+        xhr.open("GET", sourcePath)
+        xhr.onload = function () {
+            if ((xhr.status >= 200) && (xhr.status < 400)) {
+                result = JSON.parse(xhr.responseText);
             }
-            xhr.send();
-        })
-    }
+            else {
+                ;
+                // reject();
+            }
+            resolve();
+        }
+        xhr.send();
+    })
     return result;
 }
 
-
-function renderText(textBundle, lang) {
-    let result;
-    if (!textBundle.loaded) { return "Text not prepared"}
-    if (lang == "KOM") {
-        result = (
-            "<b>정리.</b> " + textBundle.theorem + "\n\n" 
-            + "<b>증명.</b> " + textBundle.proof + "\n\n" 
-            + "<b>참고.</b> " + textBundle.remark
-        );
-        result += "\n\n";
-        for (let i=0; i<textBundle.footnotes.length; i++) {
-            result += `<sup>${i+textBundle.footnoteIndex+1}</sup> ${textBundle.footnotes[i]}`;
-            if (i<textBundle.footnotes.length-1) {result += "\n";}
+function arrangeMultilayerSize(textColumn) {
+    let outers = textColumn.querySelectorAll('.multilayer')
+    for (let outer of outers) {
+        for (let inner of outer.querySelectorAll('.language-layer')) {
+            if (Number(outer.style.height.replace('px','')) < inner.offsetHeight) {
+                outer.style.height = `${inner.offsetHeight}px`;
+            }
         }
     }
-    else {
-        result = textBundle.text;
+}
+function insertTextToElement(textColumn, proposition) {
+    let innerOuter;
+    for (let i=textColumn.childNodes.length; i>0; i--) {
+        textColumn.childNodes[0].remove();
     }
-    return result
+    let numParagraph = proposition.ELH.paragraphs.length;
+    for (let i=0; i<numParagraph; i++) {
+        let outer = document.createElement('div');
+        outer.classList.add('multilayer', 'boxed')
+        textColumn.appendChild(outer);
+        // outer.style = 'position: relative;';
+        for (let j=0; j<langList.length; j++) {
+            let inner = document.createElement('div');
+            inner.classList.add(langList[j], 'language-layer');
+            // inner.style = 'position: absolute;';
+            inner.innerHTML = proposition[langList[j]].paragraphs[i];
+            outer.appendChild(inner);
+            // if (Number(outer.style.height.replace('px','')) < inner.offsetHeight) {
+            //     outer.style.height = `${inner.offsetHeight}px`;
+            // }
+        }
+    }
+    MathJax.typeset();
+    arrangeMultilayerSize(textColumn)
 }
 
-function classifyText(string, lang=null, footnoteIndex=0) {
-    let result = {footnoteIndex: footnoteIndex};
-    if (lang == "KOM") {
-        string = string.replace("\\\\", "");
-        result.footnotes = []; 
-        string = string.replaceAll(
-            /\\footnote{([^{}]+)}/gs, 
-            function (match, p1, offset, string, groups) {
-                footnoteIndex++; 
-                result.footnotes.push(p1);
-                return `<sup>${footnoteIndex}</sup>`;
-            }
-        )
-        let theorem = [...string.matchAll(/\\begin{theorem}(.+)\\end{theorem}/gs)];
-        result.theorem = theorem[0][1].trim();
-        let proof = [...string.matchAll(/\\begin{proof}(.+)\\end{proof}/gs)];
-        result.proof = proof[0][1].trim();
-        let remark = [...string.matchAll(/\\begin{remark}(.+)\\end{remark}/gs)];
-        result.remark = remark[0][1].trim();
-    }
-    else {
-        // console.log({content: string})
-        // console.log(...string.matchAll(/[\r\n]{6,}/g))
-        result.text = string.replaceAll(/[\r\n]{4,}/g, "\n").split("\n").join("\n\n");
-    }
-    return result;
-}
+
+// async function loadRawText(sourcePath) {
+//     let result = {}
+//     for (let i=0; i<langList.length; i++) {
+//         let lang = langList[i];
+//         result[lang] = {loaded: false};
+//         await new Promise(function (resolve, reject) {
+//             let xhr = new XMLHttpRequest();
+//             xhr.open("GET", sourcePath + "_" + lang + ".txt")
+//             xhr.onload = function () {
+//                 if ((xhr.status >= 200) && (xhr.status < 400)) {
+//                     result[lang] = classifyText(xhr.responseText, lang);
+//                     result[lang].loaded = true;
+//                 }
+//                 else {
+//                     ;
+//                     // reject();
+//                 }
+//                 resolve();
+//             }
+//             xhr.send();
+//         })
+//     }
+//     return result;
+// }
+
+
+// function renderText(textBundle, lang) {
+//     let result;
+//     if (!textBundle.loaded) { return "Text not prepared"}
+//     if (lang == "KOM") {
+//         result = (
+//             "<b>정리.</b> " + textBundle.theorem + "\n\n" 
+//             + "<b>증명.</b> " + textBundle.proof + "\n\n" 
+//             + "<b>참고.</b> " + textBundle.remark
+//         );
+//         result += "\n\n";
+//         for (let i=0; i<textBundle.footnotes.length; i++) {
+//             result += `<sup>${i+textBundle.footnoteIndex+1}</sup> ${textBundle.footnotes[i]}`;
+//             if (i<textBundle.footnotes.length-1) {result += "\n";}
+//         }
+//     }
+//     else {
+//         result = textBundle.text;
+//     }
+//     return result
+// }
+
+// function classifyText(string, lang=null, footnoteIndex=0) {
+//     let result = {footnoteIndex: footnoteIndex};
+//     if (lang == "KOM") {
+//         string = string.replace("\\\\", "");
+//         result.footnotes = []; 
+//         string = string.replaceAll(
+//             /\\footnote{([^{}]+)}/gs, 
+//             function (match, p1, offset, string, groups) {
+//                 footnoteIndex++; 
+//                 result.footnotes.push(p1);
+//                 return `<sup>${footnoteIndex}</sup>`;
+//             }
+//         )
+//         let theorem = [...string.matchAll(/\\begin{theorem}(.+)\\end{theorem}/gs)];
+//         result.theorem = theorem[0][1].trim();
+//         let proof = [...string.matchAll(/\\begin{proof}(.+)\\end{proof}/gs)];
+//         result.proof = proof[0][1].trim();
+//         let remark = [...string.matchAll(/\\begin{remark}(.+)\\end{remark}/gs)];
+//         result.remark = remark[0][1].trim();
+//     }
+//     else {
+//         // console.log({content: string})
+//         // console.log(...string.matchAll(/[\r\n]{6,}/g))
+//         result.text = string.replaceAll(/[\r\n]{4,}/g, "\n").split("\n").join("\n\n");
+//     }
+//     return result;
+// }
 
 // function cleanText(string, lang=null) {
 //     let result = string;
@@ -182,9 +264,14 @@ async function setProposition(index) {
     document.getElementById("select-fig-"+index).selected = true;
     geometer.clear();
     await geometer.loadSource(sourceList[index]);
-    texts = await loadRawText(sourceList[index])
+    // texts = await loadRawText(sourceList[index])
     for (let j=1; j<=2; j++) {
+        insertTextToElement(
+            document.getElementById(`page-content-col${j}-body`),
+            textJson[index]
+        )
         document.getElementById("select-lang"+j).onchange();
+        // if (j == 1) break;
     }
 
     let selectStep = document.getElementById("select-step");
@@ -208,7 +295,10 @@ async function setProposition(index) {
 import {Geometer} from "/static/geometer.js"
 
 let sourceList = [
+    "/static/on_spirals/prop01",
     "/static/on_spirals/prop02",
+    "/static/on_spirals/prop03",
+    "/static/on_spirals/prop04",
     "/static/on_spirals/prop05",
     "/static/on_spirals/prop06",
     "/static/on_spirals/prop07",
@@ -224,8 +314,18 @@ let langDetailList = [
 
 let geometer = new Geometer(document.getElementById("svg-wrapper"))
 geometer.domElement.classList.add("boxed")
-let texts;
+// let texts;
+let textJson = await loadRawTextJson('/static/on_spirals/propositions.json');
+// let textJson = [];
+// for (let i=0; i<9; i++) {
+//     textJson.push({
+//         ELH: {paragraphs: []},
+//         KOC: {paragraphs: []},
+//         KOM: {paragraphs: []},
+//     })
+// }
 
+// proposition navigation
 document.getElementById("button-fig-prev").onclick = async function () {
     let i = +document.getElementById("select-fig").value;
     if (i <= 0) { return; }
@@ -248,6 +348,7 @@ for (let i=0; i<sourceList.length; i++) {
     document.getElementById("select-fig").appendChild(option);
 }
 for (let j=1; j<=2; j++) {
+    let selectProp = document.getElementById('select-fig');
     let selectLang = document.getElementById("select-lang"+j);
     for (let i=0; i<langList.length; i++) {
         let option = document.createElement("option");
@@ -258,14 +359,35 @@ for (let j=1; j<=2; j++) {
     }
     selectLang.onchange = function () {
         let i = selectLang.value;
-        document.getElementById("page-content-col"+j+"-body").innerHTML = renderText(texts[langList[i]], langList[i]);
+        document.getElementById(`page-content-col${j}-body`)
+            .querySelectorAll('.language-layer')
+            .forEach(el => {el.style.opacity = 0; el.style.zIndex = -1; el.classList.add('unselectable');});
+        document.getElementById(`page-content-col${j}-body`)
+            .querySelectorAll(`.${langList[i]}`)
+            .forEach(el => {el.style.opacity = 1; el.style.zIndex = 1; el.classList.remove('unselectable')});
+        // document.getElementById(`page-content-col${j}-body`).innerHTML = (
+        //     '<p>'
+        //     + textJson[selectProp.value][langList[i]].paragraphs.join('</p><p>')
+        //     +'</p>'
+        // );
+        document.getElementById(`page-content-col${j}-foot`).innerHTML = (
+            '<p>'
+            + textJson[selectProp.value][langList[i]].footnotes.join('</p><p>')
+            +'</p>'
+        )
         if (langList[i] == "KOM") {
             MathJax.typeset()
         }
     }
+    document.getElementById(`page-content-col${j}-body`).onscroll = function () {
+        for (let el of document.body.querySelectorAll('.text-col-body')) {
+            el.scrollTop = this.scrollTop;
+        }
+    }
 }
 
-// window.onload = function() {
+
+// diagram navigation
 document.getElementById("button-back").onclick = function () {
     geometer.stepBack();
     document.getElementById("select-step-"+geometer.step).selected = true;
@@ -293,7 +415,6 @@ document.getElementById("check-original").onchange = function () {
 let idxInit = sourceList.length-1
 document.getElementById("select-lang2-2").selected = true;
 setProposition(idxInit);
-// }
 
 // let html;
 // await new Promise(function (resolve, reject) {
