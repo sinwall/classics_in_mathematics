@@ -196,32 +196,33 @@ class Geometer {
         ]).then(function () {
             let style = that.style;
             let renderer = that.renderer;
-            
-            camera.left = -style.scale;
-            camera.right = style.scale;
-            camera.top = style.scale;
-            camera.bottom = -style.scale;
-            camera.near = 1; camera.far = 1000;
-            camera.position.set(style.centerX, style.centerY, style.centerZ+10);
-            camera.lookAt(style.centerX, style.centerY, style.centerZ);
-            camera.updateProjectionMatrix();
-    
-            let pixelSize = (2*style.scale) / renderer.getSize().width;
-    
-            that.stepMax = style.stepMax;
-            that._objects = []
-    
-            let objTypes = style.objTypes;
-            let objCaptions = style.objCaptions;
-            let objColors = style.objStyleTrend[0];
-            let objSizes = style.objStyleTrend[0];
-            for (let i=0; i<style.nObjs; i++) {
-                let gObj = new GeometricEntity(objTypes[i], objCaptions[i], objColors[i].color, objSizes[i].size, pixelSize);
-                gObj.attachCaption(renderer);
-                that._objects.push(gObj);
-                that.scene.add(gObj._obj3d)
+            if (style) {
+                camera.left = -style.scale;
+                camera.right = style.scale;
+                camera.top = style.scale;
+                camera.bottom = -style.scale;
+                camera.near = 1; camera.far = 1000;
+                camera.position.set(style.centerX, style.centerY, style.centerZ+10);
+                camera.lookAt(style.centerX, style.centerY, style.centerZ);
+                camera.updateProjectionMatrix();
+        
+                let pixelSize = (2*style.scale) / renderer.getSize().width;
+        
+                that.stepMax = style.stepMax;
+                that._objects = []
+        
+                let objTypes = style.objTypes;
+                let objCaptions = style.objCaptions;
+                let objColors = style.objStyleTrend[0];
+                let objSizes = style.objStyleTrend[0];
+                for (let i=0; i<style.nObjs; i++) {
+                    let gObj = new GeometricEntity(objTypes[i], objCaptions[i], objColors[i].color, objSizes[i].size, pixelSize);
+                    gObj.attachCaption(renderer);
+                    that._objects.push(gObj);
+                    that.scene.add(gObj._obj3d)
+                }
+                that.buildAndRenderIfLoaded();
             }
-            that.buildAndRenderIfLoaded();
             callback();
         })
     }
@@ -260,7 +261,6 @@ class Geometer {
     }
 
     clear() {
-        if (!this._loaded) {return;}
         for (let i=this.scene.children.length-1; i>=0; i--) {
             this.scene.remove(this.scene.children[0]);
         }
@@ -294,16 +294,22 @@ class Geometer {
     }
 
     async loadStyle(bookName, sectionName) {
-        let that = this
+        let that = this;
         this._loaded = await new Promise(function (resolve, reject) {
             let xhr = new XMLHttpRequest();
             xhr.open("GET", `/diagram-parameters/${bookName}/${sectionName}`);
             xhr.onload = function () {
                 if ((xhr.status >= 200) && (xhr.status < 400)) {
-                    that.style = new StyleSheet(xhr.responseText);
-                    resolve(true);
+                    if (xhr.responseText) {
+                        that.style = new StyleSheet(xhr.responseText);
+                        resolve(true);
+                    } else {
+                        that.style = null;
+                        resolve(false);
+                    }
                 }
                 else {
+                    that.style = null;
                     console.log("rejected;")
                     resolve(false);
                 }

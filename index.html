@@ -157,7 +157,7 @@ async function loadRawTextJson(sourcePath) {
 }
 
 function loadSectionAndDo(sectionName, callback) {
-    let promises = []
+    let promises = [];
     for (let lang of metaData.languages) {
         promises.push(
             new Promise(function (resolve, reject) {
@@ -185,7 +185,7 @@ function loadSectionAndDo(sectionName, callback) {
             })
         );
     }
-    Promise.all(promises)
+    return Promise.all(promises)
         .then(
             function (resolved) {
                 let texts = {};

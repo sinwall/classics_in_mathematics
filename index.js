@@ -3,9 +3,9 @@ const path = require('path');
 const express = require('express');
 const nodeHtmlParser = require('node-html-parser');
 
-let htmlBook = fs.readFileSync('./static/on_spirals/ELH&KOC-HTML.txt', 'utf-8');
+let htmlBook = fs.readFileSync('./static/on-spirals/ELH&KOC&KOM-HTML.txt', 'utf-8');
 htmlBook = nodeHtmlParser.parse(htmlBook);
-let dgmParams = fs.readFileSync('./static/on_spirals/diagram-parameters.csv', 'utf-8');
+let dgmParams = fs.readFileSync('./static/on-spirals/diagram-parameters.csv', 'utf-8');
 dgmParams = dgmParams.split(/\r?\n/g)
     .map(
         function (line) {return line.split(',');} 
@@ -24,7 +24,7 @@ app.get(
     '/metadata/on-spirals', 
     function (req, res) {
         let result = {
-            languages: ['ELH', 'KOC'],
+            languages: ['ELH', 'KOC', 'KOM'],
             languagesDetail: ['그리스어 원문', '우리말(고전학자)', '우리말(수학자)'],
             sections: []
         };
@@ -38,7 +38,7 @@ app.get(
 );
 
 app.get(
-    /\/text\/on-spirals\/(Intro|Prop[0-9]{2})\/(ELH|KOC)/, 
+    /\/text\/on-spirals\/(Intro|Prop[0-9]{2})\/(ELH|KOC|KOM)/, 
     function (req, res) {
         let lang = req.originalUrl.split('/')[4];
         let divName = req.originalUrl.split('/')[3];
@@ -49,7 +49,6 @@ app.get(
             if (el.getAttribute('n') !== divName) {continue;}
             for (let el2 of el.getElementsByTagName('div')) {
                 if (el2.getAttribute('n') !== `${divName}-${lang}`) {continue;}
-
                 el2.querySelectorAll('a')
                     .map(function(n) {return n.getAttribute('href');})
                     .forEach(function(id) {fns.appendChild(back.querySelector(id).parentNode.parentNode.clone())});

@@ -345,9 +345,108 @@ function addParagraphNumbers(content) {
     return content;
 }
 
-function HTMtoTEI() {
-    let htmlCont = fs.readFileSync('.references/나선들에 관하여 모음.htm', 'utf8')
-    htmlCont = nodeHtmlParser.parse(htmlCont);
+function texExtractDocument(texString) {
+    texString = texString.match(/\\begin{document}(.+)\\end{document}/s)[1]
+    return texString;
+}
+
+function texAvoidEntityRef(texString) {
+    texString = texString.replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    return texString;
+}
+
+function texRemoveLinebreaks(texString) {
+    texString = texString.replaceAll('\\\\', '');
+    return texString;
+}
+
+function texDivideSections(texString) {
+    result = ''
+    // result = '<div n="Intro-KOM"></div>';
+    let num = 0;
+    texString = texString.split('\\newpage')
+        .forEach(function(s) {
+            num++;
+            let sectionName = 'Prop' + String(num).padStart(2, '0');
+            s = s.trim();
+            result += `<div n="${sectionName}-KOM">${s}</div>`;
+        })
+    // let padTo = 12;
+    // while (num < padTo) {
+    //     num++;
+    //     let sectionName = 'Prop' + String(num).padStart(2, '0');
+    //     result += `<div n="${sectionName}-KOM"></div>`
+    // }
+    return result;
+}
+
+function texTagFootnotes(texString) {
+    let footnoteNum = 0;
+    texString = texString.replaceAll(
+        /\\footnote{([^{}]+)}/gs, 
+        function (match, p1) {
+            footnoteNum++; 
+            result = `<note n="KOM-${footnoteNum}" place="bottom"><p>${p1}</p></note>`
+            return result
+        }
+    );
+    return texString;
+}
+
+let texSepToken = '\\newp'
+
+function texTagTheorem(texString) {
+    texString = texString.replaceAll(
+        /\\begin{theorem}(.+?)\\end{theorem}/gs,
+        function (match, p1) {
+            result = '<p><emph rend="boldface">정리. </emph>\n';
+            result += p1.split(texSepToken)
+                .map(function(s) {return s.trim();})
+                .join('</p><p>');
+            result += '</p>';
+            return result;
+        }
+    );
+    return texString;
+}
+
+function texTagProof(texString) {
+    texString = texString.replaceAll(
+        /\\begin{proof}(.+?)\\end{proof}/gs,
+        function (match, p1) {
+            result = '<p><emph rend="boldface">증명. </emph>\n';
+            result += p1.split(texSepToken)
+                .map(function(s) {return s.trim();})
+                .join('</p><p>');
+            result += '</p>';
+            return result;
+        }
+    );
+    return texString;
+}
+
+let remarkCounter = 0;
+function texTagRemark(texString) {
+    texString = texString.replaceAll(
+        /\\begin{remark}(.+?)\\end{remark}/gs,
+        function (match, p1) {
+            return '';
+            remarkCounter++;
+            result = `<note n="KOM-r${remarkCounter}"><span><emph rend="boldface">참고. </emph>\n`;
+            result += p1.split(texSepToken)
+                .map(function(s) {return s.trim();})
+                .join('</span><span>');
+            result += '</span></note>';
+            return result;
+        }
+    );
+    return texString;
+}
+
+function HTMtoTEI(htmlString, texString) {
+    let htmlCont = nodeHtmlParser.parse(htmlString);
     let mainTexts = targetMainTexts(htmlCont);
     let footnotes = targetFootnotes(htmlCont);
     let outputStyle = 'TEI';
@@ -371,7 +470,20 @@ function HTMtoTEI() {
             cleanFootnote
         )
     )
-    
+    if (texString) {
+        texString = compose(
+            texExtractDocument,
+            texAvoidEntityRef,
+            texRemoveLinebreaks,
+            texDivideSections,
+            texTagFootnotes,
+            texTagTheorem,
+            texTagProof,
+            texTagRemark
+        )(texString)
+        
+    }
+
     let footnoteNumELH = 0;
     let footnoteNumKOC = 0;
     for (let row=1; row<mainTexts.length; row++) {
@@ -418,13 +530,36 @@ function HTMtoTEI() {
         if (textELH.childNodes.length !== textKOC.childNodes.length) {
             throw Error;
         }
-        console.log(divName, textELH.childNodes.length, textKOC.childNodes.length);
+        // console.log(divName, textELH.childNodes.length, textKOC.childNodes.length);
         // break;
         xmlBody.appendChild(new nodeHtmlParser.HTMLElement('div', {}, `n="${divName}" type="section"`));
         xmlBody.lastChild.appendChild(new nodeHtmlParser.HTMLElement('div', {}, `n="${divName}-ELH"`));
         textELH.childNodes.forEach(function (n) {xmlBody.lastChild.lastChild.appendChild(n);});
         xmlBody.lastChild.appendChild(new nodeHtmlParser.HTMLElement('div', {}, `n="${divName}-KOC"`));
         textKOC.childNodes.forEach(function (n) {xmlBody.lastChild.lastChild.appendChild(n);});
+        if (texString) {
+            let texContent = nodeHtmlParser.parse(texString);
+            let noMatch = true;
+            let textKOM;
+            for (textKOM of texContent.childNodes) {
+                if ((textKOM.rawTagName !== 'div') || (textKOM.getAttribute('n') !== `${divName}-KOM`)) {
+                    continue;
+                }
+                xmlBody.lastChild.appendChild(textKOM.clone());
+                noMatch = false;
+                break;
+            }
+            if (noMatch) {
+                textKOM = new nodeHtmlParser.HTMLElement('div', {}, `n="${divName}-KOM"`);
+                xmlBody.lastChild.lastChild.childNodes.forEach(function (n) {textKOM.appendChild(new nodeHtmlParser.HTMLElement('p', {}));});
+                xmlBody.lastChild.appendChild(textKOM.clone());
+            }
+            // console.log(divName, xmlBody.lastChild.childNodes[0].childNodes.length, textKOM.querySelectorAll('p').length);
+            // if (xmlBody.lastChild.childNodes[0].childNodes.length !== textKOM.querySelectorAll('p').length) {
+            //     console.log(textKOM.innerHTML)
+            //     throw Error;
+            // }
+        }
     }
     return xml;
 }
@@ -501,13 +636,14 @@ function resplitFootnotes(content) {
     let back = content.querySelector('back');
     back.appendChild(new nodeHtmlParser.HTMLElement('div', {id: 'footnotes-ELH'}, ));
     back.appendChild(new nodeHtmlParser.HTMLElement('div', {id: 'footnotes-KOC'}, ));
+    back.appendChild(new nodeHtmlParser.HTMLElement('div', {id: 'footnotes-KOM'}, ));
     for (let el of body.getElementsByTagName('note')) {
         let lang = el.getAttribute('n').split('-')[0];
         let num = el.getAttribute('n').split('-')[1];
         let footnoteNum = (
             `<a id="footnote-${lang}-${num}" href="#footnoteptr-${lang}-${num}"><sup>[${num}] </sup></a>`
         );
-        let footnotePtr = new nodeHtmlParser.TextNode(
+        let footnotePtr = nodeHtmlParser.parse(
             `<a id="footnoteptr-${lang}-${num}" href="#footnote-${lang}-${num}"><sup>[${num}] </sup></a>`
         );
         back.querySelector(`#footnotes-${lang}`)
@@ -515,7 +651,7 @@ function resplitFootnotes(content) {
         el.childNodes.forEach(function (n) {back.querySelector(`#footnotes-${lang}`).lastChild.appendChild(n);});
         back.querySelector(`#footnotes-${lang}`).lastChild.firstChild.innerHTML = (
             footnoteNum + back.querySelector(`#footnotes-${lang}`).lastChild.firstChild.innerHTML
-        )
+        );
         el.replaceWith(footnotePtr);
     }
     return content;
@@ -531,7 +667,10 @@ function TEItoHTML(content) {
     return content;
 }
 
-let xml = HTMtoTEI();
-fs.writeFileSync('./static/on_spirals/ELH&KOC-TEI.xml', xml.toString());
+let htmlString = fs.readFileSync('.references/나선들에 관하여 모음.htm', 'utf-8')
+let texString = fs.readFileSync('./.references/수학고전_20240306.tex', 'utf-8');
+let xml = HTMtoTEI(htmlString, texString);
+fs.writeFileSync('./static/on-spirals/ELH&KOC&KOM-TEI.xml', xml.toString());
 let html = TEItoHTML(xml);
-fs.writeFileSync('./static/on_spirals/ELH&KOC-HTML.txt', html.toString());
+fs.writeFileSync('./static/on-spirals/ELH&KOC&KOM-HTML.txt', html.toString());
+// console.log(texString)
