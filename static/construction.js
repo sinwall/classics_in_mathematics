@@ -10,25 +10,24 @@ function origin() {
     return _origin.clone();
 }
 
+function newVector(x=0, y=0, z=0) {
+    return new Vector(x, y, z);
+}
+
 class Vector {
     constructor(x=0, y=0, z=0) {
         this._x = x;
         this._y = y;
         this._z = z;
-        this._v3 = new Vector3(this._x, this._y, this._z);
     }
     add(vec) {
-        return this.addCoords(vec.x, vec.y, vec.z);
+        return this.shift(vec.x, vec.y, vec.z);
     }
-    addCoords(dx=0, dy=0, dz=0) {
-        let result = this.clone();
-        result.x += dx;
-        result.y += dy;
-        result.z += dz;
-        return result;
+    asTHREE() {
+        return new Vector3(this.x, this.y, this.z);
     }
     clone() {
-        return Vector(this.x, this.y, this.z);
+        return new Vector(this.x, this.y, this.z);
     }
     dilate(t) {
         let result = this.clone();
@@ -78,6 +77,23 @@ class Vector {
     set z(value) {
         this._z = value;
     }
+    shift(dx=0, dy=0, dz=0) {
+        let result = this.clone();
+        result.x += dx;
+        result.y += dy;
+        result.z += dz;
+        // result.x = result.x + dx;
+        // result.y = result.y + dy;
+        // result.z = result.z + dz;
+        return result;
+    }
+    shiftPolar(r=0, azim=0, lat=0) {
+        return this.shift(
+            r*Math.cos(lat*Math.PI/180)*Math.cos(azim**Math.PI/180),
+            r*Math.cos(lat*Math.PI/180)*Math.sin(azim**Math.PI/180),
+            r*Math.sin(lat*Math.PI/180)
+        );
+    }
     sub(vec) {
         return this.subCoords(vec.x, vec.y, vec.z);
     }
@@ -90,10 +106,35 @@ class Vector {
     }
     toward(vec, t=1) {
         let result = this.clone();
-        result.x += t*(vec.x-this.x);
-        result.y += t*(vec.y-this.y);
-        result.z += t*(vec.z-this.z);
+        result.x = result.x + t*(vec.x-this.x);
+        result.y = result.y + t*(vec.y-this.y);
+        result.z = result.z + t*(vec.z-this.z);
         return result;
     }
 }
-export {origin, e_x, e_y, e_z};
+
+class CustomList {
+    constructor (...entries) {
+        this.entries = entries;
+    }
+    asArray() {
+        return this.entries;
+    }
+    push (...entries) {
+        return this.entries.push(...entries);
+    }
+}
+
+function newList(...entries) {
+    return new CustomList(...entries);
+}
+
+function iterate(func, from=0, to=1) {
+    let result = [];
+    for (let i=from; i<to; i++) {
+        result.push(func(i))
+    }
+    return result;
+}
+
+export {origin, e_x, e_y, e_z, newVector, Vector, iterate, newList, CustomList};
