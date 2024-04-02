@@ -6,16 +6,18 @@ MathJax = {
     tex: {
         inlineMath: [['$', '$']],
         macros: {
-            ol: ["\\overline{#1}", 1]
+            ol: ["\\overline{#1}", 1],
+            // wideparen: ["\\overparen{#1}", 1]
         }
     },
+    // fonts: ["STIX"],
     svg: {
         fontCache: "global"
     }
 };
 </script>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
-</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+<!-- <script src="https://unpkg.com/mathlive"></script> -->
 <script type="importmap">
 {
     "imports": {
@@ -57,6 +59,9 @@ MathJax = {
 }
 .language-layer {
     position: absolute;
+}
+.text-dialect {
+    color: red;
 }
 </style>
 </head>
@@ -116,6 +121,21 @@ Mathematica Classica per Linguas Figurasque
 <script type="module">
 // import {readFileSync} from 'fs'
 
+function renderMath() {
+    MathJax.typeset();
+    // MathLive.renderMathInDocument(
+    //     {
+    //         TeX: {
+    //             delimiters: {
+    //                 inline: [['$', '$']]
+    //             }
+    //         },
+    //         macros: {
+    //             ol: '\\overline{#1}'
+    //         }
+    //     }
+    // );
+}
 async function loadRawTextJson(sourcePath) {
     let result;
     await new Promise(function (resolve, reject) {
@@ -136,6 +156,50 @@ async function loadRawTextJson(sourcePath) {
     return result;
 }
 
+function loadSectionAndDo(sectionName, callback) {
+    let promises = []
+    for (let lang of metaData.languages) {
+        promises.push(
+            new Promise(function (resolve, reject) {
+                let xhr = new XMLHttpRequest();
+                xhr.open('GET', `/text/on-spirals/${sectionName}/${lang}`);
+                xhr.onload = function () {
+                    if ((xhr.status >= 200) & (xhr.status < 400)) {
+                        let texts = [];
+                        let footnotes = [];
+                        let responseJSON = JSON.parse(xhr.responseText);
+                        let node = document.createElement('div');
+                        node.innerHTML = responseJSON.text;
+                        node.querySelectorAll('p')
+                            .forEach(function (pElt) {texts.push(pElt.innerHTML);});
+                        node.innerHTML = responseJSON.footnote;
+                        node.querySelectorAll('p')
+                            .forEach(function (pElt) {footnotes.push(pElt.innerHTML);});
+                        node.remove();
+                        resolve({texts, footnotes});
+                    } else {
+                        reject();
+                    }
+                };
+                xhr.send();
+            })
+        );
+    }
+    Promise.all(promises)
+        .then(
+            function (resolved) {
+                let texts = {};
+                let footnotes = {};
+                for (let i=0; i<metaData.languages.length; i++) {
+                    texts[metaData.languages[i]] = resolved[i].texts;
+                    footnotes[metaData.languages[i]] = resolved[i].footnotes;
+                }
+                callback(texts, footnotes);
+            }
+        );
+
+}
+
 function arrangeMultilayerSize(textColumn) {
     let outers = textColumn.querySelectorAll('.multilayer')
     for (let outer of outers) {
@@ -146,155 +210,130 @@ function arrangeMultilayerSize(textColumn) {
         }
     }
 }
-function insertTextToElement(textColumn, proposition) {
-    let innerOuter;
+
+function insertTextToElement(textColumn, section) {
     for (let i=textColumn.childNodes.length; i>0; i--) {
         textColumn.childNodes[0].remove();
     }
-    let numParagraph = proposition.ELH.paragraphs.length;
+    let languages = metaData.languages;
+    let numParagraph = section.ELH.length;
     for (let i=0; i<numParagraph; i++) {
         let outer = document.createElement('div');
-        outer.classList.add('multilayer', 'boxed')
+        outer.classList.add('multilayer', 'boxed');
         textColumn.appendChild(outer);
         // outer.style = 'position: relative;';
-        for (let j=0; j<langList.length; j++) {
+        for (let j=0; j<languages.length; j++) {
             let inner = document.createElement('div');
-            inner.classList.add(langList[j], 'language-layer');
+            inner.classList.add(languages[j], 'language-layer');
             // inner.style = 'position: absolute;';
-            inner.innerHTML = proposition[langList[j]].paragraphs[i];
+            inner.innerHTML = section[languages[j]][i];
             outer.appendChild(inner);
             // if (Number(outer.style.height.replace('px','')) < inner.offsetHeight) {
             //     outer.style.height = `${inner.offsetHeight}px`;
             // }
         }
     }
-    MathJax.typeset();
-    arrangeMultilayerSize(textColumn)
+    renderMath();
+    arrangeMultilayerSize(textColumn);
 }
 
+function insertFootnoteToElement(footColumn, section) {
+    for (let i=footColumn.childNodes.length; i>0; i--) {
+        footColumn.childNodes[0].remove();
+    }
+    let outer = document.createElement('div');
+    outer.classList.add('multilayer', 'boxed');
+    footColumn.append(outer);
+    let languages = metaData.languages;
+    for (let j=0; j<languages.length; j++) {
+        let inner = document.createElement('div');
+        inner.classList.add(languages[j], 'language-layer');
+        section[languages[j]].forEach(function(s) {inner.innerHTML += `<div>${s}</div>`;});
+        outer.appendChild(inner);
+    }
+    renderMath();
+}
 
-// async function loadRawText(sourcePath) {
-//     let result = {}
-//     for (let i=0; i<langList.length; i++) {
-//         let lang = langList[i];
-//         result[lang] = {loaded: false};
-//         await new Promise(function (resolve, reject) {
-//             let xhr = new XMLHttpRequest();
-//             xhr.open("GET", sourcePath + "_" + lang + ".txt")
-//             xhr.onload = function () {
-//                 if ((xhr.status >= 200) && (xhr.status < 400)) {
-//                     result[lang] = classifyText(xhr.responseText, lang);
-//                     result[lang].loaded = true;
-//                 }
-//                 else {
-//                     ;
-//                     // reject();
-//                 }
-//                 resolve();
-//             }
-//             xhr.send();
-//         })
-//     }
-//     return result;
-// }
+function refactorIds(htmlString, suffix) {
+    htmlString = htmlString.replaceAll(
+        /id="footnote(ptr)?-[A-Z]{3}-\d/g, 
+        function (match) {return `${match}(${suffix})`;}
+    )
+    htmlString = htmlString.replaceAll(
+        /href="#footnote(ptr)?-[A-Z]{3}-\d/g, 
+        function (match) {return `${match}(${suffix})`;}
+    )
+    return htmlString
+}
 
-
-// function renderText(textBundle, lang) {
-//     let result;
-//     if (!textBundle.loaded) { return "Text not prepared"}
-//     if (lang == "KOM") {
-//         result = (
-//             "<b>정리.</b> " + textBundle.theorem + "\n\n" 
-//             + "<b>증명.</b> " + textBundle.proof + "\n\n" 
-//             + "<b>참고.</b> " + textBundle.remark
-//         );
-//         result += "\n\n";
-//         for (let i=0; i<textBundle.footnotes.length; i++) {
-//             result += `<sup>${i+textBundle.footnoteIndex+1}</sup> ${textBundle.footnotes[i]}`;
-//             if (i<textBundle.footnotes.length-1) {result += "\n";}
-//         }
-//     }
-//     else {
-//         result = textBundle.text;
-//     }
-//     return result
-// }
-
-// function classifyText(string, lang=null, footnoteIndex=0) {
-//     let result = {footnoteIndex: footnoteIndex};
-//     if (lang == "KOM") {
-//         string = string.replace("\\\\", "");
-//         result.footnotes = []; 
-//         string = string.replaceAll(
-//             /\\footnote{([^{}]+)}/gs, 
-//             function (match, p1, offset, string, groups) {
-//                 footnoteIndex++; 
-//                 result.footnotes.push(p1);
-//                 return `<sup>${footnoteIndex}</sup>`;
-//             }
-//         )
-//         let theorem = [...string.matchAll(/\\begin{theorem}(.+)\\end{theorem}/gs)];
-//         result.theorem = theorem[0][1].trim();
-//         let proof = [...string.matchAll(/\\begin{proof}(.+)\\end{proof}/gs)];
-//         result.proof = proof[0][1].trim();
-//         let remark = [...string.matchAll(/\\begin{remark}(.+)\\end{remark}/gs)];
-//         result.remark = remark[0][1].trim();
-//     }
-//     else {
-//         // console.log({content: string})
-//         // console.log(...string.matchAll(/[\r\n]{6,}/g))
-//         result.text = string.replaceAll(/[\r\n]{4,}/g, "\n").split("\n").join("\n\n");
-//     }
-//     return result;
-// }
-
-// function cleanText(string, lang=null) {
-//     let result = string;
-//     if (lang == "KOM") {
-//         result = result.replace("\\\\", "");
-//         result = result.replaceAll(/\\(begin|end){[a-zA-Z]+}/g, "");
-//     }
-//     else {
-//         result = result.split("\n").join("\n\n");
-//     }
-//     return result;
-// }
-
-async function setProposition(index) {
+async function setSection(index) {
     document.getElementById("select-fig-"+index).selected = true;
     geometer.clear();
-    await geometer.loadSource(sourceList[index]);
-    // texts = await loadRawText(sourceList[index])
-    for (let j=1; j<=2; j++) {
-        insertTextToElement(
-            document.getElementById(`page-content-col${j}-body`),
-            textJson[index]
+    await Promise.all([
+        geometer.loadSource(
+            sourceList[index],
+            function () {
+                let selectStep = document.getElementById("select-step");
+                for (let i=selectStep.childNodes.length; i>0; i--) {
+                    selectStep.childNodes[0].remove();
+                }
+                for (let i=geometer.stepMin; i<=geometer.stepMax; i++) {
+                    let option = document.createElement("option");
+                    option.value = i;
+                    option.textContent = i;
+                    option.setAttribute("id", "select-step-"+i);
+                    document.getElementById("select-step").appendChild(option);
+                    if (i==geometer.stepMin) {option.selected = true;}
+                };
+                if (document.getElementById("check-original").checked) {
+                    geometer.toggleOriginal()
+                }
+            }
+        ),
+        loadSectionAndDo(
+            metaData.sections[index],
+            function (texts, footnotes) {
+                for (let j=1; j<=2; j++) {
+                    let textsIdModified = {};
+                    let footnotesIdModified = {};
+                    for (let lang of metaData.languages) {
+                        textsIdModified[lang] = texts[lang].map(
+                            function (s) {return refactorIds(s, j);}
+                        );
+                        footnotesIdModified[lang] = footnotes[lang].map(
+                            function (s) {return refactorIds(s, j);}
+                        );
+                    }
+                    insertTextToElement(
+                        document.getElementById(`page-content-col${j}-body`),
+                        textsIdModified
+                    );
+                    insertFootnoteToElement(
+                        document.getElementById(`page-content-col${j}-foot`),
+                        footnotesIdModified
+                    );
+                    document.getElementById("select-lang"+j).onchange();
+                }
+            }
         )
-        document.getElementById("select-lang"+j).onchange();
-        // if (j == 1) break;
-    }
-
-    let selectStep = document.getElementById("select-step");
-    for (let i=selectStep.childNodes.length; i>0; i--) {
-        selectStep.childNodes[0].remove();
-    }
-    for (let i=geometer.stepMin; i<=geometer.stepMax; i++) {
-        let option = document.createElement("option");
-        option.value = i;
-        option.textContent = i;
-        option.setAttribute("id", "select-step-"+i);
-        document.getElementById("select-step").appendChild(option);
-        if (i==geometer.stepMin) {option.selected = true;}
-    };
-    // document.getElementById("check-original").checked = false;
-    if (document.getElementById("check-original").checked) {
-        geometer.toggleOriginal()
-    }
+    ]);
 }
 
 import {Geometer} from "/static/geometer.js"
 
+let metaData;
+await new Promise(function(resolve, reject) {
+    let xhr = new XMLHttpRequest();
+    xhr.open('GET', '/metadata/on-spirals');
+    xhr.onload = function () {
+        metaData = JSON.parse(xhr.responseText);
+        resolve();
+    };
+    xhr.send();
+});
+
 let sourceList = [
+    "/static/on_spirals/Intro",
     "/static/on_spirals/prop01",
     "/static/on_spirals/prop02",
     "/static/on_spirals/prop03",
@@ -304,41 +343,29 @@ let sourceList = [
     "/static/on_spirals/prop07",
     "/static/on_spirals/prop08",
     "/static/on_spirals/prop09",
+    "/static/on_spirals/prop10",
+    "/static/on_spirals/prop11",
 ];
-let langList = [
-    "ELH", "KOC", "KOM"
-];
-let langDetailList = [
-    "그리스어 원본", "우리말(고전학자)", "우리말(수학자)"
-]
+let langList = metaData.languages;
+let langDetailList = metaData.languagesDetail;
 
 let geometer = new Geometer(document.getElementById("svg-wrapper"))
 geometer.domElement.classList.add("boxed")
-// let texts;
-let textJson = await loadRawTextJson('/static/on_spirals/propositions.json');
-// let textJson = [];
-// for (let i=0; i<9; i++) {
-//     textJson.push({
-//         ELH: {paragraphs: []},
-//         KOC: {paragraphs: []},
-//         KOM: {paragraphs: []},
-//     })
-// }
 
 // proposition navigation
 document.getElementById("button-fig-prev").onclick = async function () {
     let i = +document.getElementById("select-fig").value;
     if (i <= 0) { return; }
-    setProposition(i-1);
+    setSection(i-1);
 };
 document.getElementById("button-fig-next").onclick = async function () {
     let i = +document.getElementById("select-fig").value;
     if (i >= sourceList.length-1) { return; }
-    setProposition(i+1);
+    setSection(i+1);
 };
 document.getElementById("select-fig").onchange = async function () {
     let i = +document.getElementById("select-fig").value;
-    setProposition(i);
+    setSection(i);
 }
 for (let i=0; i<sourceList.length; i++) {
     let option = document.createElement("option");
@@ -359,25 +386,15 @@ for (let j=1; j<=2; j++) {
     }
     selectLang.onchange = function () {
         let i = selectLang.value;
-        document.getElementById(`page-content-col${j}-body`)
+        document.getElementById(`page-content-col${j}`)
             .querySelectorAll('.language-layer')
             .forEach(el => {el.style.opacity = 0; el.style.zIndex = -1; el.classList.add('unselectable');});
-        document.getElementById(`page-content-col${j}-body`)
+        document.getElementById(`page-content-col${j}`)
             .querySelectorAll(`.${langList[i]}`)
             .forEach(el => {el.style.opacity = 1; el.style.zIndex = 1; el.classList.remove('unselectable')});
-        // document.getElementById(`page-content-col${j}-body`).innerHTML = (
-        //     '<p>'
-        //     + textJson[selectProp.value][langList[i]].paragraphs.join('</p><p>')
-        //     +'</p>'
-        // );
-        document.getElementById(`page-content-col${j}-foot`).innerHTML = (
-            '<p>'
-            + textJson[selectProp.value][langList[i]].footnotes.join('</p><p>')
-            +'</p>'
-        )
-        if (langList[i] == "KOM") {
-            MathJax.typeset()
-        }
+        // if (langList[i] == "KOM") {
+        //     renderMath();
+        // }
     }
     document.getElementById(`page-content-col${j}-body`).onscroll = function () {
         for (let el of document.body.querySelectorAll('.text-col-body')) {
@@ -413,24 +430,8 @@ document.getElementById("check-original").onchange = function () {
 
 
 let idxInit = sourceList.length-1
-document.getElementById("select-lang2-2").selected = true;
-setProposition(idxInit);
+idxInit=0;
+document.getElementById("select-lang2-1").selected = true;
+setSection(idxInit);
 
-// let html;
-// await new Promise(function (resolve, reject) {
-//     let xhr = new XMLHttpRequest();
-//     xhr.open("GET", ".references/수학고전 번역모임_20240105 업로드_'나선에 관하여'_정리1.htm")
-//     xhr.onload = function () {
-//         if ((xhr.status >= 200) && (xhr.status < 400)) {
-//             html = xhr.responseText;
-//         }
-//         else {
-//             ;
-//             // reject();
-//         }
-//         resolve();
-//     }
-//     xhr.send();
-// })
-// console.log(html);
 </script>
