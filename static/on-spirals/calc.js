@@ -1,0 +1,451 @@
+import {newVector} from "/static/construction.js"
+import {e_x, e_y, origin} from "/static/construction.js"
+import { bisectionSolver } from "/static/analysis.js";
+
+let calculations = {
+    Prop01: function (params) {
+        let {
+            lengthGD, lengthDE, ratioAD, ratioBD,
+            ratioLH, ratioHK,
+            posHx, posHy, inverseVelocity, lockLK
+        } = params;
+    
+        let D = newVector();
+        let G = D.shift(-lengthGD);
+        let E = D.shift(lengthDE);
+        let A = D.toward(G, ratioAD);
+        let B = D.toward(E, ratioBD);
+    
+        let H = D.shift(posHx, posHy);
+        let Z = H.shift(-lengthGD*inverseVelocity);
+        let Q = H.shift(lengthDE*inverseVelocity);
+        let L = H.shift(-ratioLH*lengthGD*inverseVelocity)
+            .toward(
+                H.toward(Z, ratioAD),
+                lockLK
+            );
+        let K = H.shift(ratioHK*lengthDE*inverseVelocity)
+            .toward(
+                H.toward(Q, ratioBD),
+                lockLK
+            );
+    
+        let ticksAD = [];
+        for (let i=1; i<ratioAD; i++) {
+            ticksAD.push(D.toward(G, i));
+        }
+        let ticksLH = [];
+        for (let i=1; i<ratioLH; i++) {
+            ticksLH.push(H.toward(Z, i));
+        }
+        let ticksDB = [];
+        for (let i=1; i<ratioBD; i++) {
+            ticksDB.push(D.toward(E, i));
+        }
+        let ticksHK = [];
+        for (let i=1; i<ratioHK; i++) {
+            ticksHK.push(H.toward(Q, i));
+        }
+    
+        let datas = {
+            A, B, G, D, E, Z, H, Q, K, L, 
+            AG:[A,G], GD:[G,D], DE:[D,E], EB:[E,B],
+            LZ:[L,Z], ZH:[Z,H], HQ:[H,Q], QK:[Q,K],
+            ticksAD, ticksDB, ticksLH, ticksHK
+        }    
+        return datas
+    },
+    Prop02: function (params) {
+        let {
+            aspectRatio, lengthUpperInit, lengthRatioInit, 
+            posMiddleUpper, posMiddleLower, ratioLeftInit, ratioRightInit,
+            velocityInverse} = params;
+        let A = newVector();
+        let B = A.shift(lengthUpperInit);
+        let D = A.shift((lengthUpperInit*posMiddleUpper));
+        let G = D.shift(-ratioLeftInit*D.distTo(A));
+        let E = D.shift(ratioRightInit*D.distTo(B));
+    
+        let K = A.shift(0, -lengthUpperInit / aspectRatio);
+        let L = K.shift(lengthUpperInit);
+        let H = K.shift(lengthUpperInit*posMiddleLower);
+        let Z = H.shift(-lengthRatioInit*G.distTo(D));
+        let Q = H.shift(lengthRatioInit*E.distTo(D));
+    
+        let midpt = A.toward(B, 0.5)
+            .shift(0, -2*lengthUpperInit/aspectRatio);
+        let M = midpt.shift(-G.distTo(E)*velocityInverse/2);
+        let C = M.shift(G.distTo(E)*velocityInverse);
+        let N = M.shift(M.distTo(C)*G.distTo(D)/G.distTo(E));
+    
+        let datas = {
+            A,B,G,D,E, K,L,Z,H,Q, M,C,N,
+            AB: [A,B], GD: [G,D], DE: [D,E], KL: [K,L], ZH: [Z,H], HQ: [H,Q], MC: [M, C], MN: [M, N], NC:[N,C]
+        }
+        return datas;
+    },
+    Prop05: function (params) {
+        let {
+            radius, angleLeftInit, ratioTangentLeft, ratioTangentRight,
+            ratioLongerLength, ratioLongerPos, switchZ
+        } = params;
+        let K = origin();
+        let B = K.clone().addScaledVector(e_y, radius);
+        let A = K.clone()
+            .addScaledVector(e_y, radius*Math.cos(angleLeftInit*Math.PI))
+            .addScaledVector(e_x, -radius*Math.sin(angleLeftInit*Math.PI));
+        let G = K.clone().addScaledVector(e_x, radius);
+        let D = B.clone().
+            addScaledVector(e_x, -radius*ratioTangentLeft);
+        let Z = B.clone().
+            addScaledVector(e_x, radius*ratioTangentRight);
+        let ECenter = K.clone()
+            .addScaledVector(e_x, -radius*ratioLongerPos);
+        let EBottom = ECenter.clone()
+            .addScaledVector(e_y, -ratioLongerLength*radius/2);
+        let ETop = ECenter.clone()
+            .addScaledVector(e_y, +ratioLongerLength*radius/2);
+        let E = [EBottom, ETop]; 
+        let hxRatio = Math.sqrt(
+            0.5*(2+(ratioLongerLength**2)+Math.sqrt(8*(ratioLongerLength**2)+(ratioLongerLength**4)))
+        );
+        let H = K.clone()
+            .addScaledVector(e_x, radius*hxRatio);
+        // let qyRatio = (hxRatio**2-1)/(hxRatio**2+1)
+        let qyRatio = ratioLongerLength / Math.sqrt(1+hxRatio**2);
+        let Q = K.clone()
+            .addScaledVector(e_x, Math.sqrt(1-qyRatio**2)*radius)
+            .addScaledVector(e_y, qyRatio*radius);
+        let Zafter = K.clone()
+            .addScaledVector(e_x, Q.getComponent(0)/qyRatio)
+            .addScaledVector(e_y, radius);
+        Z = Z.addScaledVector(Zafter.sub(Z), switchZ);
+    
+        let entityDatas = {
+            K, A,B,G,D, Z, H, Q,
+            E, DZ:[D,Z], AH:[A,H], BH:[B,H], QH:[Q,H], KZ:[K,Z],
+            ABG: [K, radius], 
+        };
+        return entityDatas;   
+    },
+    Prop06: function (params) {
+        let {
+            radius, ratioAngleInter, angleSecant, posPerp, 
+            ratioLongerLength, ratioLongerPos, ratioShorterLength, ratioShorterPos,
+            ratioRightEnd, ratioLeftTail, switchN, ratioBNmagn
+        } = params;
+        let K = origin();
+        let halfAKG = angleSecant*0.5*Math.PI
+        let A = K.clone()
+            .addScaledVector(e_x, -radius*Math.sin(halfAKG))
+            .addScaledVector(e_y, radius*Math.cos(halfAKG));
+        let bnLength = ratioBNmagn*radius/(ratioLongerLength/ratioShorterLength)
+        function getBNlength(halfBKG) {
+            return radius*Math.cos(halfAKG-2*halfBKG)/Math.sin(halfAKG-halfBKG) - bnLength
+        }
+        let halfBKG = 0;
+        if (switchN) { halfBKG = bisectionSolver(getBNlength, 0, 0.9*halfAKG); }
+        let B = K.clone()
+            .addScaledVector(e_x, radius*Math.sin((1-switchN)*angleSecant*(ratioAngleInter-0.5)*Math.PI + switchN*(halfAKG-2*halfBKG)))
+            .addScaledVector(e_y, radius*Math.cos((1-switchN)*angleSecant*(ratioAngleInter-0.5)*Math.PI + switchN*(halfAKG-2*halfBKG)));
+        let G = K.clone()
+            .addScaledVector(e_x, radius*Math.sin(halfAKG))
+            .addScaledVector(e_y, radius*Math.cos(halfAKG));
+        let Q = A.clone()
+            .addScaledVector(G.clone().sub(A), posPerp)
+        let longerBottom = K.clone()
+            .addScaledVector(e_x, -radius*ratioLongerPos)
+            .addScaledVector(e_y, -0.5*radius*ratioLongerLength);
+        let longerTop = longerBottom.clone()
+            .addScaledVector(e_y, radius*ratioLongerLength);
+        let shorterBottom = K.clone()
+            .addScaledVector(e_x, -radius*ratioShorterPos)
+            .addScaledVector(e_y, -0.5*radius*ratioShorterLength);
+        let shorterTop = shorterBottom.clone()
+            .addScaledVector(e_y, radius*ratioShorterLength);
+        let Z = [longerBottom, longerTop];
+        let H = [shorterBottom, shorterTop];
+        let N = K.clone()
+            .addScaledVector(e_x, (1-switchN)*radius*ratioRightEnd + switchN*radius*Math.cos(halfBKG)/Math.sin(halfAKG-halfBKG))
+        let leftTail = K.clone()
+            .addScaledVector(e_x, -radius*ratioLeftTail)
+        let KN = [leftTail, N];
+        let L = K.clone().
+            addScaledVector(e_x, radius*(1/Math.sin(angleSecant*0.5*Math.PI)))
+        let E = B.clone().multiplyScalar(G.getComponent(1)/B.getComponent(1));
+        let result = {
+            K, A, B, G, Q, N, L, E,
+            Z, H, KQ:[K,Q], GQ:[G,Q], AG:[A,G], KN, KG:[K,G], GL:[G,L], BN:[B,N], KB:[K,B], EB:[E,B], GB:[G,B],
+            ABG:[K, radius],
+        }
+        return result;
+    
+    },
+    Prop07: function (params) {
+        let {
+            radius, angleSecant, posPerp, 
+            ratioLongerLength, ratioLongerPos, ratioShorterLength, ratioShorterPos,
+            ratioL, switchIN, ratioAngleI, ratioN, ratioRightEnd, ratioLeftTail
+        } = params;
+        let K = origin();
+        let A = K.clone()
+            .addScaledVector(e_x, -radius*Math.sin(angleSecant*0.5*Math.PI))
+            .addScaledVector(e_y, radius*Math.cos(angleSecant*0.5*Math.PI));
+        // let B = K.clone()
+        //     .addScaledVector(e_x, radius*Math.sin(angleSecant*(ratioAngleInter-0.5)*Math.PI))
+        //     .addScaledVector(e_y, radius*Math.cos(angleSecant*(ratioAngleInter-0.5)*Math.PI));
+        let G = K.clone()
+            .addScaledVector(e_x, radius*Math.sin(angleSecant*0.5*Math.PI))
+            .addScaledVector(e_y, radius*Math.cos(angleSecant*0.5*Math.PI));
+        let AG = [A, G]
+        let ABG = [K, radius]
+        let Q = A.clone()
+            .addScaledVector(G.clone().sub(A), posPerp)
+        let longerBottom = K.clone()
+            .addScaledVector(e_x, -radius*ratioLongerPos)
+            .addScaledVector(e_y, -0.5*radius*ratioLongerLength);
+        let longerTop = longerBottom.clone()
+            .addScaledVector(e_y, radius*ratioLongerLength);
+        let shorterBottom = K.clone()
+            .addScaledVector(e_x, -radius*ratioShorterPos)
+            .addScaledVector(e_y, -0.5*radius*ratioShorterLength);
+        let shorterTop = shorterBottom.clone()
+            .addScaledVector(e_y, radius*ratioShorterLength);
+        let Z = [longerBottom, longerTop];
+        let H = [shorterBottom, shorterTop]; 
+        let GQ = [G, Q];
+        let QK = [Q, K];
+        let KG = [K, G];
+        let L = K.clone()
+            .addScaledVector(e_x, ratioL*radius*(1/Math.sin(angleSecant*0.5*Math.PI)))
+        let GL = [G, L];
+        let halfAKG = angleSecant*0.5*Math.PI;
+        let halfGKI = 0;
+        let INlength = radius*(ratioShorterLength/ratioLongerLength);
+        function getINlength(halfGKI) {
+            return Math.cos(halfAKG)/Math.sin(halfAKG+halfGKI) - 2*Math.sin(halfGKI) - INlength/radius;
+        }
+        if (switchIN) {halfGKI = bisectionSolver(getINlength, 0, 0.5*Math.PI-halfAKG);}
+        halfGKI = (1-switchIN)*ratioAngleI*halfAKG + switchIN*halfGKI
+        let I = K.clone()
+            .addScaledVector(e_x, radius*Math.sin(halfAKG+halfGKI*2))
+            .addScaledVector(e_y, radius*Math.cos(halfAKG+halfGKI*2));
+        let N = K.clone()
+            .addScaledVector(e_x, (ratioN*(1-switchIN) + switchIN)*radius*(Math.sin(halfAKG) + Math.cos(halfAKG)/Math.tan(halfAKG+halfGKI)));
+        // let N = K.clone()
+        //     .addScaledVector(e_x, radius*ratioRightEnd)
+        let GN = [G, N];
+        let leftTail = K.clone()
+            .addScaledVector(e_x, -radius*ratioLeftTail)
+        let KL = [leftTail, L];
+        let IN = [I, N];
+        let E = I.clone().multiplyScalar(A.getComponent(1)/I.getComponent(1));
+        let KE = [K, E]; 
+        let GE = [G, E];
+        let EI = [E, I];
+        let IG = [I, G];
+        let result = {
+            K, A, G, Q, L, I, N, E,
+            Z, H, GQ, QK, KG, GL, AG, GN, IN, KL, KE, GE, EI, IG,
+            ABG,
+        }
+        return result;
+    
+    },
+    Prop08: function (params) {
+        let {
+            radius, angleAKQ, angleBKQ, ratioLengthCG, 
+            ratioPosZ, ratioLengthZ, ratioPosH, ratioLengthH, ratioSmallerRatio,
+            switchKLleft, switchC, ratioDistortIN, switchB
+        } = params;
+        angleAKQ *= Math.PI / 180;
+        angleBKQ *= Math.PI / 180;
+        let K = origin();
+        let A = K.clone()
+            .addScaledVector(e_x, -radius*Math.sin(angleAKQ))
+            .addScaledVector(e_y, radius*Math.cos(angleAKQ));
+        let G = K.clone()
+            .addScaledVector(e_x, radius*Math.sin(angleAKQ))
+            .addScaledVector(e_y, radius*Math.cos(angleAKQ));
+        let AG = [A, G];
+        let ABGD = [K, radius];
+        let L = K.clone()
+            .addScaledVector(e_x, radius*(1/Math.sin(angleAKQ)));
+        let Q = A.clone()
+            .addScaledVector(G.clone().sub(A), 0.5);
+        ratioLengthZ = Math.min(ratioLengthZ, Math.tan(angleAKQ)*ratioLengthH*ratioSmallerRatio);
+        let Zbottom = K.clone()
+            .addScaledVector(e_x, -radius*ratioPosZ)
+            .addScaledVector(e_y, -0.5*radius*ratioLengthZ);
+        let Ztop = Zbottom.clone()
+            .addScaledVector(e_y, radius*ratioLengthZ);
+        let Hbottom = K.clone()
+            .addScaledVector(e_x, -radius*ratioPosH)
+            .addScaledVector(e_y, -0.5*radius*ratioLengthH);
+        let Htop = Hbottom.clone()
+            .addScaledVector(e_y, radius*ratioLengthH);
+        let Z = [Zbottom, Ztop];
+        let H = [Hbottom, Htop]; 
+        let GQ = [G, Q];
+        let QK = [Q, K];
+        let GK = [G, K];
+        let GL = [G, L];
+        let KLleft = K.clone()
+            .addScaledVector(e_x, -radius*switchKLleft);
+        let KL = [KLleft, L];
+        let ratioLengthGL = 1/Math.tan(angleAKQ);
+        ratioLengthCG = (1-switchC)*ratioLengthCG + (switchC)*(ratioLengthH/ratioLengthZ);
+        let C = G.clone()
+            .addScaledVector(e_x, -radius*ratioLengthCG*Math.cos(angleAKQ))
+            .addScaledVector(e_y, radius*ratioLengthCG*Math.sin(angleAKQ));
+        let CL = [C, L];
+        let CLmid = L.clone()
+            .addScaledVector(C.clone().sub(L), 0.5);
+        let ratioLengthGM = ratioLengthGL*ratioLengthCG;
+        let ratioDistCLToCenter = (ratioLengthGM - 1) / 2;
+        let centerKLC = CLmid.clone()
+            .addScaledVector(G.clone().sub(K), ratioDistCLToCenter);
+        let KLC = [centerKLC, centerKLC.distanceTo(K)];
+        let M = G.clone()
+            .addScaledVector(G.clone().sub(K), ratioLengthGM);
+        let GM = [G, M];
+        let angleGKI = 0;
+        function getINlength(angleGKI) {
+            let ratioLengthCI = ratioLengthCG - Math.tan(angleGKI);
+            let ratioLengthIL = ratioLengthGL + Math.tan(angleGKI);
+            return ratioLengthCI*ratioLengthIL - ratioDistortIN*ratioLengthGM/Math.cos(angleGKI);
+        }
+        let bsRefPt = centerKLC.clone()
+            .addScaledVector(G.clone().sub(K), KLC[1]);
+        let bsRefAngle0 = M.clone().sub(K).angleTo(bsRefPt.clone().sub(K));
+        let bsRefAngle1 = M.clone().sub(K).angleTo(C.clone().sub(K));
+        if (switchC) {
+            angleGKI = bisectionSolver(getINlength, bsRefAngle0, bsRefAngle1); // Neusis
+        }
+        let I = K.clone()
+            .addScaledVector(e_x, (radius/Math.cos(angleGKI))*Math.sin((angleAKQ-angleGKI)))
+            .addScaledVector(e_y, (radius/Math.cos(angleGKI))*Math.cos((angleAKQ-angleGKI)));
+        let N = I.clone()
+            .addScaledVector(I.clone().sub(K), ratioDistortIN*ratioLengthGM*Math.cos(angleGKI));
+        let IN = [I, N];
+        let KN = [K, N];
+        let E = K.clone()
+            .addScaledVector(I.clone().sub(K), Math.cos(angleGKI)*Math.cos(angleAKQ)/Math.cos((angleAKQ-angleGKI)));
+        let CI = [C, I]; let KE = [K, E]; let IL = [I, L];
+        let KI = [K, I];
+        angleBKQ = (1-switchB)*angleBKQ + switchB*(angleAKQ-angleGKI);
+        let CG = [C, G];
+        let B = K.clone()
+            .addScaledVector(e_x, radius*Math.sin(angleBKQ))
+            .addScaledVector(e_y, radius*Math.cos(angleBKQ));
+        let KB = [K, B];
+        let IG = [I, G];
+        let BE = [B, E];
+        let result = {
+            K, A, B, G, Q, L, C, M, I, N, E,
+            Z, H, AG, GQ, QK, GK, GL, KL, CL, GM, IN, KN, CI, KE, IL, KI, CG, KB, IG, BE, 
+            ABGD, KLC
+        }
+        return result;
+    },
+    Prop09: function (params) {
+        let {
+            radiusABGD, angleAKQ, angleBKQ, ratioLengthCG, 
+            ratioPosZ, ratioLengthZ, ratioPosH, ratioLengthH, ratioBiggerRatio,
+            switchKLleft, switchC, ratioDistortIN, switchB
+        } = params;
+        angleAKQ *= Math.PI/180;
+        angleBKQ *= Math.PI/180;
+        let K = origin();
+        let A = K.clone()
+            .addScaledVector(e_x, -radiusABGD*Math.sin(angleAKQ))
+            .addScaledVector(e_y, radiusABGD*Math.cos(angleAKQ));
+        let G = K.clone()
+            .addScaledVector(e_x, radiusABGD*Math.sin(angleAKQ))
+            .addScaledVector(e_y, radiusABGD*Math.cos(angleAKQ));
+        let AG = [A, G];
+        let ABGD = [K, radiusABGD];
+        let L = K.clone()
+            .addScaledVector(e_x, radiusABGD/Math.sin(angleAKQ));
+        let Q = A.clone()
+            .addScaledVector(G.clone().sub(A), 0.5);
+        ratioLengthZ = Math.max(ratioLengthZ, Math.tan(angleAKQ)*ratioLengthH*ratioBiggerRatio);
+        let Zbottom = K.clone()
+            .addScaledVector(e_x, -radiusABGD*ratioPosZ)
+            .addScaledVector(e_y, -0.5*radiusABGD*ratioLengthZ);
+        let Ztop = Zbottom.clone()
+            .addScaledVector(e_y, radiusABGD*ratioLengthZ);
+        let Hbottom = K.clone()
+            .addScaledVector(e_x, -radiusABGD*ratioPosH)
+            .addScaledVector(e_y, -0.5*radiusABGD*ratioLengthH);
+        let Htop = Hbottom.clone()
+            .addScaledVector(e_y, radiusABGD*ratioLengthH);
+        let Z = [Zbottom, Ztop];
+        let H = [Hbottom, Htop]; 
+        let GQ = [G, Q];
+        let QK = [Q, K];
+        let GK = [G, K];
+        let GL = [G, L];
+        let KLleft = K.clone()
+            .addScaledVector(e_x, -radiusABGD*switchKLleft);
+        let KL = [KLleft, L];
+        let ratioLengthGL = 1/Math.tan(angleAKQ);
+        ratioLengthCG = (1-switchC)*ratioLengthCG + (switchC)*(ratioLengthH/ratioLengthZ);
+        let C = G.clone()
+            .addScaledVector(e_x, -radiusABGD*ratioLengthCG*Math.cos(angleAKQ))
+            .addScaledVector(e_y, radiusABGD*ratioLengthCG*Math.sin(angleAKQ));
+        let CL = [C, L];
+        let CLmid = L.clone()
+            .addScaledVector(C.clone().sub(L), 0.5);
+        let ratioLengthGM = ratioLengthGL*ratioLengthCG;
+        let ratioDistCLToCenter = (ratioLengthGM - 1) / 2;
+        let centerKLC = CLmid.clone()
+            .addScaledVector(G.clone().sub(K), ratioDistCLToCenter);
+        let KLC = [centerKLC, centerKLC.distanceTo(K)];
+        let M = G.clone()
+            .addScaledVector(G.clone().sub(K), ratioLengthGM);
+        let GM = [G, M];
+        let angleGKI = 0;
+        function getINlength(angleGKI) {
+            let ratioLengthCI = ratioLengthCG + Math.tan(angleGKI);
+            let ratioLengthIL = ratioLengthGL - Math.tan(angleGKI);
+            return ratioLengthCI*ratioLengthIL - ratioDistortIN*ratioLengthGM/Math.cos(angleGKI);
+        }
+        let bsRefPt = centerKLC.clone()
+            .addScaledVector(G.clone().sub(K), KLC[1]);
+        let bsRefAngle0 = M.clone().sub(K).angleTo(bsRefPt.clone().sub(K));
+        let bsRefAngle1 = M.clone().sub(K).angleTo(L.clone().sub(K));
+        // console.log(bsRefAngle0, bsRefAngle1, getINlength(bsRefAngle0), getINlength(bsRefAngle1))
+        if (switchC) {
+            angleGKI = bisectionSolver(getINlength, bsRefAngle0, bsRefAngle1); // Neusis
+        }
+        let I = K.clone()
+            .addScaledVector(e_x, (radiusABGD/Math.cos(angleGKI))*Math.sin(angleAKQ+angleGKI))
+            .addScaledVector(e_y, (radiusABGD/Math.cos(angleGKI))*Math.cos(angleAKQ+angleGKI));
+        let N = I.clone()
+            .addScaledVector(I.clone().sub(K), ratioDistortIN*ratioLengthGM*Math.cos(angleGKI));
+        let IN = [I, N];
+        let KN = [K, N];
+        let E = K.clone()
+            .addScaledVector(I.clone().sub(K), Math.cos(angleGKI)*Math.cos(angleAKQ)/Math.cos(angleAKQ+angleGKI));
+        let GE = [G, E];
+        let CI = [C, I]; let KE = [K, E]; let IL = [I, L];
+        let KI = [K, I];
+        angleBKQ = (1-switchB)*angleBKQ + switchB*(angleAKQ-angleGKI);
+        let CG = [C, G];
+        let B = K.clone()
+            .addScaledVector(e_x, radiusABGD*Math.sin(angleBKQ))
+            .addScaledVector(e_y, radiusABGD*Math.cos(angleBKQ));
+        let KB = [K, B];
+        let IG = [I, G];
+        let BE = [B, E];
+        let result = {
+            K, A, B, G, Q, L, C, M, I, N, E,
+            Z, H, AG, GQ, QK, GK, GL, KL, CL, GM, IN, KN, CI, KE, GE, IL, KI, CG, KB, IG, BE, 
+            ABGD, KLC
+        };
+        return result;
+    }
+}
+
+export {calculations};

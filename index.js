@@ -5,6 +5,11 @@ const nodeHtmlParser = require('node-html-parser');
 
 let htmlBook = fs.readFileSync('./static/on_spirals/ELH&KOC-HTML.txt', 'utf-8');
 htmlBook = nodeHtmlParser.parse(htmlBook);
+let dgmParams = fs.readFileSync('./static/on_spirals/diagram-parameters.csv', 'utf-8');
+dgmParams = dgmParams.split(/\r?\n/g)
+    .map(
+        function (line) {return line.split(',');} 
+    );
 
 const app = express();
 
@@ -58,10 +63,23 @@ app.get(
     }
 );
 
-
 app.get(
     /\/diagram-parameters\/on-spirals\/(Intro|Prop[0-9]{2})/,
     function (req, res) {
+        let divName = req.originalUrl.split('/')[3];
+        let lineStart;
+        let result = [];
+        for (lineStart=0; lineStart<dgmParams.length; lineStart++) {
+            if (!dgmParams[lineStart][0].startsWith('@')) {continue;}
+            if (dgmParams[lineStart][1] !== divName) {continue;}
+            let lineEnd;
+            for (lineEnd=lineStart+1; lineEnd<dgmParams.length; lineEnd++) {
+                if (dgmParams[lineEnd][0].startsWith('@')) {break;}
+                result.push( dgmParams[lineEnd].join(',') );
+            }
+            result = result.join('\n');
+            res.send(result);
+        }
         ;
     }
 )

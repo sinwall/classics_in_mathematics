@@ -271,7 +271,8 @@ async function setSection(index) {
     geometer.clear();
     await Promise.all([
         geometer.loadSource(
-            sourceList[index],
+            'on-spirals',
+            metaData.sections[index],
             function () {
                 let selectStep = document.getElementById("select-step");
                 for (let i=selectStep.childNodes.length; i>0; i--) {
@@ -332,20 +333,6 @@ await new Promise(function(resolve, reject) {
     xhr.send();
 });
 
-let sourceList = [
-    "/static/on_spirals/Intro",
-    "/static/on_spirals/prop01",
-    "/static/on_spirals/prop02",
-    "/static/on_spirals/prop03",
-    "/static/on_spirals/prop04",
-    "/static/on_spirals/prop05",
-    "/static/on_spirals/prop06",
-    "/static/on_spirals/prop07",
-    "/static/on_spirals/prop08",
-    "/static/on_spirals/prop09",
-    "/static/on_spirals/prop10",
-    "/static/on_spirals/prop11",
-];
 let langList = metaData.languages;
 let langDetailList = metaData.languagesDetail;
 
@@ -360,17 +347,17 @@ document.getElementById("button-fig-prev").onclick = async function () {
 };
 document.getElementById("button-fig-next").onclick = async function () {
     let i = +document.getElementById("select-fig").value;
-    if (i >= sourceList.length-1) { return; }
+    if (i >= metaData.sections.length-1) { return; }
     setSection(i+1);
 };
 document.getElementById("select-fig").onchange = async function () {
     let i = +document.getElementById("select-fig").value;
     setSection(i);
 }
-for (let i=0; i<sourceList.length; i++) {
+for (let i=0; i<metaData.sections.length; i++) {
     let option = document.createElement("option");
     option.value = i;
-    option.textContent = sourceList[i];
+    option.textContent = metaData.sections[i];
     option.setAttribute("id", "select-fig-"+i);
     document.getElementById("select-fig").appendChild(option);
 }
@@ -429,7 +416,7 @@ document.getElementById("check-original").onchange = function () {
 };
 
 
-let idxInit = sourceList.length-1
+let idxInit = metaData.sections.length-1
 idxInit=0;
 document.getElementById("select-lang2-1").selected = true;
 setSection(idxInit);

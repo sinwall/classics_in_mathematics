@@ -96,8 +96,7 @@ class StyleSheet {
         this.objCaptions = [];
         this.objTypes = [];
         this.nObjs = 0;
-
-        let styleTable = responseText.split("\n").slice(1);
+        let styleTable = responseText.split("\n");
         for (let i=0; i<styleTable.length; i++) {
             let line = styleTable[i].trim().split(",");
             let parsed = parseStyle(line);
@@ -110,14 +109,15 @@ class StyleSheet {
                         this.objStyleTrend.push( [] );
                     }
                 }
-            }
-            else if (parsed.type == "param") {
+            } else if (parsed.type == "param") {
                 for (let j=0; j<=this.hparams.stepMax; j++) {
                     this.paramTrend[j][parsed.name] = parsed.values[j];
                 }
                 this.paramOrig[parsed.name] = parsed.valueOrig;
-            }
-            else {
+            } else if (parsed.type == "sync") {
+                ;
+
+            } else {
                 this.nObjs ++;
                 for (let j=0; j<=this.hparams.stepMax; j++) {
                     this.objStyleTrend[j].push( parsed.styles[j] );
