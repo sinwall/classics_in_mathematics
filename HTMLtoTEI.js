@@ -77,18 +77,36 @@ function removeChildrenButP(content) {
     return content;
 }
 
-function checkAttributeToKeep(attrs, key) {
-    if (key === 'style') {
-        if (attrs.style.includes('color:red')) {
-            return true;
-        } else if (attrs.style.includes('color:#00B050')) {
-            return true;
-        } else {
-            return false;
-        }
-    } else {
-        return false;
+// function checkAttributeToKeep(attrs, key) {
+//     if (key === 'style') {
+//         if (attrs.style.includes('color:red')) {
+//             return true;
+//         } else if (attrs.style.includes('color:#00B050')) {
+//             return true;
+//         } else {
+//             return false;
+//         }
+//     } else {
+//         return false;
+//     }
+// }
+
+function refactorSemanticGroups(content) {
+    content = content.clone();
+    for (let elt of content.querySelectorAll('a')) {
+        if (!('name' in elt.attributes)) {continue;}
+        if (!elt.getAttribute('name').startsWith('sem_')) {continue;}
+        let replacement = new nodeHtmlParser.HTMLElement('span', {});
+        replacement.setAttribute('type', elt.getAttribute('name').split('_').slice(0, -1).join('_'));
+        replacement.innerHTML = elt.innerHTML;
+        elt.replaceWith(replacement);
     }
+    for (let elt of content.querySelectorAll('span')) {
+        if (!('style' in elt.attributes)) {continue;}
+        if (!elt.getAttribute('style').replaceAll(/\s/g, '').startsWith('mso-bookmark:sem_')) {continue;}
+        elt.setAttribute('type', elt.getAttribute('style').replaceAll('mso-bookmark:', '').trim().split('_').slice(0, -1).join('_'));
+    }
+    return content;
 }
 
 function filterAttributes(element) {
@@ -107,6 +125,10 @@ function filterAttributes(element) {
             } else if (fnMatch) {
                 ;
             } else {
+                element.removeAttribute(key);
+            }
+        } else if (key === 'type') {
+            if (!element.getAttribute(key).startsWith('sem_')) {
                 element.removeAttribute(key);
             }
         } else {
@@ -169,6 +191,12 @@ function unnestIrregularTag(content) {
     return content;
 }
 
+function deduplicateBlanks(content) {
+    content = content.clone();
+    content.innerHTML = content.innerHTML.replaceAll('  ', ' ');
+    return content;
+}
+
 function refactorRedTexts(content, outputStyle='tei') {
     content = content.clone();
     let getNewReplacement;
@@ -185,7 +213,7 @@ function refactorRedTexts(content, outputStyle='tei') {
     }
 
     for (let el of content.getElementsByTagName('span')) {
-        if (el.attributes.style.includes('color:red')) {
+        if (('style' in el.attributes) && el.attributes.style.includes('color:red')) {
             let replacement = getNewReplacement();
             el.childNodes.forEach(function (n) {replacement.appendChild(n);})
             el.replaceWith(replacement);
@@ -209,7 +237,7 @@ function refactorTealTexts(content, outputStyle='tei') {
         ;
     }
     for (let el of content.getElementsByTagName('span')) {
-        if (el.attributes.style.includes('color:#00B050')) {
+        if (('style' in el.attributes) && el.attributes.style.includes('color:#00B050')) {
             let replacement = getNewReplacement();
             el.childNodes.forEach(function (n) {replacement.appendChild(n);})
             el.replaceWith(replacement);
@@ -497,9 +525,11 @@ function HTMtoTEI(htmlString, texString) {
             removeEmptyParagraphs,
             removeInessentialTags,
             removeChildrenButP,
+            refactorSemanticGroups, // 
             dropAttributes,
             unnestTags,
             unnestIrregularTag,
+            deduplicateBlanks,
             refactorRedTexts,
             refactorTealTexts,
             refactorUnderlines,
@@ -515,9 +545,11 @@ function HTMtoTEI(htmlString, texString) {
             removeEmptyParagraphs,
             removeInessentialTags,
             removeChildrenButP,
+            refactorSemanticGroups, //
             dropAttributes,
             unnestTags,
             unnestIrregularTag,
+            deduplicateBlanks,
             refactorRedTexts,
             refactorTealTexts,
             refactorUnderlines,
@@ -527,10 +559,14 @@ function HTMtoTEI(htmlString, texString) {
             addParagraphNumbers
         )(textKOC);
         footnoteNumKOC += textKOC.getElementsByTagName('note').length;
+        console.log(divName, textELH.childNodes.length, textKOC.childNodes.length);
+        // for (let ii=0; ii < textELH.childNodes.length; ii++) {
+        //     console.log(textELH.childNodes[ii].textContent);
+        //     console.log(textKOC.childNodes[ii].textContent);
+        // }
         if (textELH.childNodes.length !== textKOC.childNodes.length) {
             throw Error;
         }
-        // console.log(divName, textELH.childNodes.length, textKOC.childNodes.length);
         // break;
         xmlBody.appendChild(new nodeHtmlParser.HTMLElement('div', {}, `n="${divName}" type="section"`));
         xmlBody.lastChild.appendChild(new nodeHtmlParser.HTMLElement('div', {}, `n="${divName}-ELH"`));
@@ -589,88 +625,11 @@ let minimalTEITemplate = `
   </text>
 </TEI>
 `
-function extractTextOnly(content) {
-    return content.querySelector('text');
-}
-
-function retagDialect(content) {
-    content = content.clone();
-    for (let el of content.getElementsByTagName('distinct')) {
-        if (!(el.getAttribute('type') === 'dialect')) {
-            continue;
-        }
-        let replacement = new nodeHtmlParser.HTMLElement('span', {class: 'text-dialect'});
-        el.childNodes.forEach(function(n) {replacement.appendChild(n);});
-        el.replaceWith(replacement);
-    }
-    return content;
-}
-
-function retagEmph(content) {
-    content = content.clone();
-    for (let el of content.getElementsByTagName('emph')) {
-        if (!('rend' in el.attributes)) {continue;}
-        let rend = el.getAttribute('rend');
-        let replacement;
-        if (rend === 'teal') {
-            replacement = new nodeHtmlParser.HTMLElement('span', {class: 'text-teal'});
-        }
-        else {
-            if (rend === 'underlined') {
-                replacement = new nodeHtmlParser.HTMLElement('u', {});
-            } else if (rend === 'boldface') {
-                replacement = new nodeHtmlParser.HTMLElement('b', {});
-            } else if (rend === 'italic') {
-                replacement = new nodeHtmlParser.HTMLElement('i', {});
-            } 
-        }
-        el.childNodes.forEach(function(n) {replacement.appendChild(n);});
-        el.replaceWith(replacement);
-    }
-    return content;
-}
-
-function resplitFootnotes(content) {
-    content = content.clone();
-    let body = content.querySelector('body');
-    let back = content.querySelector('back');
-    back.appendChild(new nodeHtmlParser.HTMLElement('div', {id: 'footnotes-ELH'}, ));
-    back.appendChild(new nodeHtmlParser.HTMLElement('div', {id: 'footnotes-KOC'}, ));
-    back.appendChild(new nodeHtmlParser.HTMLElement('div', {id: 'footnotes-KOM'}, ));
-    for (let el of body.getElementsByTagName('note')) {
-        let lang = el.getAttribute('n').split('-')[0];
-        let num = el.getAttribute('n').split('-')[1];
-        let footnoteNum = (
-            `<a id="footnote-${lang}-${num}" href="#footnoteptr-${lang}-${num}"><sup>[${num}] </sup></a>`
-        );
-        let footnotePtr = nodeHtmlParser.parse(
-            `<a id="footnoteptr-${lang}-${num}" href="#footnote-${lang}-${num}"><sup>[${num}] </sup></a>`
-        );
-        back.querySelector(`#footnotes-${lang}`)
-            .appendChild(new nodeHtmlParser.HTMLElement('div', {}));
-        el.childNodes.forEach(function (n) {back.querySelector(`#footnotes-${lang}`).lastChild.appendChild(n);});
-        back.querySelector(`#footnotes-${lang}`).lastChild.firstChild.innerHTML = (
-            footnoteNum + back.querySelector(`#footnotes-${lang}`).lastChild.firstChild.innerHTML
-        );
-        el.replaceWith(footnotePtr);
-    }
-    return content;
-}
-
-function TEItoHTML(content) {
-    content = compose(
-        extractTextOnly,
-        retagDialect,
-        retagEmph,
-        resplitFootnotes,
-    )(content);
-    return content;
-}
 
 let htmlString = fs.readFileSync('.references/나선들에 관하여 모음.htm', 'utf-8')
 let texString = fs.readFileSync('./.references/수학고전_20240306.tex', 'utf-8');
 let xml = HTMtoTEI(htmlString, texString);
 fs.writeFileSync('./static/on-spirals/ELH&KOC&KOM-TEI.xml', xml.toString());
-let html = TEItoHTML(xml);
-fs.writeFileSync('./static/on-spirals/ELH&KOC&KOM-HTML.txt', html.toString());
+// let html = TEItoHTML(xml);
+// fs.writeFileSync('./static/on-spirals/ELH&KOC&KOM-HTML.txt', html.toString());
 // console.log(texString)

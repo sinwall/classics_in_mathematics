@@ -3,13 +3,95 @@ const path = require('path');
 const express = require('express');
 const nodeHtmlParser = require('node-html-parser');
 
-let htmlBook = fs.readFileSync('./static/on-spirals/ELH&KOC&KOM-HTML.txt', 'utf-8');
+function reloadDgmParams() {
+    let dgmParams = fs.readFileSync('./static/on-spirals/diagram-parameters.csv', 'utf-8');
+    dgmParams = dgmParams.split(/\r?\n/g)
+        .map(
+            function (line) {return line.split(',');} 
+        );
+    return dgmParams
+}
+function extractTextOnly(content) {
+    return content.querySelector('text');
+}
+
+function retagDialect(content) {
+    content = content.clone();
+    for (let el of content.getElementsByTagName('distinct')) {
+        if (!(el.getAttribute('type') === 'dialect')) {
+            continue;
+        }
+        let replacement = new nodeHtmlParser.HTMLElement('span', {class: 'text-dialect'});
+        el.childNodes.forEach(function(n) {replacement.appendChild(n);});
+        el.replaceWith(replacement);
+    }
+    return content;
+}
+
+function retagEmph(content) {
+    content = content.clone();
+    for (let el of content.getElementsByTagName('emph')) {
+        if (!('rend' in el.attributes)) {continue;}
+        let rend = el.getAttribute('rend');
+        let replacement;
+        if (rend === 'teal') {
+            replacement = new nodeHtmlParser.HTMLElement('span', {class: 'text-teal'});
+        }
+        else {
+            if (rend === 'underlined') {
+                replacement = new nodeHtmlParser.HTMLElement('u', {});
+            } else if (rend === 'boldface') {
+                replacement = new nodeHtmlParser.HTMLElement('b', {});
+            } else if (rend === 'italic') {
+                replacement = new nodeHtmlParser.HTMLElement('i', {});
+            } 
+        }
+        el.childNodes.forEach(function(n) {replacement.appendChild(n);});
+        el.replaceWith(replacement);
+    }
+    return content;
+}
+
+function resplitFootnotes(content) {
+    content = content.clone();
+    let body = content.querySelector('body');
+    let back = content.querySelector('back');
+    back.appendChild(new nodeHtmlParser.HTMLElement('div', {id: 'footnotes-ELH'}, ));
+    back.appendChild(new nodeHtmlParser.HTMLElement('div', {id: 'footnotes-KOC'}, ));
+    back.appendChild(new nodeHtmlParser.HTMLElement('div', {id: 'footnotes-KOM'}, ));
+    for (let el of body.getElementsByTagName('note')) {
+        let lang = el.getAttribute('n').split('-')[0];
+        let num = el.getAttribute('n').split('-')[1];
+        let footnoteNum = (
+            `<a id="footnote-${lang}-${num}" href="#footnoteptr-${lang}-${num}"><sup>[${num}] </sup></a>`
+        );
+        let footnotePtr = nodeHtmlParser.parse(
+            `<a id="footnoteptr-${lang}-${num}" href="#footnote-${lang}-${num}"><sup>[${num}] </sup></a>`
+        );
+        back.querySelector(`#footnotes-${lang}`)
+            .appendChild(new nodeHtmlParser.HTMLElement('div', {}));
+        el.childNodes.forEach(function (n) {back.querySelector(`#footnotes-${lang}`).lastChild.appendChild(n);});
+        back.querySelector(`#footnotes-${lang}`).lastChild.firstChild.innerHTML = (
+            footnoteNum + back.querySelector(`#footnotes-${lang}`).lastChild.firstChild.innerHTML
+        );
+        el.replaceWith(footnotePtr);
+    }
+    return content;
+}
+
+function TEItoHTML(content) {
+    content = extractTextOnly(content);
+    content = retagDialect(content);
+    content = retagEmph(content);
+    content = resplitFootnotes(content);
+    return content;
+}
+
+let htmlBook = fs.readFileSync('./static/on-spirals/ELH&KOC&KOM-TEI.xml', 'utf-8');
+// let htmlBook = fs.readFileSync('./static/on-spirals/ELH&KOC&KOM-HTML.txt', 'utf-8');
 htmlBook = nodeHtmlParser.parse(htmlBook);
-let dgmParams = fs.readFileSync('./static/on-spirals/diagram-parameters.csv', 'utf-8');
-dgmParams = dgmParams.split(/\r?\n/g)
-    .map(
-        function (line) {return line.split(',');} 
-    );
+htmlBook = TEItoHTML(htmlBook);
+let dgmParams = reloadDgmParams();
 
 const app = express();
 
@@ -58,7 +140,6 @@ app.get(
                 });
             }
         }
-
     }
 );
 
@@ -80,6 +161,14 @@ app.get(
             res.send(result);
         }
         ;
+    }
+)
+
+app.get(
+    '/debug/reload/diagram-parameters',
+    function (req, res) {
+        dgmParams = reloadDgmParams();
+        res.send('Diagram parameters are reloaded.')
     }
 )
 
