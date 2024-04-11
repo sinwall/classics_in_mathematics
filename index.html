@@ -79,9 +79,9 @@ MathJax = {
 Mathematica Classica per Linguas Figurasque
     <div id="nav-wrapper" style="text-align: left; font-size: medium;">
     <span id="nav-breadcrumbs"></span>
-    <button id="button-fig-prev">◁</button>
+    <!-- <button id="button-fig-prev">◁</button>
     <select name="fig" id="select-fig"></select>
-    <button id="button-fig-next">▷</button>
+    <button id="button-fig-next">▷</button> -->
     </div>
  </div>
 
@@ -299,9 +299,8 @@ function renderMath() {
 // }
 
 async function setSection(index, callback) {
-    document.getElementById("select-fig-"+index).selected = true;
+    // document.getElementById("select-fig-"+index).selected = true;
     geometer.clear();
-
     let textPromises = [];
     for (let lang of metaData.languages) {
         textPromises.push(
@@ -319,15 +318,21 @@ async function setSection(index, callback) {
             })
         );
     }
+    for (let textColumn of textColumns) {
+        textColumn.clearBodyFoot();
+    }
     await Promise.all(textPromises)
         .then(
             function (responses) {
                 for (let textColumn of textColumns) {
                     textColumn.applySectionContents(responses);
                 }
-                if (callback) {callback();}
             }
-        );
+        )
+        .finally(
+            function () {if (callback) {callback();}}   
+        )
+    ;
 
     await geometer.loadSource(
         metaData.bookTitle,
@@ -401,6 +406,56 @@ async function setSection(index, callback) {
     //     )
     // ]).then(callback)
     // ;
+}
+class SectionNavigator {
+    constructor (id, parentNode, sectionOnChange, sections=null) {
+        this.id = id;
+        this.parentNode = parentNode;
+        this.sections = sections;
+
+        this.outerSpan = document.createElement('span');
+
+        let that = this;
+
+        this.buttonPrev = document.createElement('button');
+        this.buttonPrev.innerHTML = '◁';
+        this.buttonPrev.onclick = function () {
+            if (Number(that.selector.value) === 0) {return;}
+            that.selector.value = Number(that.selector.value) - 1;
+            that.selector.onchange();
+        };
+        this.selector = document.createElement('select');
+        if (sections === null) {sections = [];}
+        for (let i=0; i<sections.length; i++) {
+            let option = document.createElement('option');
+            option.innerHTML = sections[i];
+            option.value = i;
+            this.selector.appendChild(option);
+        }
+        this.selector.onchange = function (event) {
+            let val = this.value;
+            that.setDisabled(true);
+            sectionOnChange(val, function() {that.setDisabled(false)});
+        };
+        this.buttonNext = document.createElement('button');
+        this.buttonNext.innerHTML = '▷';
+        this.buttonNext.onclick = function () {
+            if (Number(that.selector.value) === that.selector.options.length-1) {return;}
+            that.selector.value = Number(that.selector.value) + 1;
+            that.selector.onchange();
+        };
+
+        this.outerSpan.appendChild(this.buttonPrev);
+        this.outerSpan.appendChild(this.selector);
+        this.outerSpan.appendChild(this.buttonNext);
+        this.parentNode.appendChild(this.outerSpan);
+    }
+
+    setDisabled(val) {
+        this.buttonPrev.disabled = val;
+        this.selector.disabled = val;
+        this.buttonNext.disabled = val;
+    }
 }
 
 class TextColumn {
@@ -624,28 +679,30 @@ let langDetailList = metaData.languagesDetail;
 let geometer = new Geometer(document.getElementById("svg-wrapper"))
 geometer.domElement.classList.add("boxed")
 
-// proposition navigation
-document.getElementById("button-fig-prev").onclick = async function () {
-    let i = +document.getElementById("select-fig").value;
-    if (i <= 0) { return; }
-    setSection(i-1);
-};
-document.getElementById("button-fig-next").onclick = async function () {
-    let i = +document.getElementById("select-fig").value;
-    if (i >= metaData.sections.length-1) { return; }
-    setSection(i+1);
-};
-document.getElementById("select-fig").onchange = async function () {
-    let i = +document.getElementById("select-fig").value;
-    setSection(i);
-}
-for (let i=0; i<metaData.sections.length; i++) {
-    let option = document.createElement("option");
-    option.value = i;
-    option.textContent = metaData.sections[i];
-    option.setAttribute("id", "select-fig-"+i);
-    document.getElementById("select-fig").appendChild(option);
-}
+// // proposition navigation
+// document.getElementById("button-fig-prev").onclick = async function () {
+//     let i = +document.getElementById("select-fig").value;
+//     if (i <= 0) { return; }
+//     setSection(i-1);
+// };
+// document.getElementById("button-fig-next").onclick = async function () {
+//     let i = +document.getElementById("select-fig").value;
+//     if (i >= metaData.sections.length-1) { return; }
+//     setSection(i+1);
+// };
+// document.getElementById("select-fig").onchange = async function () {
+//     let i = +document.getElementById("select-fig").value;
+//     setSection(i);
+// }
+// for (let i=0; i<metaData.sections.length; i++) {
+//     let option = document.createElement("option");
+//     option.value = i;
+//     option.textContent = metaData.sections[i];
+//     option.setAttribute("id", "select-fig-"+i);
+//     document.getElementById("select-fig").appendChild(option);
+// }
+
+let sectionNav = new SectionNavigator('section-navigator', document.getElementById('nav-wrapper'), setSection, metaData.sections);
 
 let textColumns = [];
 for (let j=1; j<=2; j++) {
@@ -713,6 +770,6 @@ document.getElementById("check-original").onchange = function () {
 
 let idxInit = metaData.sections.indexOf(searchParams.get('section') || metaData.sections[0]);
 // document.getElementById("select-lang2-1").selected = true;
-setSection(idxInit);
+// setSection(idxInit);
 
 </script>
