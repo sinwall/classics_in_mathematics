@@ -91,7 +91,7 @@ function TEItoHTML(content) {
 // main.js
 
 let biblia = fs.readFileSync('static/biblia.csv', 'utf-8');
-biblia = biblia.split('\r\n')
+biblia = biblia.split(/\r?\n/g)
     .map((line) => (line.split(',')))
     .slice(1);
 bibliaDict = {};
@@ -104,7 +104,6 @@ for (let line of biblia) {
         author, authorAlias, bookTitle, bookTitleAlias
     };
 }
-
 
 // let htmlBook = fs.readFileSync('./static/on-spirals/ELH&KOC&KOM-TEI.xml', 'utf-8');
 // htmlBook = nodeHtmlParser.parse(htmlBook);
@@ -129,10 +128,10 @@ app.get(
             languagesDetail: ['그리스어 원문', '우리말(고전학자)', '우리말(수학자)'],
             sections: []
         };
-        for (let key in bibliaDict[bookTitle]) {
-            result[key] = bibliaDict[bookTitle][key];
-        }
-        // Object.assign(result, bibliaDict[bookTitle]);
+        // for (let key in bibliaDict[bookTitle]) {
+        //     result[key] = bibliaDict[bookTitle][key];
+        // }
+        Object.assign(result, bibliaDict[bookTitle]);
         if (bookTitle == 'elements') {result.languages.pop(); result.languagesDetail.pop();}
 
         let htmlBook = fs.readFileSync(`./static/${bookTitle}/text.xml`, 'utf-8');
