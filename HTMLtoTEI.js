@@ -475,6 +475,7 @@ function texTagRemark(texString) {
 
 function HTMtoTEI(htmlString, texString) {
     let htmlCont = nodeHtmlParser.parse(htmlString);
+    // console.log(htmlCont);
     let mainTexts = targetMainTexts(htmlCont);
     let footnotes = targetFootnotes(htmlCont);
     let outputStyle = 'TEI';
@@ -605,7 +606,8 @@ let minimalTEITemplate = `
   <teiHeader>
     <fileDesc>
       <titleStmt>
-        <title>On spirals</title>
+        <title></title>
+        <author></author>
       </titleStmt>
       <publicationStmt>
         <p>empty statement</p>
@@ -626,10 +628,31 @@ let minimalTEITemplate = `
 </TEI>
 `
 
-let htmlString = fs.readFileSync('.references/나선들에 관하여 모음.htm', 'utf-8')
-let texString = fs.readFileSync('./.references/수학고전_20240306.tex', 'utf-8');
-let xml = HTMtoTEI(htmlString, texString);
-fs.writeFileSync('./static/on-spirals/ELH&KOC&KOM-TEI.xml', xml.toString());
+let biblia = fs.readFileSync('static/biblia.csv', 'utf-8');
+biblia = biblia.split('\r\n')
+    .map((line) => (line.split(',')))
+    .slice(1);
+for (let line of biblia) {
+    let author = line[0];
+    let bookTitle = line[2];
+    if (bookTitle === 'on-spirals') {continue;}
+    let htmlString = fs.readFileSync(`.references/${bookTitle}(collected).htm`, 'utf-8');
+    let texString = null;
+    if (bookTitle === 'on-spirals') {
+        texString = fs.readFileSync('.references/수학고전_20240306.tex', 'utf-8');
+    }
+    console.log(author, bookTitle);
+    let xml = HTMtoTEI(htmlString, texString);
+    fs.writeFileSync(`static/${bookTitle}/text.xml`, xml.toString());
+}
+
+
+// let htmlString = fs.readFileSync('.references/나선들에 관하여 모음.htm', 'utf-8')
+// let texString = fs.readFileSync('./.references/수학고전_20240306.tex', 'utf-8');
+// let xml = HTMtoTEI(htmlString, texString);
+// fs.writeFileSync('./static/on-spirals/ELH&KOC&KOM-TEI.xml', xml.toString());
+
+// deprecated
 // let html = TEItoHTML(xml);
 // fs.writeFileSync('./static/on-spirals/ELH&KOC&KOM-HTML.txt', html.toString());
 // console.log(texString)
