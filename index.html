@@ -1,5 +1,7 @@
 <html>
 <head>
+  <title>그리스 수학 도서관</title>
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 <meta charset="utf-8">
 <script>
 MathJax = {
@@ -75,7 +77,8 @@ MathJax = {
 
  <div id="page-title" class="row boxed" style="width: 1200px; text-align: center; font-size: 20pt">
 Mathematica Classica per Linguas Figurasque
-    <div id="nav-wrapper">
+    <div id="nav-wrapper" style="text-align: left; font-size: medium;">
+    <span id="nav-breadcrumbs"></span>
     <button id="button-fig-prev">◁</button>
     <select name="fig" id="select-fig"></select>
     <button id="button-fig-next">▷</button>
@@ -83,7 +86,7 @@ Mathematica Classica per Linguas Figurasque
  </div>
 
  <div id="page-content" class="row boxed" style="width: 1200px; height:800px;">
-  <div id="page-content-col1" class="col boxed" style="width:32%; height:100%;">
+  <!-- <div id="page-content-col1" class="col boxed" style="width:32%; height:100%;">
     <div id="page-content-col1-title" class="row boxed">
     Column 1
     <select id="select-lang1"></select>
@@ -102,7 +105,7 @@ Mathematica Classica per Linguas Figurasque
     Content 2
     </div>
     <div id="page-content-col2-foot" class="row text-col-foot boxed" style="white-space:break-spaces;"></div>
-  </div>
+  </div> -->
   <div id="page-content-col3" class="col boxed" style="height:100%;">
     <div id="page-content-col3-title" class="row boxed">
     Column 3
@@ -161,27 +164,153 @@ function renderMath() {
 //     return result;
 // }
 
-function loadSectionAndDo(sectionName, callback) {
-    let promises = [];
+// function arrangeMultilayerSize(textColumn) {
+//     let outers = textColumn.querySelectorAll('.multilayer')
+//     for (let outer of outers) {
+//         for (let inner of outer.querySelectorAll('.language-layer')) {
+//             if (Number(outer.style.height.replace('px','')) < inner.offsetHeight) {
+//                 outer.style.height = `${inner.offsetHeight}px`;
+//             }
+//         }
+//     }
+// }
+
+// function insertTextToElement(textColumn, section) {
+//     for (let i=textColumn.childNodes.length; i>0; i--) {
+//         textColumn.childNodes[0].remove();
+//     }
+//     let languages = metaData.languages;
+//     let numParagraph = section.ELH.length;
+//     for (let i=0; i<numParagraph; i++) {
+//         let outer = document.createElement('div');
+//         outer.classList.add('multilayer', 'boxed');
+//         textColumn.appendChild(outer);
+//         // outer.style = 'position: relative;';
+//         for (let j=0; j<languages.length; j++) {
+//             let inner = document.createElement('div');
+//             inner.classList.add(languages[j], 'language-layer');
+//             // inner.style = 'position: absolute;';
+//             inner.innerHTML = section[languages[j]][i];
+//             // if (_DEBUG_) {
+//             //     let treeWalker = document.createTreeWalker(inner);
+//             //     do {
+//             //         let nextNode = treeWalker.nextNode();
+//             //         if (!(nextNode.nodeType != Node.TEXT_NODE)) {continue;}
+//             //         let words = nextNode.Content.trim()
+//             //             .replaceAll(/[,.·]/g, '')
+//             //             .split(' ')
+                    
+
+//             //     } while (nextNode !== null);
+//             // }
+//             outer.appendChild(inner);
+//             // if (Number(outer.style.height.replace('px','')) < inner.offsetHeight) {
+//             //     outer.style.height = `${inner.offsetHeight}px`;
+//             // }
+//         }
+//     }
+//     renderMath();
+//     arrangeMultilayerSize(textColumn);
+// }
+
+// function insertFootnoteToElement(footColumn, section) {
+//     for (let i=footColumn.childNodes.length; i>0; i--) {
+//         footColumn.childNodes[0].remove();
+//     }
+//     let outer = document.createElement('div');
+//     outer.classList.add('multilayer', 'boxed');
+//     footColumn.append(outer);
+//     let languages = metaData.languages;
+//     for (let j=0; j<languages.length; j++) {
+//         let inner = document.createElement('div');
+//         inner.classList.add(languages[j], 'language-layer');
+//         section[languages[j]].forEach(function(s) {inner.innerHTML += `<div>${s}</div>`;});
+//         outer.appendChild(inner);
+//     }
+//     renderMath();
+// }
+
+// function refactorIds(htmlString, suffix) {
+//     htmlString = htmlString.replaceAll(
+//         /id="footnote(ptr)?-[A-Z]{3}-\d/g, 
+//         function (match) {return `${match}(${suffix})`;}
+//     )
+//     htmlString = htmlString.replaceAll(
+//         /href="#footnote(ptr)?-[A-Z]{3}-\d/g, 
+//         function (match) {return `${match}(${suffix})`;}
+//     )
+//     return htmlString
+// }
+
+// let semanticGroups = {};
+// function setSemanticGroups() {
+//     semanticGroups = {};
+//     let semanticSpans = document.getElementById('page-content')
+//         .querySelectorAll('span');
+//     for (let elt of semanticSpans) {
+//         if (!('type' in elt.attributes) || !(elt.getAttribute('type').startsWith('sem_'))) {continue;}
+//         let type = elt.getAttribute('type');
+//         if (!(type in semanticGroups)) {semanticGroups[type] = [];}
+//         semanticGroups[type].push( elt );
+//     }
+//     // console.log(semanticGroups);
+//     for (let type in semanticGroups) {
+//         let group = semanticGroups[type];
+//         let mouseover = function () {
+//             for (let elt of group) {
+//                 elt.classList.add('semantic-group-hover');
+//             }
+//         };
+//         let mouseout = function () {
+//             for (let elt of group) {
+//                 elt.classList.remove('semantic-group-hover');
+//             }
+//         };
+//         for (let elt of group) {
+//             elt.addEventListener('mouseover', mouseover);
+//             elt.addEventListener('mouseout', mouseout);
+//         }
+//     }
+// }
+
+// function loadSectionAndDo(sectionName, callback) {
+//     let promises = [];
+//     for (let lang of metaData.languages) {
+//         promises.push(
+//             new Promise(function (resolve, reject) {
+//                 let xhr = new XMLHttpRequest();
+//                 xhr.open('GET', `/text/${metaData.bookTitle}/${sectionName}/${lang}`);
+//                 xhr.onload = function () {
+//                     if ((xhr.status >= 200) & (xhr.status < 400)) {
+//                         resolve(xhr.responseText);
+//                     } else {
+//                         reject();
+//                     }
+//                 };
+//                 xhr.send();
+//             })
+//         );
+//     }
+//     return Promise.all(promises)
+//         .then(
+//             callback
+//         );
+
+// }
+
+async function setSection(index, callback) {
+    document.getElementById("select-fig-"+index).selected = true;
+    geometer.clear();
+
+    let textPromises = [];
     for (let lang of metaData.languages) {
-        promises.push(
+        textPromises.push(
             new Promise(function (resolve, reject) {
                 let xhr = new XMLHttpRequest();
-                xhr.open('GET', `/text/on-spirals/${sectionName}/${lang}`);
+                xhr.open('GET', `/text/${metaData.bookTitle}/${metaData.sections[index]}/${lang}`);
                 xhr.onload = function () {
                     if ((xhr.status >= 200) & (xhr.status < 400)) {
-                        let texts = [];
-                        let footnotes = [];
-                        let responseJSON = JSON.parse(xhr.responseText);
-                        let node = document.createElement('div');
-                        node.innerHTML = responseJSON.text;
-                        node.querySelectorAll('p')
-                            .forEach(function (pElt) {texts.push(pElt.innerHTML);});
-                        node.innerHTML = responseJSON.footnote;
-                        node.querySelectorAll('p')
-                            .forEach(function (pElt) {footnotes.push(pElt.innerHTML);});
-                        node.remove();
-                        resolve({texts, footnotes});
+                        resolve(xhr.responseText);
                     } else {
                         reject();
                     }
@@ -190,199 +319,304 @@ function loadSectionAndDo(sectionName, callback) {
             })
         );
     }
-    return Promise.all(promises)
+    await Promise.all(textPromises)
         .then(
-            function (resolved) {
-                let texts = {};
-                let footnotes = {};
-                for (let i=0; i<metaData.languages.length; i++) {
-                    texts[metaData.languages[i]] = resolved[i].texts;
-                    footnotes[metaData.languages[i]] = resolved[i].footnotes;
+            function (responses) {
+                for (let textColumn of textColumns) {
+                    textColumn.applySectionContents(responses);
                 }
-                callback(texts, footnotes);
+                if (callback) {callback();}
             }
         );
 
+    await geometer.loadSource(
+        metaData.bookTitle,
+        metaData.sections[index],
+        function () {
+            let selectStep = document.getElementById("select-step");
+            for (let i=selectStep.childNodes.length; i>0; i--) {
+                selectStep.childNodes[0].remove();
+            }
+            for (let i=geometer.stepMin; i<=geometer.stepMax; i++) {
+                let option = document.createElement("option");
+                option.value = i;
+                option.textContent = i;
+                option.setAttribute("id", "select-step-"+i);
+                document.getElementById("select-step").appendChild(option);
+                if (i==geometer.stepMin) {option.selected = true;}
+            };
+            if (document.getElementById("check-original").checked) {
+                geometer.toggleOriginal()
+            }
+        }
+    )
+    // await Promise.all([
+    //     geometer.loadSource(
+    //         'on-spirals',
+    //         metaData.sections[index],
+    //         function () {
+    //             let selectStep = document.getElementById("select-step");
+    //             for (let i=selectStep.childNodes.length; i>0; i--) {
+    //                 selectStep.childNodes[0].remove();
+    //             }
+    //             for (let i=geometer.stepMin; i<=geometer.stepMax; i++) {
+    //                 let option = document.createElement("option");
+    //                 option.value = i;
+    //                 option.textContent = i;
+    //                 option.setAttribute("id", "select-step-"+i);
+    //                 document.getElementById("select-step").appendChild(option);
+    //                 if (i==geometer.stepMin) {option.selected = true;}
+    //             };
+    //             if (document.getElementById("check-original").checked) {
+    //                 geometer.toggleOriginal()
+    //             }
+    //         }
+    //     ),
+    //     loadSectionAndDo(
+    //         metaData.sections[index],
+    //         function (texts, footnotes) {
+    //             for (let j=1; j<=2; j++) {
+    //                 let textsIdModified = {};
+    //                 let footnotesIdModified = {};
+    //                 for (let lang of metaData.languages) {
+    //                     textsIdModified[lang] = texts[lang].map(
+    //                         function (s) {return refactorIds(s, j);}
+    //                     );
+    //                     footnotesIdModified[lang] = footnotes[lang].map(
+    //                         function (s) {return refactorIds(s, j);}
+    //                     );
+    //                 }
+    //                 insertTextToElement(
+    //                     document.getElementById(`page-content-col${j}-body`),
+    //                     textsIdModified
+    //                 );
+    //                 insertFootnoteToElement(
+    //                     document.getElementById(`page-content-col${j}-foot`),
+    //                     footnotesIdModified
+    //                 );
+    //                 document.getElementById("select-lang"+j).onchange();
+    //             }
+    //             setSemanticGroups();
+    //         }
+    //     )
+    // ]).then(callback)
+    // ;
 }
 
-function arrangeMultilayerSize(textColumn) {
-    let outers = textColumn.querySelectorAll('.multilayer')
-    for (let outer of outers) {
-        for (let inner of outer.querySelectorAll('.language-layer')) {
-            if (Number(outer.style.height.replace('px','')) < inner.offsetHeight) {
-                outer.style.height = `${inner.offsetHeight}px`;
+class TextColumn {
+    static innerBodies = [];
+    constructor (id, name, parentNode, languages=null) {
+        this.id = id;
+        this.name = name;
+        this.parentNode = parentNode;
+        
+        let columnWidth = '360px';
+
+        this.outerDiv = document.createElement('div');
+        this.outerDiv.setAttribute('id', `${this.id}`)
+        this.outerDiv.classList.add('col', 'boxed');
+        this.outerDiv.style.setProperty('height', '100%')
+        this.outerDiv.style.setProperty('width', columnWidth);
+
+        this.innerTitle = document.createElement('div');
+        this.innerTitle.setAttribute('id', `${this.id}-title`);
+        this.innerTitle.classList.add('row', 'boxed');
+        this.innerTitle.innerText = name;
+
+        this.langSelect = document.createElement('select');
+        this.langSelect.setAttribute('id', `${this.id}-languageSelector`);
+        this.innerTitle.appendChild(this.langSelect);
+
+        this.innerBody = document.createElement('div');
+        this.innerBody.setAttribute('id', `${this.id}-body`);
+        this.innerBody.classList.add('row', 'boxed', 'text-col-body');
+        this.innerBody.style.setProperty('white-space', 'break-spaces');
+        TextColumn.innerBodies.push(this.innerBody);
+        let that = this;
+        this.innerBody.onscroll = function () {
+            for (let el of TextColumn.innerBodies) {
+                el.scrollTop = that.innerBody.scrollTop;
+            }
+        }
+
+        this.innerFoot = document.createElement('div');
+        this.innerFoot.setAttribute('id', `${this.id}-foot`);
+        this.innerFoot.classList.add('row', 'boxed', 'text-col-foot');
+        this.innerFoot.style.setProperty('white-space', 'break-spaces');
+
+        this.outerDiv.appendChild(this.innerTitle);
+        this.outerDiv.appendChild(this.innerBody);
+        this.outerDiv.appendChild(this.innerFoot);
+
+        this.parentNode.appendChild(this.outerDiv);
+    }
+
+    activateSementicGroups() {
+        let semanticGroups = {};
+        let semanticSpanElements = this.innerBody.querySelectorAll('span');
+        for (let elt of semanticSpanElements) {
+            if (!('type' in elt.attributes) || !(elt.getAttribute('type').startsWith('sem_'))) {continue;}
+            let type = elt.getAttribute('type');
+            if (!(type in semanticGroups)) {semanticGroups[type] = [];}
+            semanticGroups[type].push( elt );
+        }
+        for (let type in semanticGroups) {
+            let group = semanticGroups[type];
+            let mouseover = function () {
+                for (let elt of group) {
+                    elt.classList.add('semantic-group-hover');
+                }
+            };
+            let mouseout = function () {
+                for (let elt of group) {
+                    elt.classList.remove('semantic-group-hover');
+                }
+            };
+            for (let elt of group) {
+                elt.addEventListener('mouseover', mouseover);
+                elt.addEventListener('mouseout', mouseout);
             }
         }
     }
-}
 
-function insertTextToElement(textColumn, section) {
-    for (let i=textColumn.childNodes.length; i>0; i--) {
-        textColumn.childNodes[0].remove();
+    applySectionContents(responses) {
+        let texts = {};
+        let footnotes = {};
+        let responsesObj = {};
+        let that = this;
+        for (let i=0; i<metaData.languages.length; i++) {
+            let language = metaData.languages[i];
+            texts[language] = [];
+            footnotes[language] = [];
+
+            let responseJSON = JSON.parse(responses[i]);
+            let node = document.createElement('div');
+            node.innerHTML = responseJSON.text;
+            node.querySelectorAll('p')
+                .forEach(function (pElt) {texts[language].push(that.refactorIds(pElt.innerHTML));});
+            node.innerHTML = responseJSON.footnote;
+            node.querySelectorAll('p')
+                .forEach(function (pElt) {footnotes[language].push(that.refactorIds(pElt.innerHTML));});
+            node.remove();
+        }
+        this.setBodyContent(texts);
+        this.setFootContent(footnotes);
+        this.langSelect.onchange();
+        this.activateSementicGroups();
     }
-    let languages = metaData.languages;
-    let numParagraph = section.ELH.length;
-    for (let i=0; i<numParagraph; i++) {
+
+    arrangeMultilayerHeights() {
+        for (let outer of this.innerBody.children) {
+            for (let inner of outer.children) {
+                if (Number(outer.style.height.replace('px','')) < inner.offsetHeight) {
+                    outer.style.height = `${inner.offsetHeight}px`;
+                }
+            }
+        }
+    }
+
+    clearBodyFoot() {
+        this.innerBody.innerHTML = 'Loading...';
+        this.innerFoot.innerHTML = 'Loading...';
+    }
+
+    refactorIds(htmlString) {
+        let suffix = this.id;
+        htmlString = htmlString.replaceAll(
+            /id="footnote(ptr)?-[A-Z]{3}-\d/g, 
+            function (match) {return `${match}(${suffix})`;}
+        )
+        htmlString = htmlString.replaceAll(
+            /href="#footnote(ptr)?-[A-Z]{3}-\d/g, 
+            function (match) {return `${match}(${suffix})`;}
+        )
+        return htmlString
+    }
+
+    setLanguage(val) {
+        // if (this.langSelect.value === val) {return;}
+        for (let option of this.langSelect.options) {
+            if (option.value == val) {
+                option.selected = true;
+                break;
+            }
+        }
+    }
+
+    setLanguagesItems(items) {
+        for (let i=0; i<items.length; i++) {
+            let option = document.createElement('option');
+            option.value = i;
+            option.innerHTML = items[i];
+            option.setAttribute('id', `${this.langSelect.id}-option-${i}`);
+            this.langSelect.appendChild(option);
+        }
+        let that = this;
+        this.langSelect.onchange = function () {
+            let i = that.langSelect.value;
+            that.outerDiv
+                .querySelectorAll('.language-layer')
+                .forEach(el => {el.style.opacity = 0; el.style.zIndex = -1; el.classList.add('unselectable')});
+            that.outerDiv
+                .querySelectorAll(`.${metaData.languages[i]}`)
+                .forEach(el => {el.style.opacity = 1; el.style.zIndex = 1; el.classList.remove('unselectable')});
+            // #TODO: make this self-contained
+        }
+    }
+
+    setBodyContent(dividedText) {
+        this.innerBody.innerHTML = '';
+        let languages = metaData.languages;
+        let numParagraph = dividedText.ELH.length;
+        for (let i=0; i<numParagraph; i++) {
+            let outer = document.createElement('div');
+            outer.classList.add('multilayer', 'boxed');
+            this.innerBody.appendChild(outer);
+            for (let j=0; j<languages.length; j++) {
+                let inner = document.createElement('div');
+                inner.classList.add(languages[j], 'language-layer');
+                inner.innerHTML = dividedText[languages[j]][i];
+                outer.appendChild(inner);
+            }
+        }
+        this.arrangeMultilayerHeights();
+    }
+
+    setFootContent(dividedText) {
+        this.innerFoot.innerHTML = '';
         let outer = document.createElement('div');
-        outer.classList.add('multilayer', 'boxed');
-        textColumn.appendChild(outer);
-        // outer.style = 'position: relative;';
+        outer.classList.add('boxed');
+        this.innerFoot.append(outer);
+        let languages = metaData.languages;
         for (let j=0; j<languages.length; j++) {
             let inner = document.createElement('div');
             inner.classList.add(languages[j], 'language-layer');
-            // inner.style = 'position: absolute;';
-            inner.innerHTML = section[languages[j]][i];
-            // if (_DEBUG_) {
-            //     let treeWalker = document.createTreeWalker(inner);
-            //     do {
-            //         let nextNode = treeWalker.nextNode();
-            //         if (!(nextNode.nodeType != Node.TEXT_NODE)) {continue;}
-            //         let words = nextNode.Content.trim()
-            //             .replaceAll(/[,.·]/g, '')
-            //             .split(' ')
-                    
-
-            //     } while (nextNode !== null);
-            // }
+            dividedText[languages[j]].forEach(function(s) {inner.innerHTML += `<div>${s}</div>`;});
             outer.appendChild(inner);
-            // if (Number(outer.style.height.replace('px','')) < inner.offsetHeight) {
-            //     outer.style.height = `${inner.offsetHeight}px`;
-            // }
         }
-    }
-    renderMath();
-    arrangeMultilayerSize(textColumn);
-}
 
-function insertFootnoteToElement(footColumn, section) {
-    for (let i=footColumn.childNodes.length; i>0; i--) {
-        footColumn.childNodes[0].remove();
     }
-    let outer = document.createElement('div');
-    outer.classList.add('multilayer', 'boxed');
-    footColumn.append(outer);
-    let languages = metaData.languages;
-    for (let j=0; j<languages.length; j++) {
-        let inner = document.createElement('div');
-        inner.classList.add(languages[j], 'language-layer');
-        section[languages[j]].forEach(function(s) {inner.innerHTML += `<div>${s}</div>`;});
-        outer.appendChild(inner);
-    }
-    renderMath();
-}
 
-function refactorIds(htmlString, suffix) {
-    htmlString = htmlString.replaceAll(
-        /id="footnote(ptr)?-[A-Z]{3}-\d/g, 
-        function (match) {return `${match}(${suffix})`;}
-    )
-    htmlString = htmlString.replaceAll(
-        /href="#footnote(ptr)?-[A-Z]{3}-\d/g, 
-        function (match) {return `${match}(${suffix})`;}
-    )
-    return htmlString
 }
-
-let semanticGroups = {};
-function setSemanticGroups() {
-    semanticGroups = {};
-    let semanticSpans = document.getElementById('page-content')
-        .querySelectorAll('span');
-    for (let elt of semanticSpans) {
-        if (!('type' in elt.attributes) || !(elt.getAttribute('type').startsWith('sem_'))) {continue;}
-        let type = elt.getAttribute('type');
-        if (!(type in semanticGroups)) {semanticGroups[type] = [];}
-        semanticGroups[type].push( elt );
-    }
-    // console.log(semanticGroups);
-    for (let type in semanticGroups) {
-        let group = semanticGroups[type];
-        let mouseover = function () {
-            for (let elt of group) {
-                elt.classList.add('semantic-group-hover');
-            }
-        };
-        let mouseout = function () {
-            for (let elt of group) {
-                elt.classList.remove('semantic-group-hover');
-            }
-        };
-        for (let elt of group) {
-            elt.addEventListener('mouseover', mouseover);
-            elt.addEventListener('mouseout', mouseout);
-        }
-    }
-}
-
-async function setSection(index, callback) {
-    document.getElementById("select-fig-"+index).selected = true;
-    geometer.clear();
-    await Promise.all([
-        geometer.loadSource(
-            'on-spirals',
-            metaData.sections[index],
-            function () {
-                let selectStep = document.getElementById("select-step");
-                for (let i=selectStep.childNodes.length; i>0; i--) {
-                    selectStep.childNodes[0].remove();
-                }
-                for (let i=geometer.stepMin; i<=geometer.stepMax; i++) {
-                    let option = document.createElement("option");
-                    option.value = i;
-                    option.textContent = i;
-                    option.setAttribute("id", "select-step-"+i);
-                    document.getElementById("select-step").appendChild(option);
-                    if (i==geometer.stepMin) {option.selected = true;}
-                };
-                if (document.getElementById("check-original").checked) {
-                    geometer.toggleOriginal()
-                }
-            }
-        ),
-        loadSectionAndDo(
-            metaData.sections[index],
-            function (texts, footnotes) {
-                for (let j=1; j<=2; j++) {
-                    let textsIdModified = {};
-                    let footnotesIdModified = {};
-                    for (let lang of metaData.languages) {
-                        textsIdModified[lang] = texts[lang].map(
-                            function (s) {return refactorIds(s, j);}
-                        );
-                        footnotesIdModified[lang] = footnotes[lang].map(
-                            function (s) {return refactorIds(s, j);}
-                        );
-                    }
-                    insertTextToElement(
-                        document.getElementById(`page-content-col${j}-body`),
-                        textsIdModified
-                    );
-                    insertFootnoteToElement(
-                        document.getElementById(`page-content-col${j}-foot`),
-                        footnotesIdModified
-                    );
-                    document.getElementById("select-lang"+j).onchange();
-                }
-                setSemanticGroups();
-            }
-        )
-    ]).then(callback)
-    ;
-}
-
 import {Geometer} from "/static/geometer.js"
 
 let _DEBUG_ = false;
+let searchParams = new URLSearchParams(window.location.search);
+let bookName = (searchParams.get('bookTitle') || 'on-spirals');
 let metaData;
 await new Promise(function(resolve, reject) {
     let xhr = new XMLHttpRequest();
-    xhr.open('GET', '/metadata/on-spirals');
+    xhr.open('GET', `/metadata/${bookName}`);
     xhr.onload = function () {
         metaData = JSON.parse(xhr.responseText);
         resolve();
     };
     xhr.send();
-});
+}).then(
+    function() {
+        document.getElementById('nav-breadcrumbs').innerHTML = `${metaData.authorAlias} > ${metaData.bookTitleAlias} > `;
+    }
+);
 
 let langList = metaData.languages;
 let langDetailList = metaData.languagesDetail;
@@ -412,34 +646,45 @@ for (let i=0; i<metaData.sections.length; i++) {
     option.setAttribute("id", "select-fig-"+i);
     document.getElementById("select-fig").appendChild(option);
 }
+
+let textColumns = [];
 for (let j=1; j<=2; j++) {
-    let selectProp = document.getElementById('select-fig');
-    let selectLang = document.getElementById("select-lang"+j);
-    for (let i=0; i<langList.length; i++) {
-        let option = document.createElement("option");
-        option.value = i;
-        option.textContent = langDetailList[i];
-        option.setAttribute("id", "select-lang" + j +"-"+i);
-        selectLang.appendChild(option);
-    }
-    selectLang.onchange = function () {
-        let i = selectLang.value;
-        document.getElementById(`page-content-col${j}`)
-            .querySelectorAll('.language-layer')
-            .forEach(el => {el.style.opacity = 0; el.style.zIndex = -1; el.classList.add('unselectable');});
-        document.getElementById(`page-content-col${j}`)
-            .querySelectorAll(`.${langList[i]}`)
-            .forEach(el => {el.style.opacity = 1; el.style.zIndex = 1; el.classList.remove('unselectable')});
-        // if (langList[i] == "KOM") {
-        //     renderMath();
-        // }
-    }
-    document.getElementById(`page-content-col${j}-body`).onscroll = function () {
-        for (let el of document.body.querySelectorAll('.text-col-body')) {
-            el.scrollTop = this.scrollTop;
-        }
-    }
+    let textColumn = new TextColumn(`column${j}`, `Column ${j}`, document.getElementById('page-content'));
+    textColumn.setLanguagesItems(metaData.languagesDetail);
+    textColumn.setLanguage(j-1);
+    textColumns.push(textColumn);
 }
+
+
+
+// for (let j=1; j<=2; j++) {
+//     let selectProp = document.getElementById('select-fig');
+//     let selectLang = document.getElementById("select-lang"+j);
+//     for (let i=0; i<langList.length; i++) {
+//         let option = document.createElement("option");
+//         option.value = i;
+//         option.textContent = langDetailList[i];
+//         option.setAttribute("id", "select-lang" + j +"-"+i);
+//         selectLang.appendChild(option);
+//     }
+//     selectLang.onchange = function () {
+//         let i = selectLang.value;
+//         document.getElementById(`page-content-col${j}`)
+//             .querySelectorAll('.language-layer')
+//             .forEach(el => {el.style.opacity = 0; el.style.zIndex = -1; el.classList.add('unselectable');});
+//         document.getElementById(`page-content-col${j}`)
+//             .querySelectorAll(`.${langList[i]}`)
+//             .forEach(el => {el.style.opacity = 1; el.style.zIndex = 1; el.classList.remove('unselectable')});
+//         // if (langList[i] == "KOM") {
+//         //     renderMath();
+//         // }
+//     }
+//     document.getElementById(`page-content-col${j}-body`).onscroll = function () {
+//         for (let el of document.body.querySelectorAll('.text-col-body')) {
+//             el.scrollTop = this.scrollTop;
+//         }
+//     }
+// }
 
 
 // diagram navigation
@@ -466,10 +711,8 @@ document.getElementById("check-original").onchange = function () {
     document.getElementById("select-step").disabled = !document.getElementById("select-step").disabled;
 };
 
-
-let idxInit = metaData.sections.length-1
-idxInit=0;
-document.getElementById("select-lang2-1").selected = true;
+let idxInit = metaData.sections.indexOf(searchParams.get('section') || metaData.sections[0]);
+// document.getElementById("select-lang2-1").selected = true;
 setSection(idxInit);
 
 </script>
