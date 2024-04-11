@@ -129,7 +129,10 @@ app.get(
             languagesDetail: ['그리스어 원문', '우리말(고전학자)', '우리말(수학자)'],
             sections: []
         };
-        Object.assign(result, bibliaDict[bookTitle]);
+        for (let key in bibliaDict[bookTitle]) {
+            result[key] = bibliaDict[bookTitle][key];
+        }
+        // Object.assign(result, bibliaDict[bookTitle]);
         if (bookTitle == 'elements') {result.languages.pop(); result.languagesDetail.pop();}
 
         let htmlBook = fs.readFileSync(`./static/${bookTitle}/text.xml`, 'utf-8');
