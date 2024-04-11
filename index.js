@@ -87,10 +87,28 @@ function TEItoHTML(content) {
     return content;
 }
 
-let htmlBook = fs.readFileSync('./static/on-spirals/ELH&KOC&KOM-TEI.xml', 'utf-8');
-// let htmlBook = fs.readFileSync('./static/on-spirals/ELH&KOC&KOM-HTML.txt', 'utf-8');
-htmlBook = nodeHtmlParser.parse(htmlBook);
-htmlBook = TEItoHTML(htmlBook);
+
+// main.js
+
+let biblia = fs.readFileSync('static/biblia.csv', 'utf-8');
+biblia = biblia.split('\r\n')
+    .map((line) => (line.split(',')))
+    .slice(1);
+bibliaDict = {};
+for (let line of biblia) {
+    let author = line[0];
+    let authorAlias = line[1];
+    let bookTitle = line[2];
+    let bookTitleAlias = line[3];
+    bibliaDict[bookTitle] = {
+        author, authorAlias, bookTitle, bookTitleAlias
+    };
+}
+
+
+// let htmlBook = fs.readFileSync('./static/on-spirals/ELH&KOC&KOM-TEI.xml', 'utf-8');
+// htmlBook = nodeHtmlParser.parse(htmlBook);
+// htmlBook = TEItoHTML(htmlBook);
 let dgmParams = reloadDgmParams();
 
 const app = express();
@@ -103,13 +121,21 @@ app.get('/', function(req, res) {
 });
 
 app.get(
-    '/metadata/on-spirals', 
+    /\/metadata\/(.+)/, 
     function (req, res) {
+        let bookTitle = req.originalUrl.split('/')[2]
         let result = {
             languages: ['ELH', 'KOC', 'KOM'],
             languagesDetail: ['그리스어 원문', '우리말(고전학자)', '우리말(수학자)'],
             sections: []
         };
+        Object.assign(result, bibliaDict[bookTitle]);
+        if (bookTitle == 'elements') {result.languages.pop(); result.languagesDetail.pop();}
+
+        let htmlBook = fs.readFileSync(`./static/${bookTitle}/text.xml`, 'utf-8');
+        htmlBook = nodeHtmlParser.parse(htmlBook);
+        htmlBook = TEItoHTML(htmlBook);
+
         let body = htmlBook.querySelector('body');
         for (let section of body.childNodes) {
             if (section.rawTagName !== 'div') {continue;}
@@ -120,10 +146,16 @@ app.get(
 );
 
 app.get(
-    /\/text\/on-spirals\/(Intro|Prop[0-9]{2})\/(ELH|KOC|KOM)/, 
+    /\/text\/(.+)\/(.+)\/(ELH|KOC|KOM)/, 
     function (req, res) {
         let lang = req.originalUrl.split('/')[4];
         let divName = req.originalUrl.split('/')[3];
+        let bookTitle = req.originalUrl.split('/')[2];
+
+        let htmlBook = fs.readFileSync(`./static/${bookTitle}/text.xml`, 'utf-8');
+        htmlBook = nodeHtmlParser.parse(htmlBook);
+        htmlBook = TEItoHTML(htmlBook);
+
         let body = htmlBook.querySelector('body');
         let back = htmlBook.querySelector('back');
         let fns = new nodeHtmlParser.HTMLElement('div', {});

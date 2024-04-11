@@ -79,48 +79,17 @@ MathJax = {
 Mathematica Classica per Linguas Figurasque
     <div id="nav-wrapper" style="text-align: left; font-size: medium;">
     <span id="nav-breadcrumbs"></span>
-    <!-- <button id="button-fig-prev">◁</button>
-    <select name="fig" id="select-fig"></select>
-    <button id="button-fig-next">▷</button> -->
     </div>
  </div>
 
  <div id="page-content" class="row boxed" style="width: 1200px; height:800px;">
-  <!-- <div id="page-content-col1" class="col boxed" style="width:32%; height:100%;">
-    <div id="page-content-col1-title" class="row boxed">
-    Column 1
-    <select id="select-lang1"></select>
-    </div>
-    <div id="page-content-col1-body" class="row boxed text-col-body" style="white-space:break-spaces; ">
-    Content 1
-    </div>
-    <div id="page-content-col1-foot" class="row text-col-foot boxed" style="white-space:break-spaces;"></div>
-  </div>
-  <div id="page-content-col2" class="col boxed" style="width:32%; height:100%;">
-    <div id="page-content-col2-title" class="row boxed">
-    Column 2
-    <select id="select-lang2"></select>
-    </div>
-    <div id="page-content-col2-body" class="row boxed text-col-body" style="white-space:break-spaces;">
-    Content 2
-    </div>
-    <div id="page-content-col2-foot" class="row text-col-foot boxed" style="white-space:break-spaces;"></div>
-  </div> -->
-  <div id="page-content-col3" class="col boxed" style="height:100%;">
+  <!-- <div id="page-content-col3" class="col boxed" style="height:100%;">
     <div id="page-content-col3-title" class="row boxed">
     Column 3
     </div>
     <div id="svg-wrapper" class="row boxed" style="position: relative; width: 400px; height: 400px;">
     </div>
-    <div class="boxed">
-    Select construction step
-     <button id="button-back">◁</button>
-     <select name="step" id="select-step">
-     </select>
-     <button id="button-forward">▷</button>
-     <input id="check-original" type="checkbox">original</input>
-    </div>
-  </div>
+  </div> -->
  </div>
 
 </body>
@@ -144,159 +113,6 @@ function renderMath() {
     //     }
     // );
 }
-// async function loadRawTextJson(sourcePath) {
-//     let result;
-//     await new Promise(function (resolve, reject) {
-//         let xhr = new XMLHttpRequest();
-//         xhr.open("GET", sourcePath)
-//         xhr.onload = function () {
-//             if ((xhr.status >= 200) && (xhr.status < 400)) {
-//                 result = JSON.parse(xhr.responseText);
-//             }
-//             else {
-//                 ;
-//                 // reject();
-//             }
-//             resolve();
-//         }
-//         xhr.send();
-//     })
-//     return result;
-// }
-
-// function arrangeMultilayerSize(textColumn) {
-//     let outers = textColumn.querySelectorAll('.multilayer')
-//     for (let outer of outers) {
-//         for (let inner of outer.querySelectorAll('.language-layer')) {
-//             if (Number(outer.style.height.replace('px','')) < inner.offsetHeight) {
-//                 outer.style.height = `${inner.offsetHeight}px`;
-//             }
-//         }
-//     }
-// }
-
-// function insertTextToElement(textColumn, section) {
-//     for (let i=textColumn.childNodes.length; i>0; i--) {
-//         textColumn.childNodes[0].remove();
-//     }
-//     let languages = metaData.languages;
-//     let numParagraph = section.ELH.length;
-//     for (let i=0; i<numParagraph; i++) {
-//         let outer = document.createElement('div');
-//         outer.classList.add('multilayer', 'boxed');
-//         textColumn.appendChild(outer);
-//         // outer.style = 'position: relative;';
-//         for (let j=0; j<languages.length; j++) {
-//             let inner = document.createElement('div');
-//             inner.classList.add(languages[j], 'language-layer');
-//             // inner.style = 'position: absolute;';
-//             inner.innerHTML = section[languages[j]][i];
-//             // if (_DEBUG_) {
-//             //     let treeWalker = document.createTreeWalker(inner);
-//             //     do {
-//             //         let nextNode = treeWalker.nextNode();
-//             //         if (!(nextNode.nodeType != Node.TEXT_NODE)) {continue;}
-//             //         let words = nextNode.Content.trim()
-//             //             .replaceAll(/[,.·]/g, '')
-//             //             .split(' ')
-                    
-
-//             //     } while (nextNode !== null);
-//             // }
-//             outer.appendChild(inner);
-//             // if (Number(outer.style.height.replace('px','')) < inner.offsetHeight) {
-//             //     outer.style.height = `${inner.offsetHeight}px`;
-//             // }
-//         }
-//     }
-//     renderMath();
-//     arrangeMultilayerSize(textColumn);
-// }
-
-// function insertFootnoteToElement(footColumn, section) {
-//     for (let i=footColumn.childNodes.length; i>0; i--) {
-//         footColumn.childNodes[0].remove();
-//     }
-//     let outer = document.createElement('div');
-//     outer.classList.add('multilayer', 'boxed');
-//     footColumn.append(outer);
-//     let languages = metaData.languages;
-//     for (let j=0; j<languages.length; j++) {
-//         let inner = document.createElement('div');
-//         inner.classList.add(languages[j], 'language-layer');
-//         section[languages[j]].forEach(function(s) {inner.innerHTML += `<div>${s}</div>`;});
-//         outer.appendChild(inner);
-//     }
-//     renderMath();
-// }
-
-// function refactorIds(htmlString, suffix) {
-//     htmlString = htmlString.replaceAll(
-//         /id="footnote(ptr)?-[A-Z]{3}-\d/g, 
-//         function (match) {return `${match}(${suffix})`;}
-//     )
-//     htmlString = htmlString.replaceAll(
-//         /href="#footnote(ptr)?-[A-Z]{3}-\d/g, 
-//         function (match) {return `${match}(${suffix})`;}
-//     )
-//     return htmlString
-// }
-
-// let semanticGroups = {};
-// function setSemanticGroups() {
-//     semanticGroups = {};
-//     let semanticSpans = document.getElementById('page-content')
-//         .querySelectorAll('span');
-//     for (let elt of semanticSpans) {
-//         if (!('type' in elt.attributes) || !(elt.getAttribute('type').startsWith('sem_'))) {continue;}
-//         let type = elt.getAttribute('type');
-//         if (!(type in semanticGroups)) {semanticGroups[type] = [];}
-//         semanticGroups[type].push( elt );
-//     }
-//     // console.log(semanticGroups);
-//     for (let type in semanticGroups) {
-//         let group = semanticGroups[type];
-//         let mouseover = function () {
-//             for (let elt of group) {
-//                 elt.classList.add('semantic-group-hover');
-//             }
-//         };
-//         let mouseout = function () {
-//             for (let elt of group) {
-//                 elt.classList.remove('semantic-group-hover');
-//             }
-//         };
-//         for (let elt of group) {
-//             elt.addEventListener('mouseover', mouseover);
-//             elt.addEventListener('mouseout', mouseout);
-//         }
-//     }
-// }
-
-// function loadSectionAndDo(sectionName, callback) {
-//     let promises = [];
-//     for (let lang of metaData.languages) {
-//         promises.push(
-//             new Promise(function (resolve, reject) {
-//                 let xhr = new XMLHttpRequest();
-//                 xhr.open('GET', `/text/${metaData.bookTitle}/${sectionName}/${lang}`);
-//                 xhr.onload = function () {
-//                     if ((xhr.status >= 200) & (xhr.status < 400)) {
-//                         resolve(xhr.responseText);
-//                     } else {
-//                         reject();
-//                     }
-//                 };
-//                 xhr.send();
-//             })
-//         );
-//     }
-//     return Promise.all(promises)
-//         .then(
-//             callback
-//         );
-
-// }
 
 async function setSection(index, callback) {
     // document.getElementById("select-fig-"+index).selected = true;
@@ -325,339 +141,50 @@ async function setSection(index, callback) {
         .then(
             function (responses) {
                 for (let textColumn of textColumns) {
-                    textColumn.applySectionContents(responses);
+                    textColumn.applySectionContents(responses, metaData.languages);
                 }
             }
         )
         .finally(
             function () {if (callback) {callback();}}   
-        )
-    ;
+        );
 
     await geometer.loadSource(
         metaData.bookTitle,
         metaData.sections[index],
         function () {
-            let selectStep = document.getElementById("select-step");
-            for (let i=selectStep.childNodes.length; i>0; i--) {
-                selectStep.childNodes[0].remove();
-            }
-            for (let i=geometer.stepMin; i<=geometer.stepMax; i++) {
-                let option = document.createElement("option");
-                option.value = i;
-                option.textContent = i;
-                option.setAttribute("id", "select-step-"+i);
-                document.getElementById("select-step").appendChild(option);
-                if (i==geometer.stepMin) {option.selected = true;}
-            };
-            if (document.getElementById("check-original").checked) {
-                geometer.toggleOriginal()
-            }
+            diagramNav.setStepsItems();
         }
     )
-    // await Promise.all([
-    //     geometer.loadSource(
-    //         'on-spirals',
-    //         metaData.sections[index],
-    //         function () {
-    //             let selectStep = document.getElementById("select-step");
-    //             for (let i=selectStep.childNodes.length; i>0; i--) {
-    //                 selectStep.childNodes[0].remove();
-    //             }
-    //             for (let i=geometer.stepMin; i<=geometer.stepMax; i++) {
-    //                 let option = document.createElement("option");
-    //                 option.value = i;
-    //                 option.textContent = i;
-    //                 option.setAttribute("id", "select-step-"+i);
-    //                 document.getElementById("select-step").appendChild(option);
-    //                 if (i==geometer.stepMin) {option.selected = true;}
-    //             };
-    //             if (document.getElementById("check-original").checked) {
-    //                 geometer.toggleOriginal()
-    //             }
-    //         }
-    //     ),
-    //     loadSectionAndDo(
-    //         metaData.sections[index],
-    //         function (texts, footnotes) {
-    //             for (let j=1; j<=2; j++) {
-    //                 let textsIdModified = {};
-    //                 let footnotesIdModified = {};
-    //                 for (let lang of metaData.languages) {
-    //                     textsIdModified[lang] = texts[lang].map(
-    //                         function (s) {return refactorIds(s, j);}
-    //                     );
-    //                     footnotesIdModified[lang] = footnotes[lang].map(
-    //                         function (s) {return refactorIds(s, j);}
-    //                     );
-    //                 }
-    //                 insertTextToElement(
-    //                     document.getElementById(`page-content-col${j}-body`),
-    //                     textsIdModified
-    //                 );
-    //                 insertFootnoteToElement(
-    //                     document.getElementById(`page-content-col${j}-foot`),
-    //                     footnotesIdModified
-    //                 );
-    //                 document.getElementById("select-lang"+j).onchange();
-    //             }
-    //             setSemanticGroups();
-    //         }
-    //     )
-    // ]).then(callback)
-    // ;
-}
-class SectionNavigator {
-    constructor (id, parentNode, sectionOnChange, sections=null) {
-        this.id = id;
-        this.parentNode = parentNode;
-        this.sections = sections;
-
-        this.outerSpan = document.createElement('span');
-
-        let that = this;
-
-        this.buttonPrev = document.createElement('button');
-        this.buttonPrev.innerHTML = '◁';
-        this.buttonPrev.onclick = function () {
-            if (Number(that.selector.value) === 0) {return;}
-            that.selector.value = Number(that.selector.value) - 1;
-            that.selector.onchange();
-        };
-        this.selector = document.createElement('select');
-        if (sections === null) {sections = [];}
-        for (let i=0; i<sections.length; i++) {
-            let option = document.createElement('option');
-            option.innerHTML = sections[i];
-            option.value = i;
-            this.selector.appendChild(option);
-        }
-        this.selector.onchange = function (event) {
-            let val = this.value;
-            that.setDisabled(true);
-            sectionOnChange(val, function() {that.setDisabled(false)});
-        };
-        this.buttonNext = document.createElement('button');
-        this.buttonNext.innerHTML = '▷';
-        this.buttonNext.onclick = function () {
-            if (Number(that.selector.value) === that.selector.options.length-1) {return;}
-            that.selector.value = Number(that.selector.value) + 1;
-            that.selector.onchange();
-        };
-
-        this.outerSpan.appendChild(this.buttonPrev);
-        this.outerSpan.appendChild(this.selector);
-        this.outerSpan.appendChild(this.buttonNext);
-        this.parentNode.appendChild(this.outerSpan);
-    }
-
-    setDisabled(val) {
-        this.buttonPrev.disabled = val;
-        this.selector.disabled = val;
-        this.buttonNext.disabled = val;
-    }
+    renderMath();
 }
 
-class TextColumn {
-    static innerBodies = [];
-    constructor (id, name, parentNode, languages=null) {
-        this.id = id;
-        this.name = name;
-        this.parentNode = parentNode;
-        
-        let columnWidth = '360px';
-
-        this.outerDiv = document.createElement('div');
-        this.outerDiv.setAttribute('id', `${this.id}`)
-        this.outerDiv.classList.add('col', 'boxed');
-        this.outerDiv.style.setProperty('height', '100%')
-        this.outerDiv.style.setProperty('width', columnWidth);
-
-        this.innerTitle = document.createElement('div');
-        this.innerTitle.setAttribute('id', `${this.id}-title`);
-        this.innerTitle.classList.add('row', 'boxed');
-        this.innerTitle.innerText = name;
-
-        this.langSelect = document.createElement('select');
-        this.langSelect.setAttribute('id', `${this.id}-languageSelector`);
-        this.innerTitle.appendChild(this.langSelect);
-
-        this.innerBody = document.createElement('div');
-        this.innerBody.setAttribute('id', `${this.id}-body`);
-        this.innerBody.classList.add('row', 'boxed', 'text-col-body');
-        this.innerBody.style.setProperty('white-space', 'break-spaces');
-        TextColumn.innerBodies.push(this.innerBody);
-        let that = this;
-        this.innerBody.onscroll = function () {
-            for (let el of TextColumn.innerBodies) {
-                el.scrollTop = that.innerBody.scrollTop;
-            }
-        }
-
-        this.innerFoot = document.createElement('div');
-        this.innerFoot.setAttribute('id', `${this.id}-foot`);
-        this.innerFoot.classList.add('row', 'boxed', 'text-col-foot');
-        this.innerFoot.style.setProperty('white-space', 'break-spaces');
-
-        this.outerDiv.appendChild(this.innerTitle);
-        this.outerDiv.appendChild(this.innerBody);
-        this.outerDiv.appendChild(this.innerFoot);
-
-        this.parentNode.appendChild(this.outerDiv);
-    }
-
-    activateSementicGroups() {
-        let semanticGroups = {};
-        let semanticSpanElements = this.innerBody.querySelectorAll('span');
-        for (let elt of semanticSpanElements) {
-            if (!('type' in elt.attributes) || !(elt.getAttribute('type').startsWith('sem_'))) {continue;}
-            let type = elt.getAttribute('type');
-            if (!(type in semanticGroups)) {semanticGroups[type] = [];}
-            semanticGroups[type].push( elt );
-        }
-        for (let type in semanticGroups) {
-            let group = semanticGroups[type];
-            let mouseover = function () {
-                for (let elt of group) {
-                    elt.classList.add('semantic-group-hover');
-                }
-            };
-            let mouseout = function () {
-                for (let elt of group) {
-                    elt.classList.remove('semantic-group-hover');
-                }
-            };
-            for (let elt of group) {
-                elt.addEventListener('mouseover', mouseover);
-                elt.addEventListener('mouseout', mouseout);
-            }
-        }
-    }
-
-    applySectionContents(responses) {
-        let texts = {};
-        let footnotes = {};
-        let responsesObj = {};
-        let that = this;
-        for (let i=0; i<metaData.languages.length; i++) {
-            let language = metaData.languages[i];
-            texts[language] = [];
-            footnotes[language] = [];
-
-            let responseJSON = JSON.parse(responses[i]);
-            let node = document.createElement('div');
-            node.innerHTML = responseJSON.text;
-            node.querySelectorAll('p')
-                .forEach(function (pElt) {texts[language].push(that.refactorIds(pElt.innerHTML));});
-            node.innerHTML = responseJSON.footnote;
-            node.querySelectorAll('p')
-                .forEach(function (pElt) {footnotes[language].push(that.refactorIds(pElt.innerHTML));});
-            node.remove();
-        }
-        this.setBodyContent(texts);
-        this.setFootContent(footnotes);
-        this.langSelect.onchange();
-        this.activateSementicGroups();
-    }
-
-    arrangeMultilayerHeights() {
-        for (let outer of this.innerBody.children) {
-            for (let inner of outer.children) {
-                if (Number(outer.style.height.replace('px','')) < inner.offsetHeight) {
-                    outer.style.height = `${inner.offsetHeight}px`;
-                }
-            }
-        }
-    }
-
-    clearBodyFoot() {
-        this.innerBody.innerHTML = 'Loading...';
-        this.innerFoot.innerHTML = 'Loading...';
-    }
-
-    refactorIds(htmlString) {
-        let suffix = this.id;
-        htmlString = htmlString.replaceAll(
-            /id="footnote(ptr)?-[A-Z]{3}-\d/g, 
-            function (match) {return `${match}(${suffix})`;}
-        )
-        htmlString = htmlString.replaceAll(
-            /href="#footnote(ptr)?-[A-Z]{3}-\d/g, 
-            function (match) {return `${match}(${suffix})`;}
-        )
-        return htmlString
-    }
-
-    setLanguage(val) {
-        // if (this.langSelect.value === val) {return;}
-        for (let option of this.langSelect.options) {
-            if (option.value == val) {
-                option.selected = true;
-                break;
-            }
-        }
-    }
-
-    setLanguagesItems(items) {
-        for (let i=0; i<items.length; i++) {
-            let option = document.createElement('option');
-            option.value = i;
-            option.innerHTML = items[i];
-            option.setAttribute('id', `${this.langSelect.id}-option-${i}`);
-            this.langSelect.appendChild(option);
-        }
-        let that = this;
-        this.langSelect.onchange = function () {
-            let i = that.langSelect.value;
-            that.outerDiv
-                .querySelectorAll('.language-layer')
-                .forEach(el => {el.style.opacity = 0; el.style.zIndex = -1; el.classList.add('unselectable')});
-            that.outerDiv
-                .querySelectorAll(`.${metaData.languages[i]}`)
-                .forEach(el => {el.style.opacity = 1; el.style.zIndex = 1; el.classList.remove('unselectable')});
-            // #TODO: make this self-contained
-        }
-    }
-
-    setBodyContent(dividedText) {
-        this.innerBody.innerHTML = '';
-        let languages = metaData.languages;
-        let numParagraph = dividedText.ELH.length;
-        for (let i=0; i<numParagraph; i++) {
-            let outer = document.createElement('div');
-            outer.classList.add('multilayer', 'boxed');
-            this.innerBody.appendChild(outer);
-            for (let j=0; j<languages.length; j++) {
-                let inner = document.createElement('div');
-                inner.classList.add(languages[j], 'language-layer');
-                inner.innerHTML = dividedText[languages[j]][i];
-                outer.appendChild(inner);
-            }
-        }
-        this.arrangeMultilayerHeights();
-    }
-
-    setFootContent(dividedText) {
-        this.innerFoot.innerHTML = '';
-        let outer = document.createElement('div');
-        outer.classList.add('boxed');
-        this.innerFoot.append(outer);
-        let languages = metaData.languages;
-        for (let j=0; j<languages.length; j++) {
-            let inner = document.createElement('div');
-            inner.classList.add(languages[j], 'language-layer');
-            dividedText[languages[j]].forEach(function(s) {inner.innerHTML += `<div>${s}</div>`;});
-            outer.appendChild(inner);
-        }
-
-    }
-
-}
-import {Geometer} from "/static/geometer.js"
+import {DiagramNavigator, SectionNavigator, TextColumn} from '/static/widgets.js'
+import {Geometer} from '/static/geometer.js'
 
 let _DEBUG_ = false;
+
 let searchParams = new URLSearchParams(window.location.search);
 let bookName = (searchParams.get('bookTitle') || 'on-spirals');
+// let idxInit = metaData.sections.indexOf(searchParams.get('section') || metaData.sections[0]);
+
+let sectionNav = new SectionNavigator('section-navigator', document.getElementById('nav-wrapper'), setSection);
+
+let textColumns = [];
+let geometers = [];
+for (let j=1; j<=3; j++) {
+    let textColumn = new TextColumn(`column${j}`, `Column ${j}`, document.getElementById('page-content'));
+    // let geometer = new Geometer(textColumn.dgmWrapper);
+    // geometer.domElement.classList.add("boxed");
+
+    textColumns.push(textColumn);
+}
+let geometer = new Geometer(textColumns[2].dgmWrapper);
+// let geometer = new Geometer(document.getElementById("svg-wrapper"));
+geometer.domElement.classList.add("boxed")
+let diagramNav = new DiagramNavigator('diagram-navigator-3', textColumns[2].dgmWrapper, geometer);
+// let diagramNav = new DiagramNavigator('diagram-navigator-3', document.getElementById('page-content-col3'), geometer);
+
 let metaData;
 await new Promise(function(resolve, reject) {
     let xhr = new XMLHttpRequest();
@@ -670,106 +197,19 @@ await new Promise(function(resolve, reject) {
 }).then(
     function() {
         document.getElementById('nav-breadcrumbs').innerHTML = `${metaData.authorAlias} > ${metaData.bookTitleAlias} > `;
+        sectionNav.setSectionsItems(metaData.sections);
+        for (let j=1; j<=3; j++) {
+            textColumns[j-1].setLanguagesItems(metaData.languages, metaData.languagesDetail);
+            textColumns[j-1].setLanguage(j-1);
+        }
+        textColumns[2].setLanguage(3);
+        let idxInit = metaData.sections.indexOf(searchParams.get('section') || metaData.sections[0]);
+        sectionNav.setSection(idxInit);
     }
 );
 
 let langList = metaData.languages;
 let langDetailList = metaData.languagesDetail;
 
-let geometer = new Geometer(document.getElementById("svg-wrapper"))
-geometer.domElement.classList.add("boxed")
-
-// // proposition navigation
-// document.getElementById("button-fig-prev").onclick = async function () {
-//     let i = +document.getElementById("select-fig").value;
-//     if (i <= 0) { return; }
-//     setSection(i-1);
-// };
-// document.getElementById("button-fig-next").onclick = async function () {
-//     let i = +document.getElementById("select-fig").value;
-//     if (i >= metaData.sections.length-1) { return; }
-//     setSection(i+1);
-// };
-// document.getElementById("select-fig").onchange = async function () {
-//     let i = +document.getElementById("select-fig").value;
-//     setSection(i);
-// }
-// for (let i=0; i<metaData.sections.length; i++) {
-//     let option = document.createElement("option");
-//     option.value = i;
-//     option.textContent = metaData.sections[i];
-//     option.setAttribute("id", "select-fig-"+i);
-//     document.getElementById("select-fig").appendChild(option);
-// }
-
-let sectionNav = new SectionNavigator('section-navigator', document.getElementById('nav-wrapper'), setSection, metaData.sections);
-
-let textColumns = [];
-for (let j=1; j<=2; j++) {
-    let textColumn = new TextColumn(`column${j}`, `Column ${j}`, document.getElementById('page-content'));
-    textColumn.setLanguagesItems(metaData.languagesDetail);
-    textColumn.setLanguage(j-1);
-    textColumns.push(textColumn);
-}
-
-
-
-// for (let j=1; j<=2; j++) {
-//     let selectProp = document.getElementById('select-fig');
-//     let selectLang = document.getElementById("select-lang"+j);
-//     for (let i=0; i<langList.length; i++) {
-//         let option = document.createElement("option");
-//         option.value = i;
-//         option.textContent = langDetailList[i];
-//         option.setAttribute("id", "select-lang" + j +"-"+i);
-//         selectLang.appendChild(option);
-//     }
-//     selectLang.onchange = function () {
-//         let i = selectLang.value;
-//         document.getElementById(`page-content-col${j}`)
-//             .querySelectorAll('.language-layer')
-//             .forEach(el => {el.style.opacity = 0; el.style.zIndex = -1; el.classList.add('unselectable');});
-//         document.getElementById(`page-content-col${j}`)
-//             .querySelectorAll(`.${langList[i]}`)
-//             .forEach(el => {el.style.opacity = 1; el.style.zIndex = 1; el.classList.remove('unselectable')});
-//         // if (langList[i] == "KOM") {
-//         //     renderMath();
-//         // }
-//     }
-//     document.getElementById(`page-content-col${j}-body`).onscroll = function () {
-//         for (let el of document.body.querySelectorAll('.text-col-body')) {
-//             el.scrollTop = this.scrollTop;
-//         }
-//     }
-// }
-
-
-// diagram navigation
-document.getElementById("button-back").onclick = function () {
-    geometer.stepBack();
-    document.getElementById("select-step-"+geometer.step).selected = true;
-};
-document.getElementById("button-forward").onclick = function () {
-    geometer.stepForward();
-    document.getElementById("select-step-"+geometer.step).selected = true;
-};
-document.getElementById("select-step").onchange = function () {
-    for (let i=geometer.step; i<this.value; i++) {
-        geometer.stepForward();
-    }
-    for (let i=geometer.step; i>this.value; i--) {
-        geometer.stepBack();
-    }
-}
-document.getElementById("check-original").onchange = function () {
-    geometer.toggleOriginal();
-    document.getElementById("button-back").disabled = !document.getElementById("button-back").disabled;
-    document.getElementById("button-forward").disabled = !document.getElementById("button-forward").disabled;
-    document.getElementById("select-step").disabled = !document.getElementById("select-step").disabled;
-};
-
-let idxInit = metaData.sections.indexOf(searchParams.get('section') || metaData.sections[0]);
-// document.getElementById("select-lang2-1").selected = true;
-// setSection(idxInit);
 
 </script>

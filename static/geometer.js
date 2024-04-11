@@ -7,6 +7,7 @@ import {Vector, CustomList} from "./construction.js"
 class GeometricEntity {
     constructor(type, name, color=0x000000, size=1., pixelSize=1,) {
         this.type = type;
+        this.name = name;
         this.color = color;
         this.size = size;
         this.pixelSize = pixelSize;
@@ -55,6 +56,7 @@ class GeometricEntity {
     }
     attachCaption (renderer) {
         renderer.domElement.parentNode.appendChild(this._caption);
+        
     }
     get captionPosition3d() {
         switch (this.type) {
@@ -68,9 +70,6 @@ class GeometricEntity {
             case "circle":
                 return this._center;
         }
-    }
-    get name() {
-        return this._caption.textContent;
     }
     get visible() {
         return this._obj3d.visible;
@@ -181,8 +180,6 @@ class Geometer {
         this.stepMin = 0;
         this.step = 0;
         this.original = false;
-
-        this._loaded = false;
     }
 
     loadSource(bookName, sectionName, callback) {
@@ -224,6 +221,8 @@ class Geometer {
                 that.buildAndRenderIfLoaded();
             }
             callback();
+        }).catch(function() {
+            console.log('rejected');
         })
     }
 
@@ -255,7 +254,7 @@ class Geometer {
     }
 
     buildAndRenderIfLoaded() {
-        if (!this._loaded) {return;}
+        // if (!this._loaded) {return;}
         this.build();
         this.render();
     }
@@ -293,25 +292,25 @@ class Geometer {
         this.calculateGeometry = this.calculations[sectionName];
     }
 
-    async loadStyle(bookName, sectionName) {
+    loadStyle(bookName, sectionName) {
         let that = this;
-        this._loaded = await new Promise(function (resolve, reject) {
+        return new Promise(function (resolve, reject) {
             let xhr = new XMLHttpRequest();
             xhr.open("GET", `/diagram-parameters/${bookName}/${sectionName}`);
             xhr.onload = function () {
                 if ((xhr.status >= 200) && (xhr.status < 400)) {
                     if (xhr.responseText) {
                         that.style = new StyleSheet(xhr.responseText);
-                        resolve(true);
+                        resolve();
                     } else {
                         that.style = null;
-                        resolve(false);
+                        reject();
                     }
                 }
                 else {
                     that.style = null;
                     console.log("rejected;")
-                    resolve(false);
+                    reject();
                 }
             }
             xhr.send();
