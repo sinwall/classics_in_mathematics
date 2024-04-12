@@ -105,6 +105,8 @@ for (let line of biblia) {
     };
 }
 
+let htmlBooks = {};
+
 // let htmlBook = fs.readFileSync('./static/on-spirals/ELH&KOC&KOM-TEI.xml', 'utf-8');
 // htmlBook = nodeHtmlParser.parse(htmlBook);
 // htmlBook = TEItoHTML(htmlBook);
@@ -154,9 +156,15 @@ app.get(
         let divName = req.originalUrl.split('/')[3];
         let bookTitle = req.originalUrl.split('/')[2];
 
-        let htmlBook = fs.readFileSync(`./static/${bookTitle}/text.xml`, 'utf-8');
-        htmlBook = nodeHtmlParser.parse(htmlBook);
-        htmlBook = TEItoHTML(htmlBook);
+        let htmlBook;
+        if (!(bookTitle in htmlBooks)) {
+            htmlBook = fs.readFileSync(`./static/${bookTitle}/text.xml`, 'utf-8');
+            htmlBook = nodeHtmlParser.parse(htmlBook);
+            htmlBook = TEItoHTML(htmlBook);
+            htmlBooks[bookTitle] = htmlBook;
+        } else {
+            htmlBook = htmlBooks[bookTitle];
+        }
 
         let body = htmlBook.querySelector('body');
         let back = htmlBook.querySelector('back');
