@@ -263,6 +263,13 @@ class TextColumn {
         this.innerBody.innerHTML = 'Loading...';
         this.innerFoot.innerHTML = 'Loading...';
     }
+    
+    makeWhite() {
+        for (let el of this.innerBody.querySelectorAll('.language-selected')) {
+            el.classList.remove('language-selected');
+            el.classList.add('language-unselected');
+        }
+    }
 
     refactorIds(htmlString) {
         let suffix = this.id;
@@ -307,11 +314,18 @@ class TextColumn {
             let i = that.langSelect.value;
             that.outerDiv
                 .querySelectorAll('.language-layer')
-                .forEach(el => {el.style.opacity = 0; el.style.zIndex = -1; el.classList.add('unselectable')});
+                .forEach(el => {
+                    if (el.classList.contains(languages[i])) {return;}
+                    el.classList.remove('language-selected')
+                    el.classList.add('language-unselected', 'unselectable')
+                });
             if (i < that.langSelect.length-1) {
                 that.outerDiv
                     .querySelectorAll(`.${languages[i]}`)
-                    .forEach(el => {el.style.opacity = 1; el.style.zIndex = 1; el.classList.remove('unselectable')});
+                    .forEach(el => {
+                        el.classList.add('language-selected');
+                        el.classList.remove('language-unselected', 'unselectable');
+                    });
                 that.innerBody.style.removeProperty('display');
                 that.innerFoot.style.removeProperty('display');
                 // that.innerBody.style.setProperty('display', 'block');
@@ -337,7 +351,8 @@ class TextColumn {
             this.innerBody.appendChild(outer);
             for (let j=0; j<languages.length; j++) {
                 let inner = document.createElement('div');
-                inner.classList.add(languages[j], 'language-layer');
+                inner.classList.add(languages[j], 'language-layer', 'language-unselected');
+
                 inner.innerHTML = dividedText[languages[j]][i];
                 outer.appendChild(inner);
             }
@@ -353,12 +368,31 @@ class TextColumn {
         this.innerFoot.append(outer);
         for (let j=0; j<languages.length; j++) {
             let inner = document.createElement('div');
-            inner.classList.add(languages[j], 'language-layer');
+            inner.classList.add(languages[j], 'language-layer', 'language-unselected');
             dividedText[languages[j]].forEach(function(s) {inner.innerHTML += `<div>${s}</div>`;});
             outer.appendChild(inner);
         }
+    }
+}
 
+class Spinner {
+    constructor (id, parentNode, message) {
+        this.id = id;
+        this.parentNode = parentNode
+        this.message = message;
+
+        this.outerSpan = document.createElement('span');
+        this.outerSpan.setAttribute('id', id);
+        this.outerSpan.style.setProperty('visibility', 'hidden');
+        this.outerSpan.innerHTML = message;
+        parentNode.appendChild(this.outerSpan)
     }
 
+    setVisibility(val) {
+        let visibility;
+        if (val) {visibility = 'visible';}
+        else {visibility = 'hidden';}
+        this.outerSpan.style.setProperty('visibility', visibility);
+    }
 }
-export {DiagramNavigator, SectionNavigator, TextColumn};
+export {DiagramNavigator, SectionNavigator, TextColumn, Spinner};
