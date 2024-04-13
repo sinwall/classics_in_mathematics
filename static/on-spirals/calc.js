@@ -57,23 +57,23 @@ let calculations = {
     },
     Prop02: function (params) {
         let {
-            aspectRatio, lengthUpperInit, lengthRatioInit, 
-            posMiddleUpper, posMiddleLower, ratioLeftInit, ratioRightInit,
+            aspectRatio, lengthAB, ratioLength, 
+            ratioPosD, ratioPosH, ratioLengthGD, ratioLengthDE,
             velocityInverse} = params;
         let A = newVector();
-        let B = A.shift(lengthUpperInit);
-        let D = A.shift((lengthUpperInit*posMiddleUpper));
-        let G = D.shift(-ratioLeftInit*D.distTo(A));
-        let E = D.shift(ratioRightInit*D.distTo(B));
+        let B = A.shift(lengthAB);
+        let D = A.shift(lengthAB*ratioPosD);
+        let G = D.shift(-ratioLengthGD*D.distTo(A));
+        let E = D.shift(ratioLengthDE*D.distTo(B));
     
-        let K = A.shift(0, -lengthUpperInit / aspectRatio);
-        let L = K.shift(lengthUpperInit);
-        let H = K.shift(lengthUpperInit*posMiddleLower);
-        let Z = H.shift(-lengthRatioInit*G.distTo(D));
-        let Q = H.shift(lengthRatioInit*E.distTo(D));
+        let K = A.shift(0, -lengthAB / aspectRatio);
+        let L = K.shift(lengthAB);
+        let H = K.shift(lengthAB*ratioPosH);
+        let Z = H.shift(-ratioLength*G.distTo(D));
+        let Q = H.shift(ratioLength*E.distTo(D));
     
         let midpt = A.toward(B, 0.5)
-            .shift(0, -2*lengthUpperInit/aspectRatio);
+            .shift(0, -2*lengthAB/aspectRatio);
         let M = midpt.shift(-G.distTo(E)*velocityInverse/2);
         let C = M.shift(G.distTo(E)*velocityInverse);
         let N = M.shift(M.distTo(C)*G.distTo(D)/G.distTo(E));
@@ -86,96 +86,68 @@ let calculations = {
     },
     Prop05: function (params) {
         let {
-            radius, angleLeftInit, ratioTangentLeft, ratioTangentRight,
-            ratioLongerLength, ratioLongerPos, switchZ
+            radius, angleAKB, ratioBD, ratioBZ,
+            ratioLengthE, ratioLongerPos, switchZ
         } = params;
-        let K = origin();
-        let B = K.clone().addScaledVector(e_y, radius);
-        let A = K.clone()
-            .addScaledVector(e_y, radius*Math.cos(angleLeftInit*Math.PI))
-            .addScaledVector(e_x, -radius*Math.sin(angleLeftInit*Math.PI));
-        let G = K.clone().addScaledVector(e_x, radius);
-        let D = B.clone().
-            addScaledVector(e_x, -radius*ratioTangentLeft);
-        let Z = B.clone().
-            addScaledVector(e_x, radius*ratioTangentRight);
-        let ECenter = K.clone()
-            .addScaledVector(e_x, -radius*ratioLongerPos);
-        let EBottom = ECenter.clone()
-            .addScaledVector(e_y, -ratioLongerLength*radius/2);
-        let ETop = ECenter.clone()
-            .addScaledVector(e_y, +ratioLongerLength*radius/2);
+        let K = newVector();
+        let B = K.shift(0, radius);
+        let A = K.shift(-radius*Math.sin(angleAKB*Math.PI/180), radius*Math.cos(angleAKB*Math.PI/180));
+        let G = K.shift(radius);
+        let D = B.shift(-radius*ratioBD);
+        let Z = B.shift(radius*ratioBZ);
+        let ECenter = K.shift(-radius*ratioLongerPos);
+        let EBottom = ECenter.shift(0, -ratioLengthE*radius/2);
+        let ETop = ECenter.shift(0, +ratioLengthE*radius/2);
         let E = [EBottom, ETop]; 
         let hxRatio = Math.sqrt(
-            0.5*(2+(ratioLongerLength**2)+Math.sqrt(8*(ratioLongerLength**2)+(ratioLongerLength**4)))
+            0.5*(2+(ratioLengthE**2)+Math.sqrt(8*(ratioLengthE**2)+(ratioLengthE**4)))
         );
-        let H = K.clone()
-            .addScaledVector(e_x, radius*hxRatio);
+        let H = K.shift(radius*hxRatio);
         // let qyRatio = (hxRatio**2-1)/(hxRatio**2+1)
-        let qyRatio = ratioLongerLength / Math.sqrt(1+hxRatio**2);
-        let Q = K.clone()
-            .addScaledVector(e_x, Math.sqrt(1-qyRatio**2)*radius)
-            .addScaledVector(e_y, qyRatio*radius);
-        let Zafter = K.clone()
-            .addScaledVector(e_x, Q.getComponent(0)/qyRatio)
-            .addScaledVector(e_y, radius);
-        Z = Z.addScaledVector(Zafter.sub(Z), switchZ);
+        let qyRatio = ratioLengthE / Math.sqrt(1+hxRatio**2);
+        let Q = K.shift(Math.sqrt(1-qyRatio**2)*radius, qyRatio*radius);
+        let Zafter = K.shift(Q.x/qyRatio, radius);
+        Z = Z.toward(Zafter, switchZ);
     
         let entityDatas = {
             K, A,B,G,D, Z, H, Q,
-            E, DZ:[D,Z], AH:[A,H], BH:[B,H], QH:[Q,H], KZ:[K,Z],
+            E, DZ:[D,Z], AH:[A,H], BQ:[B,Q], QH:[Q,H], KQ:[K,Q], QZ:[Q,Z],
             ABG: [K, radius], 
         };
         return entityDatas;   
     },
     Prop06: function (params) {
         let {
-            radius, ratioAngleInter, angleSecant, posPerp, 
-            ratioLongerLength, ratioLongerPos, ratioShorterLength, ratioShorterPos,
-            ratioRightEnd, ratioLeftTail, switchN, ratioBNmagn
+            radius, angleBKQ, angleAKQ, ratioPosQ, 
+            ratioLengthZ, ratioPosZ, ratioLengthH, ratioPosH,
+            ratioPosN, ratioLeftTail, switchN, ratioBNmagn
         } = params;
-        let K = origin();
-        let halfAKG = angleSecant*0.5*Math.PI
-        let A = K.clone()
-            .addScaledVector(e_x, -radius*Math.sin(halfAKG))
-            .addScaledVector(e_y, radius*Math.cos(halfAKG));
-        let bnLength = ratioBNmagn*radius/(ratioLongerLength/ratioShorterLength)
+        let K = newVector();
+        let A = K.shift(-radius*Math.sin(angleAKQ*Math.PI/180), radius*Math.cos(angleAKQ*Math.PI/180));
+        let bnLength = ratioBNmagn*radius/(ratioLengthZ/ratioLengthH)
         function getBNlength(halfBKG) {
-            return radius*Math.cos(halfAKG-2*halfBKG)/Math.sin(halfAKG-halfBKG) - bnLength
+            return radius*Math.cos((angleAKQ-2*halfBKG)*Math.PI/180)/Math.sin((angleAKQ-halfBKG)*Math.PI/180) - bnLength
         }
         let halfBKG = 0;
-        if (switchN) { halfBKG = bisectionSolver(getBNlength, 0, 0.9*halfAKG); }
-        let B = K.clone()
-            .addScaledVector(e_x, radius*Math.sin((1-switchN)*angleSecant*(ratioAngleInter-0.5)*Math.PI + switchN*(halfAKG-2*halfBKG)))
-            .addScaledVector(e_y, radius*Math.cos((1-switchN)*angleSecant*(ratioAngleInter-0.5)*Math.PI + switchN*(halfAKG-2*halfBKG)));
-        let G = K.clone()
-            .addScaledVector(e_x, radius*Math.sin(halfAKG))
-            .addScaledVector(e_y, radius*Math.cos(halfAKG));
-        let Q = A.clone()
-            .addScaledVector(G.clone().sub(A), posPerp)
-        let longerBottom = K.clone()
-            .addScaledVector(e_x, -radius*ratioLongerPos)
-            .addScaledVector(e_y, -0.5*radius*ratioLongerLength);
-        let longerTop = longerBottom.clone()
-            .addScaledVector(e_y, radius*ratioLongerLength);
-        let shorterBottom = K.clone()
-            .addScaledVector(e_x, -radius*ratioShorterPos)
-            .addScaledVector(e_y, -0.5*radius*ratioShorterLength);
-        let shorterTop = shorterBottom.clone()
-            .addScaledVector(e_y, radius*ratioShorterLength);
-        let Z = [longerBottom, longerTop];
-        let H = [shorterBottom, shorterTop];
-        let N = K.clone()
-            .addScaledVector(e_x, (1-switchN)*radius*ratioRightEnd + switchN*radius*Math.cos(halfBKG)/Math.sin(halfAKG-halfBKG))
-        let leftTail = K.clone()
-            .addScaledVector(e_x, -radius*ratioLeftTail)
-        let KN = [leftTail, N];
-        let L = K.clone().
-            addScaledVector(e_x, radius*(1/Math.sin(angleSecant*0.5*Math.PI)))
-        let E = B.clone().multiplyScalar(G.getComponent(1)/B.getComponent(1));
+        if (switchN) { halfBKG = bisectionSolver(getBNlength, 0, 0.9*angleAKQ); }
+        let B = K.shift(
+            radius*Math.sin(((1-switchN)*angleBKQ + switchN*(angleAKQ-2*halfBKG))*Math.PI/180), 
+            radius*Math.cos(((1-switchN)*angleBKQ + switchN*(angleAKQ-2*halfBKG))*Math.PI/180)
+        );
+        let G = K.shift(radius*Math.sin(angleAKQ*Math.PI/180), radius*Math.cos(angleAKQ*Math.PI/180));
+        let Q = A.toward(G, ratioPosQ)
+        let Zbottom = K.shift(-radius*ratioPosZ, -0.5*radius*ratioLengthZ);
+        let Ztop = Zbottom.shift(0, radius*ratioLengthZ);
+        let Hbottom = K.shift(-radius*ratioPosH, -0.5*radius*ratioLengthH);
+        let Htop = Hbottom.shift(0, radius*ratioLengthH);
+        let N = K.shift((1-switchN)*radius*ratioPosN + switchN*radius*Math.cos(halfBKG*Math.PI/180)/Math.sin((angleAKQ-halfBKG)*Math.PI/180))
+        let leftTail = K.shift(-radius*ratioLeftTail)
+        let L = K.shift(radius*(1/Math.sin(angleAKQ*Math.PI/180)))
+        let E = K.toward(B, G.y/B.y);
         let result = {
             K, A, B, G, Q, N, L, E,
-            Z, H, KQ:[K,Q], GQ:[G,Q], AG:[A,G], KN, KG:[K,G], GL:[G,L], BN:[B,N], KB:[K,B], EB:[E,B], GB:[G,B],
+            Z:[Zbottom, Ztop], H:[Hbottom, Htop], KQ:[K,Q], GQ:[G,Q], AQ:[A,Q], KN:[leftTail, N], 
+            KG:[K,G], GL:[G,L], BN:[B,N], KB:[K,B], EB:[E,B], GB:[G,B],
             ABG:[K, radius],
         }
         return result;
