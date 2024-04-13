@@ -112,9 +112,10 @@ function refactorSemanticGroups(content) {
 function filterAttributes(element) {
     for (let key in element.attributes) {
         if (key === 'style') {
-            let colorMatch = element.attributes.style.match(/color:(.+);?/)
+            let colorMatch = element.attributes.style.match(/color:(.+?)[;$]/)
             let fnMatch = element.attributes.style.includes('mso-footnote-id');
             if (colorMatch !== null) {
+                console.log(colorMatch)
                 if (colorMatch[1] == 'red') {
                     element.attributes.style = colorMatch[0];
                 } else if (colorMatch[1] == '#00B050') {
@@ -197,21 +198,11 @@ function deduplicateBlanks(content) {
     return content;
 }
 
-function refactorRedTexts(content, outputStyle='tei') {
+function refactorRedTexts(content) {
     content = content.clone();
-    let getNewReplacement;
-    if (outputStyle.toLowerCase() === 'tei') {
-        getNewReplacement = function () {
-            return new nodeHtmlParser.HTMLElement('distinct', {}, 'type="dialect"');
-        }
-    } else if (outputStyle.toLowerCase() === 'html') {
-        getNewReplacement = function () {
-            return new nodeHtmlParser.HTMLElement('span', {class: 'text-dialect'});
-        }
-    } else {
-        ;
+    let getNewReplacement = function () {
+        return new nodeHtmlParser.HTMLElement('distinct', {}, 'type="dialect"');
     }
-
     for (let el of content.getElementsByTagName('span')) {
         if (('style' in el.attributes) && el.attributes.style.includes('color:red')) {
             let replacement = getNewReplacement();
@@ -518,6 +509,7 @@ function HTMtoTEI(htmlString, texString) {
     for (let row=1; row<mainTexts.length; row++) {
         let rowContent = mainTexts[row].querySelectorAll('td');
         let divName = rowContent[0].textContent.trim();
+        if (divName === '') {continue;}
         let textELH = rowContent[3];
         let textKOC = rowContent[4];
         textELH = compose(
@@ -635,7 +627,7 @@ biblia = biblia.split('\r\n')
 for (let line of biblia) {
     let author = line[0];
     let bookTitle = line[2];
-    if (bookTitle === 'on-spirals') {continue;}
+    // if (bookTitle === 'on-spirals') {continue;}
     let htmlString = fs.readFileSync(`.references/${bookTitle}(collected).htm`, 'utf-8');
     let texString = null;
     if (bookTitle === 'on-spirals') {
