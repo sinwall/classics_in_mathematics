@@ -14,6 +14,14 @@ function newVector(x=0, y=0, z=0) {
     return new Vector(x, y, z);
 }
 
+function degCos(x) {
+    return Math.cos(x*Math.PI/180);
+}
+
+function degSin(x) {
+    return Math.sin(x*Math.PI/180);
+}
+
 class Vector {
     constructor(x=0, y=0, z=0) {
         this._x = x;
@@ -89,9 +97,9 @@ class Vector {
     }
     shiftPolar(r=0, azim=0, lat=0) {
         return this.shift(
-            r*Math.cos(lat*Math.PI/180)*Math.cos(azim**Math.PI/180),
-            r*Math.cos(lat*Math.PI/180)*Math.sin(azim**Math.PI/180),
-            r*Math.sin(lat*Math.PI/180)
+            r*degCos(lat)*degCos(azim),
+            r*degCos(lat)*degSin(azim),
+            r*degSin(lat)
         );
     }
     sub(vec) {

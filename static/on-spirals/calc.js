@@ -1,6 +1,6 @@
 import {newVector} from "/static/construction.js"
 import {e_x, e_y, origin} from "/static/construction.js"
-import { bisectionSolver } from "/static/analysis.js";
+import { bisectionSolver, degCos, degSin } from "/static/analysis.js";
 
 let calculations = {
     Prop01: function (params) {
@@ -415,6 +415,93 @@ let calculations = {
             K, A, B, G, Q, L, C, M, I, N, E,
             Z, H, AG, GQ, QK, GK, GL, KL, CL, GM, IN, KN, CI, KE, GE, IL, KI, CG, KB, IG, BE, 
             ABGD, KLC
+        };
+        return result;
+    },
+
+    Prop10: function(params) {
+        let {
+            lengthA, lengthBetweenLines
+        } = params;
+        let lengthQ = lengthA / 8;
+        let Abot = newVector();
+        let Bbot = Abot.shift(lengthBetweenLines);
+        let Gbot = Bbot.shift(lengthBetweenLines);
+        let Dbot = Gbot.shift(lengthBetweenLines);
+        let Ebot = Dbot.shift(lengthBetweenLines);
+        let Zbot = Ebot.shift(lengthBetweenLines);
+        let Hbot = Zbot.shift(lengthBetweenLines);
+        let Qbot = Hbot.shift(lengthBetweenLines);
+
+        let Atop = Abot.shift(0, lengthA);
+        let Itop = Atop.shift(lengthBetweenLines);
+        let Ktop = Itop.shift(lengthBetweenLines);
+        let Ltop = Ktop.shift(lengthBetweenLines);
+        let Mtop = Ltop.shift(lengthBetweenLines);
+        let Ntop = Mtop.shift(lengthBetweenLines);
+        let Xtop = Ntop.shift(lengthBetweenLines);
+        let Otop = Xtop.shift(lengthBetweenLines);
+
+        let Btop = Itop.shift(0, -lengthQ);
+        let Gtop = Btop.shift(lengthBetweenLines, -lengthQ);
+        let Dtop = Gtop.shift(lengthBetweenLines, -lengthQ);
+        let Etop = Dtop.shift(lengthBetweenLines, -lengthQ);
+        let Ztop = Etop.shift(lengthBetweenLines, -lengthQ);
+        let Htop = Ztop.shift(lengthBetweenLines, -lengthQ);
+        let Qtop = Htop.shift(lengthBetweenLines, -lengthQ);
+
+        let result = {A:[Abot,Atop], 
+            B:[Bbot,Btop], G:[Gbot,Gtop], D:[Dbot,Dtop], E:[Ebot,Etop], Z:[Zbot,Ztop], H:[Hbot,Htop], Q:[Qbot,Qtop],
+            I:[Btop,Itop], K:[Gtop,Ktop], L:[Dtop,Ltop], M:[Etop,Mtop], N:[Ztop,Ntop], X:[Htop,Xtop], O:[Qtop,Otop],
+            Btop, Gtop, Dtop, Etop, Ztop, Htop, Qtop
+        };
+        return result;
+    },
+
+    Prop12: function(params) {
+        let {
+            radius, angleSpiralEnd, angleSpiralRotation, angleB, angleG
+        } = params;
+        let A = newVector();
+        let spiral = [A, radius, 0, angleSpiralEnd, angleSpiralRotation];
+        let B = A.shiftPolar(radius*angleB/360, angleB+angleSpiralRotation);
+        let G = A.shiftPolar(radius*angleG/360, angleG+angleSpiralRotation);
+        let angleD = angleG + (angleG - angleB);
+        let D = A.shiftPolar(radius*angleD/360, angleD+angleSpiralRotation);
+        let angleE = angleG + 2*(angleG-angleB);
+        let E = A.shiftPolar(radius*angleE/360, angleE+angleSpiralRotation);
+        let angleZ = angleG + 3*(angleG-angleB);
+        let Z = A.shiftPolar(radius*angleZ/360, angleZ+angleSpiralRotation);
+
+        let result = {
+            A, B, G, D, E, Z,
+            AB:[A,B], AG:[A,G], AD:[A,D], AE:[A,E], AZ:[A,Z],
+            spiral,
+        };
+        return result;
+    },
+
+    Prop13: function(params) {
+        let {
+            radius, angleSpiralEnd, angleSpiralRotation, angleG, angleH,
+            lengthZE
+        } = params;
+        let A = newVector();
+        let spiral = [A, radius, 0, angleSpiralEnd, angleSpiralRotation];
+        let B = A.shiftPolar(radius*0.5*angleG/360, (0.5*angleG+angleSpiralRotation));
+        let G = A.shiftPolar(radius*angleG/360, (angleG+angleSpiralRotation));
+        let D = A.shiftPolar(radius*1.5*angleG/360, (1.5*angleG+angleSpiralRotation));
+        let H = A.shiftPolar(radius*angleH/360, (angleH+angleSpiralRotation));
+        let angleQ = (angleG + angleH)/2
+        let Q = A.shiftPolar(radius*angleQ/360, (angleQ+angleSpiralRotation));
+        let Z = G.toward(H, 0.5+0.5*lengthZE/G.distTo(H));
+        let E = H.toward(G, 0.5+0.5*lengthZE/G.distTo(H));
+        let ratioCut = 4*(angleG*angleH)*degCos(angleQ-angleG) / ((angleG + angleH)**2);
+        let cut = A.toward(Q, ratioCut);
+        let result = {
+            A, B, G, D, H, Z, E, Q, cut,
+            AG:[A,G], AH:[A,H], ZE:[Z,E], AQ:[A,Q],
+            spiral,
         };
         return result;
     }
