@@ -12,6 +12,7 @@ class GeometricEntity {
         this.size = size;
         this.pixelSize = pixelSize;
 
+        this.resolution = 128;
         this._caption = document.createElement('div');
         this._caption.classList.add('unselectable');
         this._caption.style.position = 'absolute';
@@ -37,7 +38,7 @@ class GeometricEntity {
                 )
                 break;
             case "circle":
-                this._unitCircle = (new THREE.CircleGeometry(1, 128))
+                this._unitCircle = (new THREE.CircleGeometry(1, this.resolution))
                     .getAttribute("position")
                     .array
                     .slice(3)
@@ -52,23 +53,32 @@ class GeometricEntity {
                 );
                 this._center = new THREE.Vector3();
                 break;
+            case 'spiral':
+                this._obj3d = new THREE.Line(
+                    new THREE.BufferGeometry(),
+                    new THREE.LineBasicMaterial({color: color, linewidth: 1.5*size})
+                )
+                break;
         }
     }
     attachCaption (renderer) {
         renderer.domElement.parentNode.appendChild(this._caption);
-        
     }
     get captionPosition3d() {
+        let ary;
         switch (this.type) {
             case "point":
                 return (new THREE.Vector3(...this._obj3d.geometry.getAttribute("position").array));
             case "points":
                 return (new THREE.Vector3(...this._obj3d.geometry.getAttribute("position").array));
             case "line":
-                let ary = this._obj3d.geometry.getAttribute("position").array
+                ary = this._obj3d.geometry.getAttribute("position").array;
                 return (new THREE.Vector3(0.5*(ary[0]+ary[3]), 0.5*(ary[1]+ary[4]), 0.5*(ary[2]+ary[5])));
             case "circle":
                 return this._center;
+            case 'spiral':
+                ary = this._obj3d.geometry.getAttribute("position").array;
+                return (new THREE.Vector3(ary[0], ary[1], ary[2]));
         }
     }
     get visible() {
@@ -122,6 +132,23 @@ class GeometricEntity {
                     this._center.getComponent(0), this._center.getComponent(1), this._center.getComponent(2)
                 )
                 break;
+            case 'spiral':
+                let origin = value[0];
+                let radius = value[1];
+                let angleStart = value[2] || 0;
+                let angleEnd = value[3] || 2*Math.PI;
+                let rotation = value[4] || 0;
+                let points = [];
+                for (let i=0; i<=this.resolution; i++) {
+                    let theta = (angleStart + (i/this.resolution)*(angleEnd-angleStart))*(Math.PI/180);
+                    let r = radius*(theta/(2*Math.PI));
+                    let point = new THREE.Vector3(
+                        r*Math.cos(theta+rotation*(Math.PI/180)), 
+                        r*Math.sin(theta+rotation*(Math.PI/180)));
+                    points.push(point.add(origin));
+                }
+                this._obj3d.geometry.setFromPoints(points);
+                break;
         }
     }
 
@@ -144,6 +171,10 @@ class GeometricEntity {
             case "circle":
                 this._obj3d.material.linewidth = 1.5*value;
                 break;
+            case 'spiral':
+                this._obj3d.material.linewidth = 1.5*value;
+                break;
+
         }
     }
 
@@ -222,7 +253,16 @@ class Geometer {
             }
             callback();
         }).catch(function() {
-            console.log('rejected');
+            console.log('loading rejected');
+            // that.renderer.domElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            let text = document.createElement('div');
+            text.classList.add('diagram-warning');
+            text.style.setProperty('position', 'absolute');
+            text.style.setProperty('text-align', 'center');
+            text.style.setProperty('width', that.renderer.domElement.parentNode.style.width);
+            text.innerHTML = '그림이 없는 문서거나<br>그림이 준비되지 않았습니다.';
+            that.renderer.domElement.parentNode.prepend(text);
+            // console.error(reason);
         })
     }
 
@@ -272,6 +312,9 @@ class Geometer {
         this._objects = [];
         this.step = 0;
         this.original = false;
+
+        let warnBox = this.renderer.domElement.parentNode.querySelector('.diagram-warning');
+        if (warnBox) {warnBox.remove();}
     }
 
     get domElement() {
@@ -296,7 +339,7 @@ class Geometer {
         let that = this;
         return new Promise(function (resolve, reject) {
             let xhr = new XMLHttpRequest();
-            xhr.open("GET", `/diagram-parameters/${bookName}/${sectionName}`);
+            xhr.open('GET', `/diagram-parameters/${bookName}/${sectionName}`);
             xhr.onload = function () {
                 if ((xhr.status >= 200) && (xhr.status < 400)) {
                     if (xhr.responseText) {
@@ -304,12 +347,13 @@ class Geometer {
                         resolve();
                     } else {
                         that.style = null;
+                        console.log("style loading rejected;")
                         reject();
                     }
                 }
                 else {
                     that.style = null;
-                    console.log("rejected;")
+                    console.log("style loading rejected;")
                     reject();
                 }
             }
