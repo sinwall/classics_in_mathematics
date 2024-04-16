@@ -174,6 +174,7 @@ app.get(
             for (let el2 of el.getElementsByTagName('div')) {
                 if (el2.getAttribute('n') !== `${divName}-${lang}`) {continue;}
                 el2.querySelectorAll('a')
+                    .filter(function(n) {return (n.getAttribute('id') && n.getAttribute('id').startsWith('footnote'));})
                     .map(function(n) {return n.getAttribute('href');})
                     .forEach(function(id) {fns.appendChild(back.querySelector(id).parentNode.parentNode.clone())});
                 res.send({
@@ -185,8 +186,19 @@ app.get(
     }
 );
 
+// app.get(
+//     /\/kataskeue\/(.+)\/(.+).js/,
+//     function (req, res) {
+//         let bookName = req.originalUrl.split('/')[2];
+//         let sectionName = req.originalUrl.split('/')[3];
+//         let scriptPath = `/static/${bookName}/calc.js`;
+
+
+//     }
+// )
+
 app.get(
-    /\/diagram-parameters\/on-spirals\/(Intro|Prop[0-9]{2})/,
+    /\/diagram-parameters\/on-spirals\/(.+)/,
     function (req, res) {
         let divName = req.originalUrl.split('/')[3];
         let lineStart;
@@ -201,7 +213,9 @@ app.get(
             }
             result = result.join('\n');
             res.send(result);
+            return;
         }
+        res.send('');
         ;
     }
 )
