@@ -11,6 +11,7 @@ function reloadDgmParams() {
         );
     return dgmParams
 }
+
 function extractTextOnly(content) {
     return content.querySelector('text');
 }

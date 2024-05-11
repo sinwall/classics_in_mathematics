@@ -504,6 +504,52 @@ let calculations = {
             spiral,
         };
         return result;
+    }, 
+    Prop14: function (params) {
+        let {
+            radius, angleSpiralRotation, angleD, angleE, angleQ,
+        } = params;
+        let A = newVector();
+        let spiral = [A, radius, 0, -360, angleSpiralRotation];
+        let circle = [A, radius];
+        let D = A.shiftPolar(radius*angleD/360, angleD+angleSpiralRotation);
+        let H = A.shiftPolar(radius*(-1), angleD+angleSpiralRotation);
+        let E = A.shiftPolar(radius*angleE/360, angleE+angleSpiralRotation);
+        let angleEm = Math.max(angleE, angleQ+360);
+        let Em = A.shiftPolar(radius*angleEm/360, angleEm+angleSpiralRotation);
+        let Z = A.shiftPolar(radius*(-1), angleE+angleSpiralRotation);
+        let angleDm = Math.max(angleD, angleQ+720);
+        let Dm = A.shiftPolar(radius*angleDm/360, angleDm+angleSpiralRotation);
+        let Q = A.shiftPolar(radius*(-1), angleQ+angleSpiralRotation);
+
+        let result = {
+            A, D, E, Z, H, Q, 
+            AQ: [A, Q], AZ:[A,Z], AH:[A,H], AEm:[A,Em], ADm:[A,Dm],
+            circle, QKZ:[A, radius, angleSpiralRotation, angleEm], QKH:[A, radius, angleSpiralRotation, angleDm],
+            spiral,
+        };
+        return result;
+    },
+    Prop15: function (params) {
+        let {
+            radius, angleSpiralRotation, angleG, angleD,
+        } = params;
+
+        let A = newVector();
+        let G = A.shiftPolar(radius*(angleG/360), angleG+angleSpiralRotation);
+        let D = A.shiftPolar(radius*(angleD/360), angleD+angleSpiralRotation);
+        let Q = A.shiftPolar(radius, angleSpiralRotation);
+        let Z = A.shiftPolar(radius, angleG+angleSpiralRotation);
+        let H = A.shiftPolar(radius, angleD+angleSpiralRotation);
+        let M = A.shiftPolar(radius*2, angleSpiralRotation);
+        let L = G.shiftPolar(radius, angleG+angleSpiralRotation);
+        let E = D.shiftPolar(radius, angleD+angleSpiralRotation);
+        let circle = [A, radius];
+        let spiral = [A, radius, 0, -720, angleSpiralRotation];
+        let result = {
+
+        };
+        return result;
     }
 }
 
