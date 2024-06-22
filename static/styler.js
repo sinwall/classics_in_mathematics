@@ -13,6 +13,12 @@ function parseColor(color) {
         case "k":
             result = 0x000000;
             break;
+        case "o": // orange
+            result = 0xff5533
+            break;
+        case "s": // skyblue
+            result = 0x55bbff
+            break;
         default:
             result = color;
             break;
@@ -23,7 +29,7 @@ function parseColor(color) {
 
 function parseStyleCode(code) {
     let v = null; let c; let s;
-    c = code.search(/[rgbk]/g);
+    c = code.search(/[rgbkos]/g);
     if (c == -1) {c = null;}
     else {c = parseColor(code[c]); v = 1;}
     s = (/[0-9.]+/g).exec(code);
@@ -88,6 +94,8 @@ function parseStyle(line) {
 class StyleSheet {
     constructor(responseText) {
         this.hparams = {};
+        this.hparamTrend = [];
+        this.hparamOrig = [];
         this.paramTrend = [];
         this.paramOrig = {};
         this.objStyleTrend = [];
@@ -96,21 +104,25 @@ class StyleSheet {
         this.objCaptions = [];
         this.objTypes = [];
         this.nObjs = 0;
+
         let styleTable = responseText.split("\n");
-        for (let i=0; i<styleTable.length; i++) {
+        this.stepMax = Number(styleTable[0].split(',')[2]);
+        for (let i=0; i<=this.stepMax; i++) {
+            this.hparamTrend.push( {} );
+            this.paramTrend.push( {} );
+            this.objStyleTrend.push( [] );
+        }
+        for (let i=1; i<styleTable.length; i++) {
             let line = styleTable[i].trim().split(",");
             let parsed = parseStyle(line);
             if (parsed.type == "hparam") {
-                this[parsed.name] = parsed.valueOrig;
-                this.hparams[parsed.name] = parsed.valueOrig;
-                if (parsed.name == "stepMax") {
-                    for (let j=0; j<=parsed.valueOrig; j++) {
-                        this.paramTrend.push( {} );
-                        this.objStyleTrend.push( [] );
-                    }
+                for (let j=0; j<=this.stepMax; j++) {
+                    this.hparamTrend[j][parsed.name] = parsed.values[j];
                 }
+                // this[parsed.name] = parsed.valueOrig;
+                // this.hparams[parsed.name] = parsed.valueOrig;
             } else if (parsed.type == "param") {
-                for (let j=0; j<=this.hparams.stepMax; j++) {
+                for (let j=0; j<=this.stepMax; j++) {
                     this.paramTrend[j][parsed.name] = parsed.values[j];
                 }
                 this.paramOrig[parsed.name] = parsed.valueOrig;
@@ -119,7 +131,7 @@ class StyleSheet {
 
             } else {
                 this.nObjs ++;
-                for (let j=0; j<=this.hparams.stepMax; j++) {
+                for (let j=0; j<=this.stepMax; j++) {
                     this.objStyleTrend[j].push( parsed.styles[j] );
                 }
                 this.objStyleOrig.push( parsed.styleOrig );
@@ -129,8 +141,11 @@ class StyleSheet {
             }
         }
         if (!('centerZ' in this.hparams)) {
-            this.hparams.centerZ = 0;
-            this.centerZ = 0;
+            for (let j=0; j<=this.stepMax; j++) {
+                this.hparamTrend[j]['centerZ'] = 0;
+            }
+            // this.hparams.centerZ = 0;
+            // this.centerZ = 0;
         }
     }
 
@@ -142,6 +157,11 @@ class StyleSheet {
     getStyles(step=0, original=false) {
         if (original) { return this.objStyleOrig; }
         else { return this.objStyleTrend[step]; }
+    }
+
+    getCamSetting(step=0, original=false) {
+        if (original) {return this.hparamOrig;}
+        else { return this.hparamTrend[step];}
     }
 }
 

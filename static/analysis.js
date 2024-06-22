@@ -6,6 +6,10 @@ function degSin(x) {
     return Math.sin(x*Math.PI/180);
 }
 
+function degTan(x) {
+    return degSin(x) / degCos(x);
+}
+
 function bisectionSolver(fun, x0, x1, max_iter=10) {
     let f0, f1, f2, x2;
     f0 = fun(x0);
@@ -23,4 +27,4 @@ function bisectionSolver(fun, x0, x1, max_iter=10) {
     return x2;
 }
 
-export {bisectionSolver, degCos, degSin};
+export {bisectionSolver, degCos, degSin, degTan};

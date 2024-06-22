@@ -151,9 +151,10 @@ app.get(
 );
 
 app.get(
-    /\/text\/(.+)\/(.+)\/(ELH|KOC|KOM)/, 
+    // /\/text\/(.+)\/(.+)\/(ELH|KOC|KOM)/, 
+    /\/text\/(.+)\/(.+)/, 
     function (req, res) {
-        let lang = req.originalUrl.split('/')[4];
+        // let lang = req.originalUrl.split('/')[4];
         let divName = req.originalUrl.split('/')[3];
         let bookTitle = req.originalUrl.split('/')[2];
 
@@ -170,19 +171,26 @@ app.get(
         let body = htmlBook.querySelector('body');
         let back = htmlBook.querySelector('back');
         let fns = new nodeHtmlParser.HTMLElement('div', {});
+        let result = {};
         for (let el of body.getElementsByTagName('div')) {
             if (el.getAttribute('n') !== divName) {continue;}
             for (let el2 of el.getElementsByTagName('div')) {
-                if (el2.getAttribute('n') !== `${divName}-${lang}`) {continue;}
+                let lang = el2.getAttribute('n').split('-').at(-1);
+                // if (el2.getAttribute('n') !== `${divName}-${lang}`) {continue;}
                 el2.querySelectorAll('a')
                     .filter(function(n) {return (n.getAttribute('id') && n.getAttribute('id').startsWith('footnote'));})
                     .map(function(n) {return n.getAttribute('href');})
                     .forEach(function(id) {fns.appendChild(back.querySelector(id).parentNode.parentNode.clone())});
-                res.send({
+                // res.send({
+                //     text: el2.toString(),
+                //     footnote: fns.toString()
+                // });
+                result[lang] = {
                     text: el2.toString(),
                     footnote: fns.toString()
-                });
+                }
             }
+            res.send(result);
         }
     }
 );
@@ -207,6 +215,7 @@ app.get(
         for (lineStart=0; lineStart<dgmParams.length; lineStart++) {
             if (!dgmParams[lineStart][0].startsWith('@')) {continue;}
             if (dgmParams[lineStart][1] !== divName) {continue;}
+            result.push(dgmParams[lineStart]);
             let lineEnd;
             for (lineEnd=lineStart+1; lineEnd<dgmParams.length; lineEnd++) {
                 if (dgmParams[lineEnd][0].startsWith('@')) {break;}

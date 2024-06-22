@@ -1,13 +1,85 @@
 import {Vector3} from 'three'
 // import {Vector3} from '../node_modules/three'
 
-let _origin = new Vector3();
-let e_x = new Vector3(1);
-let e_y = new Vector3(0, 1);
-let e_z = new Vector3(0, 0, 1);
 
-function origin() {
-    return _origin.clone();
+class TracedScalar {
+    static addCount = 0;
+    static subCount = 0;
+    static mulCount = 0;
+    constructor(name, parents=null, func=null) {
+        this.name = name;
+        this.parents = [];
+        this.children = [];
+        if (!parents) {parents = [];}
+        this.registerParents(...parents);
+        if (!func) {func = null;}
+        this.eval = func;
+    }
+
+    add(val) {
+        val = ensureTraced(val);
+        let result = new TracedScalar(
+            `add-${TracedScalar.addCount++}`,
+            [this, val],
+            function (parents) {return parents[0].value + parents[1].value;}
+        );
+        return result;
+    }
+
+    sub(val) {
+        val = ensureTraced(val);
+        let result = new TracedScalar(
+            `sub-${TracedScalar.subCount++}`,
+            [this, val],
+            function (parents) {return parents[0].value - parents[1].value;}
+        );
+        return result;
+    }
+
+    mul(val) {
+        val = ensureTraced(val);
+        let result = new TracedScalar(
+            `mul-${TracedScalar.mulCount++}`,
+            [this, val],
+            function (parents) {return parents[0].value * parents[1].value;}
+        );
+        return result;
+    }
+
+    registerParents(...parents) {
+        this.parents.push(...parents);
+        let that = this;
+        parents.forEach(function (el) {el.children.push(that)});
+    }
+
+}
+
+function ensureTraced(val) {
+    if (!(val instanceof TracedScalar)) {
+        val = Constant(val);
+    }
+    return val;
+}
+
+class Constant extends TracedScalar{
+    static count = 0;
+    constructor (value, name=null) {
+        this.value = value;
+        if (!name) {
+            name = `constant-${Constant.count}`
+            Constant.count ++;
+        }
+        this.name = name;
+    }
+}
+
+class Parameter extends TracedScalar{
+    static noname = 0;
+    constructor(name, value) {
+        this.name = name;
+        this.value = value;
+        this.referredBy = [];
+    }
 }
 
 function newVector(x=0, y=0, z=0) {
@@ -30,6 +102,9 @@ class Vector {
     }
     add(vec) {
         return this.shift(vec.x, vec.y, vec.z);
+    }
+    angleTo(vec) {
+        return (180/Math.PI)* Math.acos(this.dot(vec) / (this.norm()*vec.norm()))
     }
     asTHREE() {
         return new Vector3(this.x, this.y, this.z);
@@ -121,28 +196,82 @@ class Vector {
     }
 }
 
-class CustomList {
-    constructor (...entries) {
-        this.entries = entries;
+class CircleData {
+    constructor (origin, radius, start=0, end=360, rotAngle=0, xAxis=null, yAxis=null) {
+        this.origin = origin;
+        this.radius = radius;
+        this.start = start;
+        this.end = end;
+        this.rotAngle = rotAngle;
+        if (!xAxis) {xAxis = newVector(1,0,0); }
+        if (!yAxis) {yAxis = newVector(0,1,0); }
+        this.xAxis = xAxis;
+        this.yAxis = yAxis;
     }
-    asArray() {
-        return this.entries;
+    pick(angle) {
+        return this.origin
+            .add(this.xAxis.dilate(this.radius*degCos(angle+this.rotAngle)))
+            .add(this.yAxis.dilate(this.radius*degSin(angle+this.rotAngle)));
+        // (this.origin.shiftPolar(this.radius, angle+this.rotAngle));
     }
-    push (...entries) {
-        return this.entries.push(...entries);
+    asarray() {
+        return [this.origin, this.radius, this.start, this.end, this.rotAngle, this.rotAxis];
     }
 }
 
-function newList(...entries) {
-    return new CustomList(...entries);
+function newCircle(origin, radius, start=0, end=360, rotAngle=0, xAxis=null, yAxis=null) {
+    return new CircleData(origin, radius, start, end, rotAngle, xAxis, yAxis);
 }
 
-function iterate(func, from=0, to=1) {
-    let result = [];
-    for (let i=from; i<to; i++) {
-        result.push(func(i))
+class SpiralData {
+    constructor (origin, radius, start, end, rotAngle=0, xAxis=null, yAxis=null) {
+        this.origin = origin;
+        this.radius = radius;
+        this.start = start;
+        this.end = end;
+        this.rotAngle = rotAngle;
+        if (!xAxis) {xAxis = newVector(1,0,0); }
+        if (!yAxis) {yAxis = newVector(0,1,0); }
+        this.xAxis = xAxis;
+        this.yAxis = yAxis;
     }
-    return result;
+    pick(angle) {
+        return this.origin
+            .add(this.xAxis.dilate(this.radius*(angle/360)*degCos(angle+this.rotAngle)))
+            .add(this.yAxis.dilate(this.radius*(angle/360)*degSin(angle+this.rotAngle)));
+        // return this.origin.shiftPolar(this.radius*(angle/360), angle+this.rotAngle);
+    }
+    asarray() {
+        return [this.origin, this.radius, this.start, this.end, this.rotAngle, this.rotAxis];
+    }
 }
 
-export {origin, e_x, e_y, e_z, newVector, Vector, iterate, newList, CustomList};
+function newSpiral(origin, radius, start, end, rotAngle=0, xAxis=null, yAxis=null) {
+    return new SpiralData(origin, radius, start, end, rotAngle, xAxis, yAxis);
+}
+
+// class CustomList {
+//     constructor (...entries) {
+//         this.entries = entries;
+//     }
+//     asArray() {
+//         return this.entries;
+//     }
+//     push (...entries) {
+//         return this.entries.push(...entries);
+//     }
+// }
+
+// function newList(...entries) {
+//     return new CustomList(...entries);
+// }
+
+// function iterate(func, from=0, to=1) {
+//     let result = [];
+//     for (let i=from; i<to; i++) {
+//         result.push(func(i))
+//     }
+//     return result;
+// }
+
+export {newVector, Vector, newCircle, newSpiral};

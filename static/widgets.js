@@ -226,18 +226,20 @@ class TextColumn {
         let texts = {};
         let footnotes = {};
         let that = this;
-        let languages = this.languages;
-        for (let i=0; i<languages.length; i++) {
-            let language = languages[i];
+        let responseJSON = JSON.parse(responses);
+        // let languages = this.languages;
+        for (let language in responseJSON) {
+        // for (let i=0; i<languages.length; i++) {
+        //     let language = languages[i];
             texts[language] = [];
             footnotes[language] = [];
 
-            let responseJSON = JSON.parse(responses[i]);
+            // let responseJSON = JSON.parse(responses[i]);
             let node = document.createElement('div');
-            node.innerHTML = responseJSON.text;
+            node.innerHTML = responseJSON[language].text;
             node.querySelectorAll('p')
                 .forEach(function (pElt) {texts[language].push(that.refactorIds(pElt.innerHTML));});
-            node.innerHTML = responseJSON.footnote;
+            node.innerHTML = responseJSON[language].footnote;
             node.querySelectorAll('p')
                 .forEach(function (pElt) {footnotes[language].push(that.refactorIds(pElt.innerHTML));});
             node.remove();
@@ -262,6 +264,7 @@ class TextColumn {
         TextColumn.semanticGroups = {};
         this.innerBody.innerHTML = 'Loading...';
         this.innerFoot.innerHTML = 'Loading...';
+        // this.dgmWrapper.innerHTML = 'Loading...';
     }
     
     makeWhite() {
@@ -383,7 +386,7 @@ class Spinner {
 
         this.outerSpan = document.createElement('span');
         this.outerSpan.setAttribute('id', id);
-        this.outerSpan.style.setProperty('visibility', 'hidden');
+        this.outerSpan.style.setProperty('visibility', 'visible');
         this.outerSpan.innerHTML = message;
         parentNode.appendChild(this.outerSpan)
     }

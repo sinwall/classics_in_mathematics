@@ -144,41 +144,62 @@ async function setSection(index, callback) {
     // document.getElementById("select-fig-"+index).selected = true;
     spinner.setVisibility(true);
     geometer.clear();
-    let textPromises = [];
-    for (let lang of metaData.languages) {
-        textPromises.push(
-            new Promise(function (resolve, reject) {
-                let xhr = new XMLHttpRequest();
-                xhr.open('GET', `/text/${metaData.bookTitle}/${metaData.sections[index]}/${lang}`);
-                xhr.onload = function () {
-                    if ((xhr.status >= 200) & (xhr.status < 400)) {
-                        resolve(xhr.responseText);
-                    } else {
-                        reject();
-                    }
-                };
-                xhr.send();
-            })
-        );
-    }
+    // let textPromises = [];
+    // for (let lang of metaData.languages) {
+    //     textPromises.push(
+    //         new Promise(function (resolve, reject) {
+    //             let xhr = new XMLHttpRequest();
+    //             xhr.open('GET', `/text/${metaData.bookTitle}/${metaData.sections[index]}/${lang}`);
+    //             xhr.onload = function () {
+    //                 if ((xhr.status >= 200) & (xhr.status < 400)) {
+    //                     resolve(xhr.responseText);
+    //                 } else {
+    //                     reject();
+    //                 }
+    //             };
+    //             xhr.send();
+    //         })
+    //     );
+    // }
     for (let textColumn of textColumns) {
         textColumn.makeWhite();
     }
-    await Promise.all(textPromises)
-        .then(
-            function (responses) {
-                for (let textColumn of textColumns) {
-                    textColumn.clearBodyFoot();
+    await new Promise(
+        function (resolve, reject) {
+            let xhr = new XMLHttpRequest();
+            xhr.open('GET', `/text/${metaData.bookTitle}/${metaData.sections[index]}`);
+            xhr.onload = function () {
+                if ((xhr.status >= 200) & (xhr.status < 400)) {
+                    // resolve(xhr.responseText);
+                    for (let textColumn of textColumns) {
+                        textColumn.clearBodyFoot();
+                    }
+                    for (let textColumn of textColumns) {
+                        textColumn.applySectionContents(xhr.responseText);
+                    }
+                    resolve();
+                } else {
+                    reject();
                 }
-                for (let textColumn of textColumns) {
-                    textColumn.applySectionContents(responses, metaData.languages);
-                }
-            }
-        )
-        .finally(
-            function () {if (callback) {callback();}}   
-        );
-
+            };
+            xhr.send();
+    }).finally(
+        function () {if (callback) {callback();}}   
+    );
+    // await Promise.all(textPromises)
+    //     .then(
+    //         function (responses) {
+    //             for (let textColumn of textColumns) {
+    //                 textColumn.clearBodyFoot();
+    //             }
+    //             for (let textColumn of textColumns) {
+    //                 textColumn.applySectionContents(responses, metaData.languages);
+    //             }
+    //         }
+    //     )
+    //     .finally(
+    //         function () {if (callback) {callback();}}   
+    //     );
     await geometer.loadSource(
         metaData.bookTitle,
         metaData.sections[index],
@@ -190,7 +211,12 @@ async function setSection(index, callback) {
     for (let textColumn of textColumns) {
         textColumn.arrangeMultilayerHeights();
     }
+    window.history.pushState(
+        {}, '', 
+        window.location.toString().split('?')[0] + `?bookTitle=${metaData.bookTitle}&section=${metaData.sections[index]}`
+    )
     spinner.setVisibility(false);
+
 }
 
 import {DiagramNavigator, SectionNavigator, TextColumn, Spinner} from '/static/widgets.js'
@@ -199,8 +225,8 @@ import {Geometer} from '/static/geometer.js'
 let _DEBUG_ = false;
 
 let searchParams = new URLSearchParams(window.location.search);
-let bookName = (searchParams.get('bookTitle') || 'on-spirals');
-// let idxInit = metaData.sections.indexOf(searchParams.get('section') || metaData.sections[0]);
+if (!searchParams.has('bookTitle')) {searchParams.append('bookTitle', 'on-spirals');}
+let bookName = (searchParams.get('bookTitle'));
 
 let sectionNav = new SectionNavigator('section-navigator', document.getElementById('nav-wrapper'), setSection);
 let spinner = new Spinner('spinner', document.getElementById('nav-wrapper'), '로딩중...')
@@ -238,13 +264,17 @@ await new Promise(function(resolve, reject) {
             textColumns[j-1].setLanguage(j-1);
         }
         textColumns[2].setLanguage(3);
-        let idxInit = metaData.sections.indexOf(searchParams.get('section') || metaData.sections[0]);
+
+        if (!searchParams.has('section')) {searchParams.append('section', metaData.sections[0]);}
+        let idxInit = metaData.sections.indexOf(searchParams.get('section'));
         sectionNav.setSection(idxInit);
     }
 );
 
+let xhr = new XMLHttpRequest();
+xhr.open('GET', 'debug/reload/diagram-parameters');
+xhr.send();
+
 let langList = metaData.languages;
 let langDetailList = metaData.languagesDetail;
-
-
 </script>

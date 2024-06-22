@@ -1,6 +1,6 @@
-import {newVector} from "/static/construction.js"
-import {e_x, e_y, origin} from "/static/construction.js"
-import { bisectionSolver, degCos, degSin } from "/static/analysis.js";
+import {newVector, newCircle, newSpiral} from "/static/construction.js"
+// import {e_x, e_y, origin} from "/static/construction.js"
+import { bisectionSolver, degCos, degSin, degTan } from "/static/analysis.js";
 
 let calculations = {
     Prop01: function (params) {
@@ -112,7 +112,7 @@ let calculations = {
         let entityDatas = {
             K, A,B,G,D, Z, H, Q,
             E, DZ:[D,Z], AH:[A,H], BQ:[B,Q], QH:[Q,H], KQ:[K,Q], QZ:[Q,Z],
-            ABG: [K, radius], 
+            ABG: newCircle(K, radius), 
         };
         return entityDatas;   
     },
@@ -148,78 +148,44 @@ let calculations = {
             K, A, B, G, Q, N, L, E,
             Z:[Zbottom, Ztop], H:[Hbottom, Htop], KQ:[K,Q], GQ:[G,Q], AQ:[A,Q], KN:[leftTail, N], 
             KG:[K,G], GL:[G,L], BN:[B,N], KB:[K,B], EB:[E,B], GB:[G,B],
-            ABG:[K, radius],
+            ABG:newCircle(K, radius),
         }
         return result;
     
     },
     Prop07: function (params) {
         let {
-            radius, angleSecant, posPerp, 
-            ratioLongerLength, ratioLongerPos, ratioShorterLength, ratioShorterPos,
+            radius, angleAKQ, posPerp, 
+            ratioLengthZ, ratioPosZ, ratioLengthH, ratioPosH,
             ratioL, switchIN, ratioAngleI, ratioN, ratioRightEnd, ratioLeftTail
         } = params;
-        let K = origin();
-        let A = K.clone()
-            .addScaledVector(e_x, -radius*Math.sin(angleSecant*0.5*Math.PI))
-            .addScaledVector(e_y, radius*Math.cos(angleSecant*0.5*Math.PI));
-        // let B = K.clone()
-        //     .addScaledVector(e_x, radius*Math.sin(angleSecant*(ratioAngleInter-0.5)*Math.PI))
-        //     .addScaledVector(e_y, radius*Math.cos(angleSecant*(ratioAngleInter-0.5)*Math.PI));
-        let G = K.clone()
-            .addScaledVector(e_x, radius*Math.sin(angleSecant*0.5*Math.PI))
-            .addScaledVector(e_y, radius*Math.cos(angleSecant*0.5*Math.PI));
-        let AG = [A, G]
-        let ABG = [K, radius]
-        let Q = A.clone()
-            .addScaledVector(G.clone().sub(A), posPerp)
-        let longerBottom = K.clone()
-            .addScaledVector(e_x, -radius*ratioLongerPos)
-            .addScaledVector(e_y, -0.5*radius*ratioLongerLength);
-        let longerTop = longerBottom.clone()
-            .addScaledVector(e_y, radius*ratioLongerLength);
-        let shorterBottom = K.clone()
-            .addScaledVector(e_x, -radius*ratioShorterPos)
-            .addScaledVector(e_y, -0.5*radius*ratioShorterLength);
-        let shorterTop = shorterBottom.clone()
-            .addScaledVector(e_y, radius*ratioShorterLength);
-        let Z = [longerBottom, longerTop];
-        let H = [shorterBottom, shorterTop]; 
-        let GQ = [G, Q];
-        let QK = [Q, K];
-        let KG = [K, G];
-        let L = K.clone()
-            .addScaledVector(e_x, ratioL*radius*(1/Math.sin(angleSecant*0.5*Math.PI)))
-        let GL = [G, L];
-        let halfAKG = angleSecant*0.5*Math.PI;
+        let K = newVector();
+        let A = K.shiftPolar(radius, 90+angleAKQ);
+        let G = K.shiftPolar(radius, 90-angleAKQ);
+        let Q = A.toward(G, posPerp);
+        let Zbot = K.shift(-radius*ratioPosZ, -0.5*radius*ratioLengthZ);
+        let Ztop = Zbot.shift(0, radius*ratioLengthZ);
+        let Hbot = K.shift(-radius*ratioPosH, -0.5*radius*ratioLengthH);
+        let Htop = Hbot.shift(0, radius*ratioLengthH);
+        let L = K.shift(ratioL*radius/degSin(angleAKQ));
+
         let halfGKI = 0;
-        let INlength = radius*(ratioShorterLength/ratioLongerLength);
+        let INlength = radius*(ratioLengthH/ratioLengthZ);
         function getINlength(halfGKI) {
-            return Math.cos(halfAKG)/Math.sin(halfAKG+halfGKI) - 2*Math.sin(halfGKI) - INlength/radius;
+            return degCos(angleAKQ)/degSin(angleAKQ+halfGKI) - 2*degSin(halfGKI) - INlength/radius;
         }
-        if (switchIN) {halfGKI = bisectionSolver(getINlength, 0, 0.5*Math.PI-halfAKG);}
-        halfGKI = (1-switchIN)*ratioAngleI*halfAKG + switchIN*halfGKI
-        let I = K.clone()
-            .addScaledVector(e_x, radius*Math.sin(halfAKG+halfGKI*2))
-            .addScaledVector(e_y, radius*Math.cos(halfAKG+halfGKI*2));
-        let N = K.clone()
-            .addScaledVector(e_x, (ratioN*(1-switchIN) + switchIN)*radius*(Math.sin(halfAKG) + Math.cos(halfAKG)/Math.tan(halfAKG+halfGKI)));
-        // let N = K.clone()
-        //     .addScaledVector(e_x, radius*ratioRightEnd)
-        let GN = [G, N];
-        let leftTail = K.clone()
-            .addScaledVector(e_x, -radius*ratioLeftTail)
-        let KL = [leftTail, L];
-        let IN = [I, N];
-        let E = I.clone().multiplyScalar(A.getComponent(1)/I.getComponent(1));
-        let KE = [K, E]; 
-        let GE = [G, E];
-        let EI = [E, I];
-        let IG = [I, G];
+        if (switchIN) {halfGKI = bisectionSolver(getINlength, 0, 90-angleAKQ);}
+        halfGKI = (1-switchIN)*ratioAngleI*angleAKQ + switchIN*halfGKI
+
+        let I = K.shiftPolar(radius, 90-(angleAKQ + halfGKI*2));
+        let N = K.shift((ratioN*(1-switchIN) + switchIN)*radius*(degSin(angleAKQ) + degCos(angleAKQ)/degTan(angleAKQ+halfGKI)));
+        let leftTail = K.shift(-radius*ratioLeftTail);
+        let E = K.toward(I, A.y/I.y);
         let result = {
             K, A, G, Q, L, I, N, E,
-            Z, H, GQ, QK, KG, GL, AG, GN, IN, KL, KE, GE, EI, IG,
-            ABG,
+            Z:[Zbot,Ztop], H:[Hbot,Htop], AQ:[A,Q], GQ:[G,Q], QK:[Q,K], KG:[K,G], GL:[G,L], GN:[G,N], IN:[I,N], 
+            KL:[leftTail, L], KE:[K,E], GE:[G,E], EI:[E,I], IG:[I,G],
+            ABG:newCircle(K,radius),
         }
         return result;
     
@@ -230,93 +196,53 @@ let calculations = {
             ratioPosZ, ratioLengthZ, ratioPosH, ratioLengthH, ratioSmallerRatio,
             switchKLleft, switchC, ratioDistortIN, switchB
         } = params;
-        angleAKQ *= Math.PI / 180;
-        angleBKQ *= Math.PI / 180;
-        let K = origin();
-        let A = K.clone()
-            .addScaledVector(e_x, -radius*Math.sin(angleAKQ))
-            .addScaledVector(e_y, radius*Math.cos(angleAKQ));
-        let G = K.clone()
-            .addScaledVector(e_x, radius*Math.sin(angleAKQ))
-            .addScaledVector(e_y, radius*Math.cos(angleAKQ));
-        let AG = [A, G];
-        let ABGD = [K, radius];
-        let L = K.clone()
-            .addScaledVector(e_x, radius*(1/Math.sin(angleAKQ)));
-        let Q = A.clone()
-            .addScaledVector(G.clone().sub(A), 0.5);
-        ratioLengthZ = Math.min(ratioLengthZ, Math.tan(angleAKQ)*ratioLengthH*ratioSmallerRatio);
-        let Zbottom = K.clone()
-            .addScaledVector(e_x, -radius*ratioPosZ)
-            .addScaledVector(e_y, -0.5*radius*ratioLengthZ);
-        let Ztop = Zbottom.clone()
-            .addScaledVector(e_y, radius*ratioLengthZ);
-        let Hbottom = K.clone()
-            .addScaledVector(e_x, -radius*ratioPosH)
-            .addScaledVector(e_y, -0.5*radius*ratioLengthH);
-        let Htop = Hbottom.clone()
-            .addScaledVector(e_y, radius*ratioLengthH);
-        let Z = [Zbottom, Ztop];
-        let H = [Hbottom, Htop]; 
-        let GQ = [G, Q];
-        let QK = [Q, K];
-        let GK = [G, K];
-        let GL = [G, L];
-        let KLleft = K.clone()
-            .addScaledVector(e_x, -radius*switchKLleft);
-        let KL = [KLleft, L];
-        let ratioLengthGL = 1/Math.tan(angleAKQ);
+        let K = newVector();
+        let A = K.shiftPolar(radius, 90+angleAKQ);
+        let G = K.shiftPolar(radius, 90-angleAKQ);
+        let L = K.shift(radius/degSin(angleAKQ));
+        let Q = A.toward(G, 0.5);
+        
+        ratioLengthZ = Math.min(ratioLengthZ, degTan(angleAKQ)*ratioLengthH*ratioSmallerRatio);
+        let Zbot = K.shift(-radius*ratioPosZ, -0.5*radius*ratioLengthZ);
+        let Ztop = Zbot.shift(0, radius*ratioLengthZ);
+        let Hbot = K.shift(-radius*ratioPosH, -0.5*ratioLengthH*radius);
+        let Htop = Hbot.shift(0, radius*ratioLengthH);
+        let KLleft = K.shift(-radius*switchKLleft);
+
+        let ratioLengthGL = 1/degTan(angleAKQ);
         ratioLengthCG = (1-switchC)*ratioLengthCG + (switchC)*(ratioLengthH/ratioLengthZ);
-        let C = G.clone()
-            .addScaledVector(e_x, -radius*ratioLengthCG*Math.cos(angleAKQ))
-            .addScaledVector(e_y, radius*ratioLengthCG*Math.sin(angleAKQ));
-        let CL = [C, L];
-        let CLmid = L.clone()
-            .addScaledVector(C.clone().sub(L), 0.5);
+        let C = G.shiftPolar(radius*ratioLengthCG, 180-angleAKQ);
+        let CLmid = L.toward(C, 0.5);
+
         let ratioLengthGM = ratioLengthGL*ratioLengthCG;
         let ratioDistCLToCenter = (ratioLengthGM - 1) / 2;
-        let centerKLC = CLmid.clone()
-            .addScaledVector(G.clone().sub(K), ratioDistCLToCenter);
-        let KLC = [centerKLC, centerKLC.distanceTo(K)];
-        let M = G.clone()
-            .addScaledVector(G.clone().sub(K), ratioLengthGM);
-        let GM = [G, M];
+        let centerKLC = CLmid.add(G.sub(K).dilate(ratioDistCLToCenter));
+        let radiusKLC = centerKLC.distTo(K);
+        let M = G.toward(K, -ratioLengthGM);
+
         let angleGKI = 0;
         function getINlength(angleGKI) {
-            let ratioLengthCI = ratioLengthCG - Math.tan(angleGKI);
-            let ratioLengthIL = ratioLengthGL + Math.tan(angleGKI);
-            return ratioLengthCI*ratioLengthIL - ratioDistortIN*ratioLengthGM/Math.cos(angleGKI);
+            let ratioLengthCI = ratioLengthCG - degTan(angleGKI);
+            let ratioLengthIL = ratioLengthGL + degTan(angleGKI);
+            return ratioLengthCI*ratioLengthIL - ratioDistortIN*ratioLengthGM/degCos(angleGKI);
         }
-        let bsRefPt = centerKLC.clone()
-            .addScaledVector(G.clone().sub(K), KLC[1]);
-        let bsRefAngle0 = M.clone().sub(K).angleTo(bsRefPt.clone().sub(K));
-        let bsRefAngle1 = M.clone().sub(K).angleTo(C.clone().sub(K));
+        let bsRefPt = centerKLC.add(G.sub(K).dilate(radiusKLC))
+        let bsRefAngle0 = M.sub(K).angleTo(bsRefPt.sub(K));
+        let bsRefAngle1 = M.sub(K).angleTo(C.sub(K));
         if (switchC) {
             angleGKI = bisectionSolver(getINlength, bsRefAngle0, bsRefAngle1); // Neusis
         }
-        let I = K.clone()
-            .addScaledVector(e_x, (radius/Math.cos(angleGKI))*Math.sin((angleAKQ-angleGKI)))
-            .addScaledVector(e_y, (radius/Math.cos(angleGKI))*Math.cos((angleAKQ-angleGKI)));
-        let N = I.clone()
-            .addScaledVector(I.clone().sub(K), ratioDistortIN*ratioLengthGM*Math.cos(angleGKI));
-        let IN = [I, N];
-        let KN = [K, N];
-        let E = K.clone()
-            .addScaledVector(I.clone().sub(K), Math.cos(angleGKI)*Math.cos(angleAKQ)/Math.cos((angleAKQ-angleGKI)));
-        let CI = [C, I]; let KE = [K, E]; let IL = [I, L];
-        let KI = [K, I];
+        let I = K.shiftPolar(radius/degCos(angleGKI), 90-(angleAKQ-angleGKI));
+        let N = I.toward(K, -ratioDistortIN*ratioLengthGM*degCos(angleGKI));
+        let E = K.toward(I, degCos(angleGKI)*degCos(angleAKQ)/degCos((angleAKQ-angleGKI)));
         angleBKQ = (1-switchB)*angleBKQ + switchB*(angleAKQ-angleGKI);
-        let CG = [C, G];
-        let B = K.clone()
-            .addScaledVector(e_x, radius*Math.sin(angleBKQ))
-            .addScaledVector(e_y, radius*Math.cos(angleBKQ));
-        let KB = [K, B];
-        let IG = [I, G];
-        let BE = [B, E];
+        let B = K.shiftPolar(radius, 90-angleBKQ);
         let result = {
             K, A, B, G, Q, L, C, M, I, N, E,
-            Z, H, AG, GQ, QK, GK, GL, KL, CL, GM, IN, KN, CI, KE, IL, KI, CG, KB, IG, BE, 
-            ABGD, KLC
+            Z:[Zbot,Ztop], H:[Hbot,Htop], AG:[A,G], GQ:[G,Q], QK:[Q,K], GK:[G,K], GL:[G,L], 
+            KL:[KLleft,L], CL:[C,L], GM:[G,M], IN:[I,N], KN:[K,N], CI:[C,I], KE:[K,E], IL:[I,L], KI:[K,I], 
+            CG:[C,G], KB:[K,B], IG:[I,G], BE:[B,E], 
+            ABGD:newCircle(K, radius), KLC:newCircle(centerKLC, radiusKLC)
         }
         return result;
     },
@@ -326,94 +252,52 @@ let calculations = {
             ratioPosZ, ratioLengthZ, ratioPosH, ratioLengthH, ratioBiggerRatio,
             switchKLleft, switchC, ratioDistortIN, switchB
         } = params;
-        angleAKQ *= Math.PI/180;
-        angleBKQ *= Math.PI/180;
-        let K = origin();
-        let A = K.clone()
-            .addScaledVector(e_x, -radiusABGD*Math.sin(angleAKQ))
-            .addScaledVector(e_y, radiusABGD*Math.cos(angleAKQ));
-        let G = K.clone()
-            .addScaledVector(e_x, radiusABGD*Math.sin(angleAKQ))
-            .addScaledVector(e_y, radiusABGD*Math.cos(angleAKQ));
-        let AG = [A, G];
-        let ABGD = [K, radiusABGD];
-        let L = K.clone()
-            .addScaledVector(e_x, radiusABGD/Math.sin(angleAKQ));
-        let Q = A.clone()
-            .addScaledVector(G.clone().sub(A), 0.5);
-        ratioLengthZ = Math.max(ratioLengthZ, Math.tan(angleAKQ)*ratioLengthH*ratioBiggerRatio);
-        let Zbottom = K.clone()
-            .addScaledVector(e_x, -radiusABGD*ratioPosZ)
-            .addScaledVector(e_y, -0.5*radiusABGD*ratioLengthZ);
-        let Ztop = Zbottom.clone()
-            .addScaledVector(e_y, radiusABGD*ratioLengthZ);
-        let Hbottom = K.clone()
-            .addScaledVector(e_x, -radiusABGD*ratioPosH)
-            .addScaledVector(e_y, -0.5*radiusABGD*ratioLengthH);
-        let Htop = Hbottom.clone()
-            .addScaledVector(e_y, radiusABGD*ratioLengthH);
-        let Z = [Zbottom, Ztop];
-        let H = [Hbottom, Htop]; 
-        let GQ = [G, Q];
-        let QK = [Q, K];
-        let GK = [G, K];
-        let GL = [G, L];
-        let KLleft = K.clone()
-            .addScaledVector(e_x, -radiusABGD*switchKLleft);
+        let K = newVector();
+        let A = K.shiftPolar(radiusABGD, 90+angleAKQ);
+        let G = K.shiftPolar(radiusABGD, 90-angleAKQ);
+        let ABGD = newCircle(K, radiusABGD);
+        let L = K.shift(radiusABGD/degSin(angleAKQ));
+        let Q = A.toward(G, 0.5);
+        ratioLengthZ = Math.max(ratioLengthZ, degTan(angleAKQ)*ratioLengthH*ratioBiggerRatio);
+        let Zbot = K.shift(-radiusABGD*ratioPosZ, -0.5*radiusABGD*ratioLengthZ);
+        let Ztop = Zbot.shift(0, radiusABGD*ratioLengthZ);
+        let Hbot = K.shift(-radiusABGD*ratioPosH, -0.5*radiusABGD*ratioLengthH);
+        let Htop = Hbot.shift(0, radiusABGD*ratioLengthH);
+        let KLleft = K.shift(-radiusABGD*switchKLleft);
         let KL = [KLleft, L];
-        let ratioLengthGL = 1/Math.tan(angleAKQ);
+        let ratioLengthGL = 1/degTan(angleAKQ);
         ratioLengthCG = (1-switchC)*ratioLengthCG + (switchC)*(ratioLengthH/ratioLengthZ);
-        let C = G.clone()
-            .addScaledVector(e_x, -radiusABGD*ratioLengthCG*Math.cos(angleAKQ))
-            .addScaledVector(e_y, radiusABGD*ratioLengthCG*Math.sin(angleAKQ));
-        let CL = [C, L];
-        let CLmid = L.clone()
-            .addScaledVector(C.clone().sub(L), 0.5);
+        let C = G.shiftPolar(radiusABGD*ratioLengthCG, 180-angleAKQ);
+        let CLmid = L.toward(C, 0.5);
         let ratioLengthGM = ratioLengthGL*ratioLengthCG;
         let ratioDistCLToCenter = (ratioLengthGM - 1) / 2;
-        let centerKLC = CLmid.clone()
-            .addScaledVector(G.clone().sub(K), ratioDistCLToCenter);
-        let KLC = [centerKLC, centerKLC.distanceTo(K)];
-        let M = G.clone()
-            .addScaledVector(G.clone().sub(K), ratioLengthGM);
-        let GM = [G, M];
+        let centerKLC = CLmid.add(G.sub(K).dilate(ratioDistCLToCenter));
+        let radiusKLC = centerKLC.distTo(K)
+        let KLC = newCircle(centerKLC, radiusKLC);
+        let M = G.toward(K, -ratioLengthGM);
+
         let angleGKI = 0;
         function getINlength(angleGKI) {
-            let ratioLengthCI = ratioLengthCG + Math.tan(angleGKI);
-            let ratioLengthIL = ratioLengthGL - Math.tan(angleGKI);
-            return ratioLengthCI*ratioLengthIL - ratioDistortIN*ratioLengthGM/Math.cos(angleGKI);
+            let ratioLengthCI = ratioLengthCG + degTan(angleGKI);
+            let ratioLengthIL = ratioLengthGL - degTan(angleGKI);
+            return ratioLengthCI*ratioLengthIL - ratioDistortIN*ratioLengthGM/degCos(angleGKI);
         }
-        let bsRefPt = centerKLC.clone()
-            .addScaledVector(G.clone().sub(K), KLC[1]);
-        let bsRefAngle0 = M.clone().sub(K).angleTo(bsRefPt.clone().sub(K));
-        let bsRefAngle1 = M.clone().sub(K).angleTo(L.clone().sub(K));
-        // console.log(bsRefAngle0, bsRefAngle1, getINlength(bsRefAngle0), getINlength(bsRefAngle1))
+        let bsRefPt = centerKLC.add(G.sub(K).dilate(radiusKLC));
+        let bsRefAngle0 = M.sub(K).angleTo(bsRefPt.sub(K));
+        let bsRefAngle1 = M.sub(K).angleTo(L.sub(K));
         if (switchC) {
             angleGKI = bisectionSolver(getINlength, bsRefAngle0, bsRefAngle1); // Neusis
         }
-        let I = K.clone()
-            .addScaledVector(e_x, (radiusABGD/Math.cos(angleGKI))*Math.sin(angleAKQ+angleGKI))
-            .addScaledVector(e_y, (radiusABGD/Math.cos(angleGKI))*Math.cos(angleAKQ+angleGKI));
-        let N = I.clone()
-            .addScaledVector(I.clone().sub(K), ratioDistortIN*ratioLengthGM*Math.cos(angleGKI));
-        let IN = [I, N];
-        let KN = [K, N];
-        let E = K.clone()
-            .addScaledVector(I.clone().sub(K), Math.cos(angleGKI)*Math.cos(angleAKQ)/Math.cos(angleAKQ+angleGKI));
-        let GE = [G, E];
-        let CI = [C, I]; let KE = [K, E]; let IL = [I, L];
-        let KI = [K, I];
+        let I = K.shiftPolar((radiusABGD/degCos(angleGKI)), 90-(angleAKQ+angleGKI));
+        let N = I.toward(K, -ratioDistortIN*ratioLengthGM*degCos(angleGKI));
+        let E = K.toward(I, degCos(angleGKI)*degCos(angleAKQ)/degCos(angleAKQ+angleGKI));
         angleBKQ = (1-switchB)*angleBKQ + switchB*(angleAKQ-angleGKI);
-        let CG = [C, G];
-        let B = K.clone()
-            .addScaledVector(e_x, radiusABGD*Math.sin(angleBKQ))
-            .addScaledVector(e_y, radiusABGD*Math.cos(angleBKQ));
-        let KB = [K, B];
-        let IG = [I, G];
-        let BE = [B, E];
+        let B = K.shiftPolar(radiusABGD, 90-angleBKQ);
+
         let result = {
             K, A, B, G, Q, L, C, M, I, N, E,
-            Z, H, AG, GQ, QK, GK, GL, KL, CL, GM, IN, KN, CI, KE, GE, IL, KI, CG, KB, IG, BE, 
+            Z:[Zbot,Ztop], H:[Hbot,Htop], AG:[A,G], GQ:[G,Q], QK:[Q,K], GK:[G,K], GL:[G,L], KL, CL:[C,L], GM:[G,M], 
+            IN:[I,N], KN:[K,N], CI:[C,I], KE:[K,E], GE:[G,E], IL:[I,L], KI:[K,I], CG:[C,G], KB:[K,B], IG:[I,G], BE:[B,E], 
             ABGD, KLC
         };
         return result;
@@ -463,7 +347,7 @@ let calculations = {
             radius, angleSpiralEnd, angleSpiralRotation, angleB, angleG
         } = params;
         let A = newVector();
-        let spiral = [A, radius, 0, angleSpiralEnd, angleSpiralRotation];
+        let spiral = newSpiral(A, radius, 0, angleSpiralEnd, angleSpiralRotation);
         let B = A.shiftPolar(radius*angleB/360, angleB+angleSpiralRotation);
         let G = A.shiftPolar(radius*angleG/360, angleG+angleSpiralRotation);
         let angleD = angleG + (angleG - angleB);
@@ -487,7 +371,7 @@ let calculations = {
             lengthZE
         } = params;
         let A = newVector();
-        let spiral = [A, radius, 0, angleSpiralEnd, angleSpiralRotation];
+        let spiral = newSpiral(A, radius, 0, angleSpiralEnd, angleSpiralRotation);
         let B = A.shiftPolar(radius*0.5*angleG/360, (0.5*angleG+angleSpiralRotation));
         let G = A.shiftPolar(radius*angleG/360, (angleG+angleSpiralRotation));
         let D = A.shiftPolar(radius*1.5*angleG/360, (1.5*angleG+angleSpiralRotation));
@@ -510,44 +394,104 @@ let calculations = {
             radius, angleSpiralRotation, angleD, angleE, angleQ,
         } = params;
         let A = newVector();
-        let spiral = [A, radius, 0, -360, angleSpiralRotation];
-        let circle = [A, radius];
-        let D = A.shiftPolar(radius*angleD/360, angleD+angleSpiralRotation);
-        let H = A.shiftPolar(radius*(-1), angleD+angleSpiralRotation);
-        let E = A.shiftPolar(radius*angleE/360, angleE+angleSpiralRotation);
+        let spiral = newSpiral(A, radius, 0, -360, angleSpiralRotation);
+        let circle = newCircle(A, radius, 0, 360, 180+angleSpiralRotation);
+        let D = spiral.pick(angleD);
+        let H = circle.pick(angleD);
+        let E = spiral.pick(angleE);
         let angleEm = Math.max(angleE, angleQ+360);
-        let Em = A.shiftPolar(radius*angleEm/360, angleEm+angleSpiralRotation);
-        let Z = A.shiftPolar(radius*(-1), angleE+angleSpiralRotation);
+        let Em = spiral.pick(angleEm);
+        let Z = circle.pick(angleE);
         let angleDm = Math.max(angleD, angleQ+720);
-        let Dm = A.shiftPolar(radius*angleDm/360, angleDm+angleSpiralRotation);
-        let Q = A.shiftPolar(radius*(-1), angleQ+angleSpiralRotation);
+        let Dm = spiral.pick(angleDm);
+        let Q = spiral.pick(-360);
+        let QKZ = newCircle(A, radius, 0, angleEm, angleSpiralRotation);
+        let QKH = newCircle(A, radius, 0, angleDm, angleSpiralRotation);
 
         let result = {
             A, D, E, Z, H, Q, 
             AQ: [A, Q], AZ:[A,Z], AH:[A,H], AEm:[A,Em], ADm:[A,Dm],
-            circle, QKZ:[A, radius, angleSpiralRotation, angleEm], QKH:[A, radius, angleSpiralRotation, angleDm],
+            circle, QKZ, QKH,
             spiral,
         };
         return result;
     },
     Prop15: function (params) {
         let {
-            radius, angleSpiralRotation, angleG, angleD,
+            radius, angleSpiralRotation, angleG, angleD, angleL, angleE, angleQ,
         } = params;
 
         let A = newVector();
-        let G = A.shiftPolar(radius*(angleG/360), angleG+angleSpiralRotation);
-        let D = A.shiftPolar(radius*(angleD/360), angleD+angleSpiralRotation);
-        let Q = A.shiftPolar(radius, angleSpiralRotation);
-        let Z = A.shiftPolar(radius, angleG+angleSpiralRotation);
-        let H = A.shiftPolar(radius, angleD+angleSpiralRotation);
-        let M = A.shiftPolar(radius*2, angleSpiralRotation);
-        let L = G.shiftPolar(radius, angleG+angleSpiralRotation);
-        let E = D.shiftPolar(radius, angleD+angleSpiralRotation);
-        let circle = [A, radius];
-        let spiral = [A, radius, 0, -720, angleSpiralRotation];
-        let result = {
+        let circle = newCircle(A, radius, 0, 360, 180+angleSpiralRotation);
+        let spiral = newSpiral(A, radius, 0, -720, angleSpiralRotation);
+        let G = spiral.pick(angleG);
+        let D = spiral.pick(angleD);
+        let Q = circle.pick(angleQ);
+        let Z = circle.pick(angleL);
+        let H = circle.pick(angleE);
+        let M = spiral.pick(-720);
+        let L = spiral.pick(angleL);
+        let E = spiral.pick(angleE);
+        
+        let angleEm = Math.max(angleE+360, angleQ+360);
+        let Em = spiral.pick(angleEm);
+        let angleLm = Math.max(angleL+360, angleQ+720);
+        let Lm = spiral.pick(angleLm);
 
+        let QKZ = newCircle(A, radius, 0, angleEm, angleSpiralRotation)
+        let QKH = newCircle(A, radius, 0, angleLm, angleSpiralRotation)
+
+        let result = {
+            A, G, D, M, L, E, Z, H, Q, 
+            AQ: [A, Q], AZ:[A,Z], AH:[A,H], AEm:[A,Em], ALm:[A,Lm],
+            circle, QKZ, QKH,
+            spiral,
+        };
+        return result;
+    },
+    Prop18: function (params) {
+        let {
+            radius, angleSpiralRotation, angleB, angleG, angleD, angleH, 
+            ratioLA, ratioQN, ratioMQ, caseNum,
+        } = params;
+        let A = newVector();
+
+        let circle = newCircle(A, radius, 0, 360, 180+angleSpiralRotation);
+        let spiral = newSpiral(A, radius, 0, -400, angleSpiralRotation);
+        let B = spiral.pick(angleB);
+        let G = spiral.pick(angleG);
+        let D = spiral.pick(angleD);
+        let Q = spiral.pick(-360);
+
+        let H = A.shiftPolar(radius, angleH);
+        let Z = A.shiftPolar(-radius*2*Math.PI, angleSpiralRotation+90);
+        let N = Z.toward(Q, 1+ratioQN);
+
+        let L = A.toward(Z, ratioLA);
+        let QHmid = Q.toward(H, 0.5);
+
+        let P = newVector();
+        N = Z.toward(Q, 1+ratioQN);
+        if (caseNum >= 1) {
+            N = QHmid;
+        }
+        let R = A.toward(N, radius/A.distTo(N));
+        let angleQAR = Q.sub(A).angleTo(R.sub(A));
+        let QRarc = newCircle(A, radius, 90-angleQAR, 90);
+        let X = A.shiftPolar(radius*(-360-angleQAR)/360, -angleQAR+angleSpiralRotation);
+
+        let M = Q.add(Z.sub(A).dilate(ratioMQ))
+        if (caseNum >= 1) {
+            P = A.toward(R, (radius/A.distTo(N)));
+        }
+
+        let result = {
+            A,B,G,D,H,Q,Z,L, N,R, X, M, P,
+            AZ:[A,Z], AQ:[A,Q], ZN:[Z,N], LA:[A,L], ZL:[Z,L], QQHmid:[Q,QHmid], AQHmid:[A,QHmid],
+            NR:[N,R], AR:[A,R], QR:[Q,R], XR:[X,R],
+            MP:[M,P], QP:[Q,P], ZQ:[Z,Q],
+            QRarc, 
+            circle, spiral,
         };
         return result;
     }

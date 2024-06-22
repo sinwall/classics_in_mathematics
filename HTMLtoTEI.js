@@ -115,7 +115,6 @@ function filterAttributes(element) {
             let colorMatch = element.attributes.style.match(/color:(.+?)[;$]/)
             let fnMatch = element.attributes.style.includes('mso-footnote-id');
             if (colorMatch !== null) {
-                console.log(colorMatch)
                 if (colorMatch[1] == 'red') {
                     element.attributes.style = colorMatch[0];
                 } else if (colorMatch[1] == '#00B050') {
