@@ -1,31 +1,33 @@
 import * as THREE from 'three'
 import {SVGRenderer} from 'three/addons/renderers/SVGRenderer.js'
 import {StyleSheet} from "./styler.js"
-import {Vector} from "./construction.js"
+import {Vector, isEntityData} from "./construction.js"
+import { AllParamsSummary } from './effects.js'
 
 
-function newGeometricEntity(type, name, color=0x000000, size=1., pixelSize=1) {
+function newGeometricEntity(type, key, name, color=0x000000, size=1., pixelSize=1) {
     // return new GeometricEntity(type, name, color, size, pixelSize);
 
     switch (type) {
         case "point":
-            return new PointEntity(type, name, color, size, pixelSize);
+            return new PointEntity(type, key, name, color, size, pixelSize);
         case "points":
-            return new PointsEntity(type, name, color, size, pixelSize);
+            return new PointsEntity(type, key, name, color, size, pixelSize);
         case "line":
-            return new LineEntity(type, name, color, size, pixelSize);
+            return new LineEntity(type, key, name, color, size, pixelSize);
         case "circle":
-            return new CircleEntity(type, name, color, size, pixelSize);
+            return new CircleEntity(type, key, name, color, size, pixelSize);
         case "spiral":
-            return new SpiralEntity(type, name, color, size, pixelSize);
+            return new SpiralEntity(type, key, name, color, size, pixelSize);
         default:
             Error();
     }
 }
 
 class GeometricEntity {
-    constructor(type, name, color=0x000000, size=1., pixelSize=1,) {
+    constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
         this.type = type;
+        this.key = key;
         this.name = name;
         this.color = color;
         this.size = size;
@@ -196,8 +198,8 @@ class GeometricEntity {
 }
 
 class PointEntity extends GeometricEntity {
-    constructor(type, name, color=0x000000, size=1., pixelSize=1,) {
-        super(type, name, color, size, pixelSize);
+    constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
+        super(type, key, name, color, size, pixelSize);
         this._obj3d = new THREE.Points(
             new THREE.BufferGeometry(),
             new THREE.PointsMaterial({color: color, size: 4*size*pixelSize})
@@ -213,14 +215,15 @@ class PointEntity extends GeometricEntity {
     }
 
     setSize(value) {
+        this.size = value;
         this._obj3d.material.size = 4*value*this.pixelSize;
     }
 
 }
 
 class PointsEntity extends GeometricEntity {
-    constructor(type, name, color=0x000000, size=1., pixelSize=1,) {
-        super(type, name, color, size, pixelSize);
+    constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
+        super(type, key, name, color, size, pixelSize);
         this._obj3d = new THREE.Points(
             new THREE.BufferGeometry(),
             new THREE.PointsMaterial({color: color, size: 4*size*pixelSize})
@@ -232,18 +235,19 @@ class PointsEntity extends GeometricEntity {
     }
 
     setData(value) {
-        this._obj3d.geometry.setFromPoints(value);
+        this._obj3d.geometry.setFromPoints(value.points);
     }
 
     setSize(value) {
+        this.size = value;
         this._obj3d.material.size = 4*value*this.pixelSize;
     }
 
 }
 
 class LineEntity extends GeometricEntity {
-    constructor(type, name, color=0x000000, size=1., pixelSize=1,) {
-        super(type, name, color, size, pixelSize);
+    constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
+        super(type, key, name, color, size, pixelSize);
         this._obj3d = new THREE.Line(
             new THREE.BufferGeometry(),
             new THREE.LineBasicMaterial({color: color, linewidth: 1.5*size})
@@ -268,14 +272,15 @@ class LineEntity extends GeometricEntity {
     }
 
     setSize(value) {
+        this.size = value;
         this._obj3d.material.linewidth = 1.5*value;
     }
 
 }
 
 class CircleEntity extends GeometricEntity {
-    constructor(type, name, color=0x000000, size=1., pixelSize=1,) {
-        super(type, name, color, size, pixelSize);
+    constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
+        super(type, key, name, color, size, pixelSize);
         let g = new THREE.BufferGeometry()
         g.setAttribute(
             "position", 
@@ -292,6 +297,10 @@ class CircleEntity extends GeometricEntity {
         return this._center;
     }
 
+    atIntermediate(ary, t) {
+        return ary.slice(0, 3*Math.floor(ary.length*t/3));
+    }
+
     setData(value) {
         let pointsOnCircle = [];
         let resolution = Math.ceil(this.resolution*Math.abs(value.end-value.start)/360)
@@ -303,13 +312,14 @@ class CircleEntity extends GeometricEntity {
     }
 
     setSize(value) {
+        this.size = value;
         this._obj3d.material.linewidth = 1.5*value;
     }
 }
 
 class SpiralEntity extends GeometricEntity {
-    constructor(type, name, color=0x000000, size=1., pixelSize=1,) {
-        super(type, name, color, size, pixelSize);
+    constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
+        super(type, key, name, color, size, pixelSize);
         this._obj3d = new THREE.Line(
             new THREE.BufferGeometry(),
             new THREE.LineBasicMaterial({color: color, linewidth: 1.5*size})
@@ -335,56 +345,9 @@ class SpiralEntity extends GeometricEntity {
     }
 
     setSize(value) {
+        this.size = value;
         this._obj3d.material.linewidth = 1.5*value;
     }
-}
-
-class BaseFX {
-
-    setAfter(after) {
-        this.after = after;
-    }
-}
-
-class DrawingFX extends BaseFX{
-    constructor(entity, duration, interval, timing) {
-        super();
-        this.entity = entity;
-        this.duration = duration;
-        this.interval = interval;
-        this.timing = timing;
-        
-        this.after = null;
-    }
-
-    action(callback) {
-        let tmp = this.entity._obj3d.geometry.getAttribute('position').array;
-        let epoch = Date.now();
-        let that = this;
-        let timer = setInterval(
-            function () {
-                let progress = (Date.now() - epoch) / that.duration;
-                if ((progress >= 1)) {
-                    clearInterval(timer);
-                    that.entity._obj3d.geometry.setAttribute(
-                        'position', 
-                        new THREE.BufferAttribute(that.entity.atIntermediate(tmp, progress), 3)
-                    );
-                    if (callback) { callback(); }
-                    if (this.after) { this.after(); }
-                    return;
-                }
-                
-                that.entity._obj3d.geometry.setAttribute(
-                    'position', 
-                    new THREE.BufferAttribute(that.entity.atIntermediate(tmp, progress), 3)
-                );
-                if (callback) { callback(); }
-            }, 
-            this.interval
-        );
-    }
-
 }
 
 class Geometer {
@@ -422,35 +385,10 @@ class Geometer {
         let that = this;
         return Promise.all([
             this.loadStyle(bookName, sectionName),
-            this.loadGeometryCalculator(bookName, sectionName)
+            this.loadGeometryCalculator(bookName, sectionName),
+            this.loadSE(bookName, sectionName)
         ]).then(function () {
-            let style = that.style;
-            let renderer = that.renderer;
-            if (style) {
-                that.pixelSize = (2*style.hparamTrend[0].scale) / renderer.getSize().width;
-                
-        
-                that.stepMax = style.stepMax;
-                that._objects = []
-        
-                let objTypes = style.objTypes;
-                let objCaptions = style.objCaptions;
-                let objColors = style.objStyleTrend[0];
-                let objSizes = style.objStyleTrend[0];
-                for (let i=0; i<style.nObjs; i++) {
-                    let gObj = newGeometricEntity(objTypes[i], objCaptions[i], objColors[i].color, objSizes[i].size, that.pixelSize);
-                    gObj.attachCaption(renderer);
-                    that._objects.push(gObj);
-                    that.scene.add(gObj._obj3d)
-                }
-                that.buildAndRenderIfLoaded();
-                
-                // let fx = new DrawingFX(that._objects.at(-1), 500, 50);
-                // let fx2 = new DrawingFX(that._objects.at(13), 500, 50);
-
-                // fx.action(function() {that.render();});
-                // fx2.action();
-            }
+            that.setup();
             callback();
         }).catch(function(reason) {
             console.log('loading rejected', reason);
@@ -466,28 +404,116 @@ class Geometer {
         })
     }
 
+    setup() {
+        let style = this.style;
+        let renderer = this.renderer;
+        if (this.specialEffects) {
+            this.camSetting = this.specialEffects.initialCamSet;
+            this.params = Object.assign({}, this.specialEffects.initialParams);
+
+            this.pixelSize = (2*this.specialEffects.initialCamSet.scale) / renderer.getSize().width;
+            // for (let i=0; i<this._objects.length; i++) {
+            //     this._objects[i].setVisibility(false);
+            // }
+            this.stepMax = this.specialEffects.stepMax;
+            this.cameraReady(this.specialEffects.initialCamSet);
+            let built = this.calculateGeometry(this.specialEffects.initialParams);
+
+            this._objectsDict = {};
+            for (let key in built) {
+                let type;
+                let caption;
+                let builtData = built[key];
+                if (! isEntityData(builtData)) {
+                    if (builtData instanceof Vector) {
+                        type = 'point';
+                    } else if ((builtData instanceof Array) && (builtData.length == 2)) {
+                        type = 'line';
+                    } else {
+                        type = 'points';
+                    }
+                } else {
+                    type = builtData.getType();
+                }
+                if (key in this.specialEffects.captions) {caption = this.specialEffects.captions[key];}
+                else {caption = '';}
+                let gObj = newGeometricEntity(type, key, caption);
+                gObj.setVisibility(false);
+                gObj.attachCaption(this.renderer);
+                this._objectsDict[key] = gObj;
+                this.scene.add(gObj._obj3d);
+            }
+            this.build(this.specialEffects.initialParams);
+            this.attachCaption(this.specialEffects.initialCamSet);
+
+            this._fx = this.specialEffects.setup(this._objectsDict);
+            this._fx.attachGeometer(this);
+            let that = this;
+            this._fx.action(50);
+
+            this.currentAllParams = new AllParamsSummary(
+                this.specialEffects.initialCamSet,
+                this.specialEffects.initialParams,
+                null
+            )
+            this.currentAllParams.update(this._fx.summary());
+            // this._fx.action(50, null, function() {that.render();});
+            this._useStyler = false;
+
+        } else if (style) {
+            this._useStyler = true;
+            this.pixelSize = (2*style.hparamTrend[0].scale) / renderer.getSize().width;
+            this.camSetting = this.style.getCamSetting();
+            this.params = this.style.getParams(0, false);
+
+            this.stepMax = style.stepMax;
+            this._nameToIdx = {};
+            this._objectsDict = {};
+    
+            let objTypes = style.objTypes;
+            let objNames = style.objNames;
+            let objCaptions = style.objCaptions;
+            let objColors = style.objStyleTrend[0];
+            let objSizes = style.objStyleTrend[0];
+            for (let i=0; i<style.nObjs; i++) {
+                let gObj = newGeometricEntity(objTypes[i], objNames[i], objCaptions[i], objColors[i].color, objSizes[i].size, this.pixelSize);
+                gObj.attachCaption(renderer);
+                this._nameToIdx[objNames[i]] = i;
+                this._objectsDict[objNames[i]] = gObj;
+                this.scene.add(gObj._obj3d);
+            }
+            this.buildAndRenderIfLoaded();
+            
+        }
+
+    }
+
     build(params=null) {
         if (params === null) {params = this.params;}
         let entityDatas = this.calculateGeometry(params);
 
-        let objStyles;
-        if (this.original) { objStyles = this.style.objStyleOrig; }
-        else { objStyles = this.style.objStyleTrend[this.step]; }
-        for (let i=0; i<this._objects.length; i++) {
-            let gObj = this._objects[i];
-            let sty = objStyles[i];
-            gObj.setData(entityDatas[this.style.objNames[i]]);
-            gObj.setVisibility(sty.visible);
-            gObj.setColor(sty.color);
-            gObj.setSize(sty.size);
+        for (let key in this._objectsDict) {
+            let gObj = this._objectsDict[key];
+            gObj.setData(entityDatas[key]);
             gObj.setPixelSize(this.pixelSize);
+        }
+        if (this._useStyler) {
+            for (let i=0; i<this.style.nObjs; i++) {
+                let key = this.style.objNames[i];
+                let gObj = this._objectsDict[key];
+                gObj.setColor(this.style.objStyleTrend[this.step][i].color);
+                gObj.setSize(this.style.objStyleTrend[this.step][i].size);
+            }
         }
     }
 
     attachCaption(camSet) {
         if (!camSet) { camSet = this.camSetting; }
-        for (let i=0; i<this._objects.length; i++) {
-            let gObj = this._objects[i];
+        for (let key in this._objectsDict) {
+            let gObj = this._objectsDict[key];
+        // }
+        // for (let i=0; i<this._objects.length; i++) {
+        //     let gObj = this._objects[i];
 
             let [cx, cy, cz] = gObj.captionPosition3d.clone().project(this.camera);
             let [dx, dy, dz] = (new THREE.Vector3(
@@ -527,19 +553,21 @@ class Geometer {
         camera.lookAt(centerX, centerY, centerZ);
         camera.updateProjectionMatrix();
         this.pixelSize = (2*camSet.scale) / this.renderer.getSize().width;
+        for (let key in this._objectsDict) {
+            let gObj = this._objectsDict[key];
+            gObj.setPixelSize(this.pixelSize);
+        }
     }
 
     clear() {
         for (let i=this.scene.children.length-1; i>=0; i--) {
             this.scene.remove(this.scene.children[0]);
         }
-        if ('_objects' in this) {
-            for (let i=0; i<this._objects.length; i++) {
-                this._objects[i]._caption.remove();
-            }
+        for (let key in this._objectsDict) {
+            this._objectsDict[key]._caption.remove();
         }
         this.render();
-        this._objects = [];
+        this._objectsDict = {};
         this.step = 0;
         this.original = false;
 
@@ -547,16 +575,20 @@ class Geometer {
         if (warnBox) {warnBox.remove();}
     }
 
-    get camSetting() {
-        return this.style.getCamSetting(this.step, this.original);
-    }
+    // get camSetting() {
+    //     return this.style.getCamSetting(this.step, this.original);
+    // }
 
     get domElement() {
         return this.renderer.domElement
     }
 
-    get params() {
-        return this.style.getParams(this.step, this.original);
+    // get params() {
+    //     return this.style.getParams(this.step, this.original);
+    // }
+
+    getEntity(name) {
+        return this._objects[this._nameToIdx[name]];
     }
 
     async loadGeometryCalculator(bookName, sectionName) {
@@ -567,6 +599,18 @@ class Geometer {
             this.calculations = calculations;
         }
         this.calculateGeometry = this.calculations[sectionName];
+    }
+
+    async loadSE(bookName, sectionName) {
+        if (!('specialEffectsBundle' in this)) {
+            let {specialEffects} = await import(`/static/${bookName}/SEs.js`);
+            this.specialEffectsBundle = specialEffects;
+        }
+        if (sectionName in this.specialEffectsBundle) {
+            this.specialEffects = this.specialEffectsBundle[sectionName];
+        } else {
+            this.specialEffects = null;
+        }
     }
 
     loadStyle(bookName, sectionName) {
@@ -603,57 +647,70 @@ class Geometer {
         if (this.step <= this.stepMin) {return;}
         if (this.original) {return;}
         this.step--;
-        this.buildAndRenderIfLoaded();
+        if (this._useStyler) {
+            this.params = this.style.getParams(this.step);
+            this.buildAndRenderIfLoaded();
+        } else {
+            this._fx.terminate();
+            let entities = {};
+            for (let key in this._objectsDict) {
+                entities[key] = {
+                    size: 1,
+                    visibility: false,
+                    color: 'black'
+                };
+            }
+            let tempAllParams = new AllParamsSummary(
+                this.specialEffects.initialCamSet,
+                this.specialEffects.initialParams,
+                entities
+            );
+            tempAllParams.update(this.specialEffects.setup(this._objectsDict).summary());
+            for (let i=0; i<this.step; i++) {
+                tempAllParams.update(this.specialEffects.forward[i](this._objectsDict).summary());
+            }
+    
+            this._fx = this.specialEffects.forward[this.step](this._objectsDict).reversed(tempAllParams);
+            this._fx.attachGeometer(this);
+            let that = this;
+            this._fx.action(50, null, function() {that.render();});
+            this.currentAllParams.update(this._fx.summary());
+
+        }
+
     }
     stepForward() {
         if (this.step >= this.stepMax) {return;}
         if (this.original) {return;}
-        // this.step++;
-        // this.buildAndRenderIfLoaded();
-
-        let paramsBf = this.params;
-        let camSetBf = this.camSetting;
         this.step++;
-        let paramsAf = this.params;
-        let camSetAf = this.camSetting;
-        let fps = 20;
-        let duration = 1;
-        let that = this;
-        let epoch = Date.now();
-        if (this.currentAnimation) {
-            clearInterval(this.currentAnimation);
-        }
-        let timer = setInterval(
-            function () {
-                let timePassed = Date.now() - epoch;
-                if ((timePassed >= duration*1000)) {
-                    clearInterval(timer);
-                    that.buildAndRenderIfLoaded();
-                    that.currentAnimation = null;
-                    return;
-                }
-            that.animate(camSetBf, paramsBf, camSetAf, paramsAf, timePassed / (duration*1000))
-            }, 
-            duration*1000/fps
-        );
-        this.currentAnimation = timer;
+        if (this._useStyler) {
+            this.params = this.style.getParams(this.step);
+            this.buildAndRenderIfLoaded();
+        } else {
+            this._fx.terminate();
+            this._fx = this.specialEffects.forward[this.step-1](this._objectsDict);
+            this._fx.attachGeometer(this);
+            let that = this;
+            this._fx.action(50, null, function() {that.render();});
+            this.currentAllParams.update(this._fx.summary());
 
+        }
+    }
 
-    }
-    animate(camSetBf, paramsBf, camSetAf, paramsAf, progress) {
-        let camSet = {};
-        for (let key in camSetBf) {
-            camSet[key] = progress*camSetAf[key] + (1-progress)*camSetBf[key];
-        }
-        let params = {};
-        for (let key in paramsBf) {
-            params[key] = progress*paramsAf[key] + (1-progress)*paramsBf[key];
-        }
-        this.cameraReady(camSet);
-        this.build(params);
-        this.attachCaption(camSet);
-        this.render();
-    }
+    // animate(camSetBf, paramsBf, camSetAf, paramsAf, progress) {
+    //     let camSet = {};
+    //     for (let key in camSetBf) {
+    //         camSet[key] = progress*camSetAf[key] + (1-progress)*camSetBf[key];
+    //     }
+    //     let params = {};
+    //     for (let key in paramsBf) {
+    //         params[key] = progress*paramsAf[key] + (1-progress)*paramsBf[key];
+    //     }
+    //     this.cameraReady(camSet);
+    //     this.build(params);
+    //     this.attachCaption(camSet);
+    //     this.render();
+    // }
     toggleOriginal() {
         this.original = !this.original;
         this.buildAndRenderIfLoaded();

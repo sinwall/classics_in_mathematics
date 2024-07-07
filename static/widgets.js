@@ -45,13 +45,14 @@ class DiagramNavigator {
                 that.setDisabled(false);
             }
         }
+        this.checkOriginal.style.visibility = 'hidden';
         this.setStepsItems();
 
         this.outerDiv.appendChild(this.buttonPrev);
         this.outerDiv.appendChild(this.selector);
         this.outerDiv.appendChild(this.buttonNext);
         this.outerDiv.appendChild(this.checkOriginal);
-        this.outerDiv.appendChild(document.createTextNode('original'));
+        // this.outerDiv.appendChild(document.createTextNode('original'));
         this.parentNode.appendChild(this.outerDiv);
     }
 

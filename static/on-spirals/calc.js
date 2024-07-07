@@ -1,4 +1,4 @@
-import {newVector, newCircle, newSpiral} from "/static/construction.js"
+import {newVector, newPoints as Points, newLine as Line, newCircle as Circle, newSpiral as Spiral} from "/static/construction.js"
 // import {e_x, e_y, origin} from "/static/construction.js"
 import { bisectionSolver, degCos, degSin, degTan } from "/static/analysis.js";
 
@@ -34,26 +34,30 @@ let calculations = {
         for (let i=1; i<ratioAD; i++) {
             ticksAD.push(D.toward(G, i));
         }
+        ticksAD = Points(ticksAD);
         let ticksLH = [];
         for (let i=1; i<ratioLH; i++) {
             ticksLH.push(H.toward(Z, i));
         }
+        ticksLH = Points(ticksLH);
         let ticksDB = [];
         for (let i=1; i<ratioBD; i++) {
             ticksDB.push(D.toward(E, i));
         }
+        ticksDB = Points(ticksDB);
         let ticksHK = [];
         for (let i=1; i<ratioHK; i++) {
             ticksHK.push(H.toward(Q, i));
         }
+        ticksHK = Points(ticksHK);
     
         let datas = {
             A, B, G, D, E, Z, H, Q, K, L, 
-            AG:[A,G], GD:[G,D], DE:[D,E], EB:[E,B],
+            AG:[A,G], GD:[G,D], DE:[D,E], EB:[E,B], AB:[A,B],
             LZ:[L,Z], ZH:[Z,H], HQ:[H,Q], QK:[Q,K],
             ticksAD, ticksDB, ticksLH, ticksHK
-        }    
-        return datas
+        };
+        return datas;
     },
     Prop02: function (params) {
         let {
@@ -112,7 +116,7 @@ let calculations = {
         let entityDatas = {
             K, A,B,G,D, Z, H, Q,
             E, DZ:[D,Z], AH:[A,H], BQ:[B,Q], QH:[Q,H], KQ:[K,Q], QZ:[Q,Z],
-            ABG: newCircle(K, radius), 
+            ABG: Circle(K, radius), 
         };
         return entityDatas;   
     },
@@ -148,7 +152,7 @@ let calculations = {
             K, A, B, G, Q, N, L, E,
             Z:[Zbottom, Ztop], H:[Hbottom, Htop], KQ:[K,Q], GQ:[G,Q], AQ:[A,Q], KN:[leftTail, N], 
             KG:[K,G], GL:[G,L], BN:[B,N], KB:[K,B], EB:[E,B], GB:[G,B],
-            ABG:newCircle(K, radius),
+            ABG:Circle(K, radius),
         }
         return result;
     
@@ -185,7 +189,7 @@ let calculations = {
             K, A, G, Q, L, I, N, E,
             Z:[Zbot,Ztop], H:[Hbot,Htop], AQ:[A,Q], GQ:[G,Q], QK:[Q,K], KG:[K,G], GL:[G,L], GN:[G,N], IN:[I,N], 
             KL:[leftTail, L], KE:[K,E], GE:[G,E], EI:[E,I], IG:[I,G],
-            ABG:newCircle(K,radius),
+            ABG:Circle(K,radius),
         }
         return result;
     
@@ -242,7 +246,7 @@ let calculations = {
             Z:[Zbot,Ztop], H:[Hbot,Htop], AG:[A,G], GQ:[G,Q], QK:[Q,K], GK:[G,K], GL:[G,L], 
             KL:[KLleft,L], CL:[C,L], GM:[G,M], IN:[I,N], KN:[K,N], CI:[C,I], KE:[K,E], IL:[I,L], KI:[K,I], 
             CG:[C,G], KB:[K,B], IG:[I,G], BE:[B,E], 
-            ABGD:newCircle(K, radius), KLC:newCircle(centerKLC, radiusKLC)
+            ABGD:Circle(K, radius), KLC:Circle(centerKLC, radiusKLC)
         }
         return result;
     },
@@ -255,7 +259,7 @@ let calculations = {
         let K = newVector();
         let A = K.shiftPolar(radiusABGD, 90+angleAKQ);
         let G = K.shiftPolar(radiusABGD, 90-angleAKQ);
-        let ABGD = newCircle(K, radiusABGD);
+        let ABGD = Circle(K, radiusABGD);
         let L = K.shift(radiusABGD/degSin(angleAKQ));
         let Q = A.toward(G, 0.5);
         ratioLengthZ = Math.max(ratioLengthZ, degTan(angleAKQ)*ratioLengthH*ratioBiggerRatio);
@@ -273,7 +277,7 @@ let calculations = {
         let ratioDistCLToCenter = (ratioLengthGM - 1) / 2;
         let centerKLC = CLmid.add(G.sub(K).dilate(ratioDistCLToCenter));
         let radiusKLC = centerKLC.distTo(K)
-        let KLC = newCircle(centerKLC, radiusKLC);
+        let KLC = Circle(centerKLC, radiusKLC);
         let M = G.toward(K, -ratioLengthGM);
 
         let angleGKI = 0;
@@ -347,7 +351,7 @@ let calculations = {
             radius, angleSpiralEnd, angleSpiralRotation, angleB, angleG
         } = params;
         let A = newVector();
-        let spiral = newSpiral(A, radius, 0, angleSpiralEnd, angleSpiralRotation);
+        let spiral = Spiral(A, radius, 0, angleSpiralEnd, angleSpiralRotation);
         let B = A.shiftPolar(radius*angleB/360, angleB+angleSpiralRotation);
         let G = A.shiftPolar(radius*angleG/360, angleG+angleSpiralRotation);
         let angleD = angleG + (angleG - angleB);
@@ -371,7 +375,7 @@ let calculations = {
             lengthZE
         } = params;
         let A = newVector();
-        let spiral = newSpiral(A, radius, 0, angleSpiralEnd, angleSpiralRotation);
+        let spiral = Spiral(A, radius, 0, angleSpiralEnd, angleSpiralRotation);
         let B = A.shiftPolar(radius*0.5*angleG/360, (0.5*angleG+angleSpiralRotation));
         let G = A.shiftPolar(radius*angleG/360, (angleG+angleSpiralRotation));
         let D = A.shiftPolar(radius*1.5*angleG/360, (1.5*angleG+angleSpiralRotation));
@@ -394,8 +398,8 @@ let calculations = {
             radius, angleSpiralRotation, angleD, angleE, angleQ,
         } = params;
         let A = newVector();
-        let spiral = newSpiral(A, radius, 0, -360, angleSpiralRotation);
-        let circle = newCircle(A, radius, 0, 360, 180+angleSpiralRotation);
+        let spiral = Spiral(A, radius, 0, -360, angleSpiralRotation);
+        let circle = Circle(A, radius, 0, 360, 180+angleSpiralRotation);
         let D = spiral.pick(angleD);
         let H = circle.pick(angleD);
         let E = spiral.pick(angleE);
@@ -405,8 +409,8 @@ let calculations = {
         let angleDm = Math.max(angleD, angleQ+720);
         let Dm = spiral.pick(angleDm);
         let Q = spiral.pick(-360);
-        let QKZ = newCircle(A, radius, 0, angleEm, angleSpiralRotation);
-        let QKH = newCircle(A, radius, 0, angleDm, angleSpiralRotation);
+        let QKZ = Circle(A, radius, 0, angleEm, angleSpiralRotation);
+        let QKH = Circle(A, radius, 0, angleDm, angleSpiralRotation);
 
         let result = {
             A, D, E, Z, H, Q, 
@@ -422,8 +426,8 @@ let calculations = {
         } = params;
 
         let A = newVector();
-        let circle = newCircle(A, radius, 0, 360, 180+angleSpiralRotation);
-        let spiral = newSpiral(A, radius, 0, -720, angleSpiralRotation);
+        let circle = Circle(A, radius, 0, 360, 180+angleSpiralRotation);
+        let spiral = Spiral(A, radius, 0, -720, angleSpiralRotation);
         let G = spiral.pick(angleG);
         let D = spiral.pick(angleD);
         let Q = circle.pick(angleQ);
@@ -438,8 +442,8 @@ let calculations = {
         let angleLm = Math.max(angleL+360, angleQ+720);
         let Lm = spiral.pick(angleLm);
 
-        let QKZ = newCircle(A, radius, 0, angleEm, angleSpiralRotation)
-        let QKH = newCircle(A, radius, 0, angleLm, angleSpiralRotation)
+        let QKZ = Circle(A, radius, 0, angleEm, angleSpiralRotation)
+        let QKH = Circle(A, radius, 0, angleLm, angleSpiralRotation)
 
         let result = {
             A, G, D, M, L, E, Z, H, Q, 
@@ -456,8 +460,8 @@ let calculations = {
         } = params;
         let A = newVector();
 
-        let circle = newCircle(A, radius, 0, 360, 180+angleSpiralRotation);
-        let spiral = newSpiral(A, radius, 0, -400, angleSpiralRotation);
+        let circle = Circle(A, radius, 0, 360, 180+angleSpiralRotation);
+        let spiral = Spiral(A, radius, 0, -400, angleSpiralRotation);
         let B = spiral.pick(angleB);
         let G = spiral.pick(angleG);
         let D = spiral.pick(angleD);
@@ -468,6 +472,7 @@ let calculations = {
         let N = Z.toward(Q, 1+ratioQN);
 
         let L = A.toward(Z, ratioLA);
+        let ZLmid = L.toward(Z, 0.5);
         let QHmid = Q.toward(H, 0.5);
 
         let P = newVector();
@@ -477,7 +482,7 @@ let calculations = {
         }
         let R = A.toward(N, radius/A.distTo(N));
         let angleQAR = Q.sub(A).angleTo(R.sub(A));
-        let QRarc = newCircle(A, radius, 90-angleQAR, 90);
+        let QRarc = Circle(A, radius, 90-angleQAR, 90);
         let X = A.shiftPolar(radius*(-360-angleQAR)/360, -angleQAR+angleSpiralRotation);
 
         let M = Q.add(Z.sub(A).dilate(ratioMQ))
@@ -486,10 +491,10 @@ let calculations = {
         }
 
         let result = {
-            A,B,G,D,H,Q,Z,L, N,R, X, M, P,
+            A,B,G,D,H,Q,Z,L, N,R, X, M, P, 
             AZ:[A,Z], AQ:[A,Q], ZN:[Z,N], LA:[A,L], ZL:[Z,L], QQHmid:[Q,QHmid], AQHmid:[A,QHmid],
             NR:[N,R], AR:[A,R], QR:[Q,R], XR:[X,R],
-            MP:[M,P], QP:[Q,P], ZQ:[Z,Q],
+            MP:[M,P], QP:[Q,P], ZQ:[Z,Q], AZLmid:[A,ZLmid],
             QRarc, 
             circle, spiral,
         };

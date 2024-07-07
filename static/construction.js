@@ -196,8 +196,48 @@ class Vector {
     }
 }
 
-class CircleData {
+class EntityData {
+    getType () {
+        return this.constructor.type;
+    }
+}
+
+function isEntityData(x) {
+    return (x instanceof EntityData);
+}
+
+class PointsData extends EntityData {
+    static type = 'points';
+    constructor (points) {
+        super();
+        this.points = points;
+    }
+}
+
+function newPoints(points) {
+    return new PointsData(points);
+}
+
+class LineData extends EntityData {
+    static type = 'line';
+    constructor (begin, end) {
+        super();
+        this.begin = begin;
+        this.end = end;
+    }
+    pick(t) {
+        return this.begin.toward(this.end, t);
+    }
+}
+
+function newLine(begin, end) {
+    return new LineData(begin, end);
+}
+
+class CircleData extends EntityData {
+    static type = 'circle';
     constructor (origin, radius, start=0, end=360, rotAngle=0, xAxis=null, yAxis=null) {
+        super();
         this.origin = origin;
         this.radius = radius;
         this.start = start;
@@ -223,8 +263,10 @@ function newCircle(origin, radius, start=0, end=360, rotAngle=0, xAxis=null, yAx
     return new CircleData(origin, radius, start, end, rotAngle, xAxis, yAxis);
 }
 
-class SpiralData {
+class SpiralData extends EntityData {
+    static type = 'spiral';
     constructor (origin, radius, start, end, rotAngle=0, xAxis=null, yAxis=null) {
+        super();
         this.origin = origin;
         this.radius = radius;
         this.start = start;
@@ -274,4 +316,4 @@ function newSpiral(origin, radius, start, end, rotAngle=0, xAxis=null, yAxis=nul
 //     return result;
 // }
 
-export {newVector, Vector, newCircle, newSpiral};
+export {newVector, Vector, newPoints, newLine, newCircle, newSpiral, isEntityData};
