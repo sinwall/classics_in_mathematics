@@ -71,6 +71,10 @@ class BaseFX {
     terminate() {
         clearInterval(this.timer);
         this.onEnd();
+        this.geometer.cameraReady();
+        this.geometer.build();
+        this.geometer.attachCaption();
+        this.geometer.render();
     }
 }
 
@@ -490,7 +494,7 @@ class CameraChangeFX extends BaseFX {
     }
 
     reversed(state) {
-        let camSetting = {}
+        let camSetting = {};
         for (let key in this.camSetting) {
             camSetting[key] = state.camSetting[key];
         }
@@ -498,9 +502,7 @@ class CameraChangeFX extends BaseFX {
     }
     
     summary() {
-        return {
-            camSetting: this.camSetting
-        };
+        return new AllParamsSummary(this.camSetting);
     }
 
 }

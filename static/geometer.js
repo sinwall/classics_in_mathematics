@@ -408,7 +408,7 @@ class Geometer {
         let style = this.style;
         let renderer = this.renderer;
         if (this.specialEffects) {
-            this.camSetting = this.specialEffects.initialCamSet;
+            this.camSetting = Object.assign({}, this.specialEffects.initialCamSet);
             this.params = Object.assign({}, this.specialEffects.initialParams);
 
             this.pixelSize = (2*this.specialEffects.initialCamSet.scale) / renderer.getSize().width;
@@ -567,6 +567,7 @@ class Geometer {
             this._objectsDict[key]._caption.remove();
         }
         this.render();
+        if (this._fx) {this._fx.terminate();this._fx = null;}
         this._objectsDict = {};
         this.step = 0;
         this.original = false;
@@ -669,11 +670,11 @@ class Geometer {
             for (let i=0; i<this.step; i++) {
                 tempAllParams.update(this.specialEffects.forward[i](this._objectsDict).summary());
             }
-    
+            this._fx.terminate();
             this._fx = this.specialEffects.forward[this.step](this._objectsDict).reversed(tempAllParams);
             this._fx.attachGeometer(this);
             let that = this;
-            this._fx.action(50, null, function() {that.render();});
+            this._fx.action(50);
             this.currentAllParams.update(this._fx.summary());
 
         }
@@ -691,7 +692,7 @@ class Geometer {
             this._fx = this.specialEffects.forward[this.step-1](this._objectsDict);
             this._fx.attachGeometer(this);
             let that = this;
-            this._fx.action(50, null, function() {that.render();});
+            this._fx.action(50);
             this.currentAllParams.update(this._fx.summary());
 
         }
