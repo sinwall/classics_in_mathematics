@@ -274,6 +274,156 @@ let specialEffects = {
 
         ]
     },
+    Prop05: {
+        stepMax: 4,
+        initialCamSet: {
+            scale: 7.5,
+            centerX: 0,
+            centerY: 0,
+            centerZ: 0
+        },
+        captions: {
+            K:'Κ', A:'Α', B:'Β', G:'Γ', D:'Δ', Z:'Ζ', H:'Η', Q:'Θ', E:'Ε', 
+        },
+        initialParams: {
+            radius: 2,
+            angleAKB: 108,
+            ratioBD: 0.9,
+            ratioBZ: 1.2,
+            ratioLengthE: 3,
+            ratioLongerPos: 2,
+            switchZ: 0,
+        },
+        setup: (e) => Sequential(
+            Show(200, e.A), 
+            Show(200, e.B),
+            Show(200, e.G),
+            Draw(500, e.ABG),
+            Show(200, e.K),
+            Show(1, e.D),
+            Draw(400, e.DZ),
+            Show(1, e.Z),
+            Draw(400, e.E)
+        ),
+        forward: [
+            // 0 -> 1
+            (e) => Sequential(
+                ChangeParams(400, {angleAKB: 90}),
+                Draw(400, e.AH),
+                Show(1, e.H),
+                Draw(400, e.QH),
+                Show(1, e.Q),
+                Draw(200, e.BQ),
+                Parallel(
+                    ChangeStyle(200, e.E, 'red', 1.5),
+                    ChangeStyle(200, e.QH, 'red', 1.5),
+                )
+            ),
+            // 1-> 2
+            (e) => Sequential(
+                Parallel(
+                    ChangeParams(400, {switchZ: 1}),
+                    Draw(400, e.KQ), 
+                    ChangeStyle(200, e.E, 'black', 1),
+                    ChangeStyle(200, e.QH, 'black', 1),
+                ),
+                Draw(200, e.QZ),
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.QZ, 'red', 1.5),
+                    ChangeStyle(200, e.KQ, 'DarkRed', 1.5),
+                    ChangeStyle(200, e.BQ, 'blue', 1.5),
+                    ChangeStyle(200, e.QH, 'DarkBlue', 1.5),
+                )
+            ),
+            // 3 -> 4
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.BQ, 'black', 1),
+                    ChangeStyle(200, e.QH, 'black', 1),
+                ),
+                Show(1, e.BQarc),
+                Parallel(
+                    ChangeStyle(200, e.BQarc, 'blue', 1.5),
+                    ChangeStyle(200, e.ABG, 'DarkBlue', 1.5)
+                )
+            )
+        ]
+    },
+    Prop06: {
+        stepMax: 6,
+        initialCamSet: {
+            scale: 5,
+            centerX: 0,
+            centerY: 0,
+            centerZ: 0
+        },
+        captions: {
+            K:'Κ', A:'Α', B:'Β', G:'Γ', Q:'Θ', N:'Ν', L:'Λ', E:'Ε', Z:'Ζ', H:'Η',
+        },
+        initialParams: {
+            radius: 2,
+            angleAKQ: 63,
+            angleBKQ: 25,
+            ratioPosQ: 0.5,
+            ratioLengthZ: 4,
+            ratioPosZ: 2,
+            ratioLengthH: 3,
+            ratioPosH: 1.5,
+            ratioPosN: 2,
+            ratioLeftTail: 0,
+            switchN: 0,
+            ratioBNmagn: 1,
+        },
+        setup: (e) => Sequential(
+            Show(200, e.A),
+            Show(200, e.B),
+            Show(200, e.G),
+            Draw(500, e.ABG),
+            Show(200, e.K),
+            Draw(200, e.AQ),
+            Draw(200, e.GQ),
+        ),
+        forward: [
+            // 0 -> 1
+            (e) => Sequential(
+                Parallel(
+                    Draw(400, e.Z),
+                    Draw(400, e.H),
+                ),
+                Draw(200, e.KQ),
+                Show(1, e.Q),
+                Parallel(
+                    ChangeStyle(200, e.Z, 'red', 1.5),
+                    ChangeStyle(200, e.H, 'DarkRed', 1.5),
+                    ChangeStyle(200, e.GQ, 'blue', 1.5),
+                    ChangeStyle(200, e.KQ, 'DarkBlue', 1.5),
+                ),
+            ),
+            // 1 -> 2
+            (e) => Sequential(
+                Parallel(
+                    Sequential(
+                        Draw(300, e.KN),
+                        Show(1, e.N),
+                        Draw(300, e.GL),
+                        Show(1, e.L)
+                    ),
+                    ChangeStyle(200, e.Z, 'black', 1),
+                    ChangeStyle(200, e.H, 'black', 1),
+                    ChangeStyle(200, e.GQ, 'black', 1),
+                    ChangeStyle(200, e.KQ, 'black', 1),
+                    
+                )
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+
+            )
+        ]
+    },
     Prop18: {
         stepMax: 15,
         initialCamSet: {

@@ -117,6 +117,7 @@ let calculations = {
             K, A,B,G,D, Z, H, Q,
             E, DZ:[D,Z], AH:[A,H], BQ:[B,Q], QH:[Q,H], KQ:[K,Q], QZ:[Q,Z],
             ABG: Circle(K, radius), 
+            BQarc: Circle(K, radius, G.sub(K).angleTo(Q.sub(K)), 90)
         };
         return entityDatas;   
     },
