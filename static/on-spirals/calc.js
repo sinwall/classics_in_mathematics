@@ -90,7 +90,7 @@ let calculations = {
     },
     Prop05: function (params) {
         let {
-            radius, angleAKB, ratioBD, ratioBZ,
+            radius, angleAKB, angleGivenArc, ratioBD, ratioBZ,
             ratioLengthE, ratioLongerPos, switchZ
         } = params;
         let K = newVector();
@@ -99,6 +99,9 @@ let calculations = {
         let G = K.shift(radius);
         let D = B.shift(-radius*ratioBD);
         let Z = B.shift(radius*ratioBZ);
+        let givenArcEnd = K.shiftPolar(radius, 90+angleGivenArc);
+        let givenArc = Circle(K, radius, 90, 90+angleGivenArc);
+
         let ECenter = K.shift(-radius*ratioLongerPos);
         let EBottom = ECenter.shift(0, -ratioLengthE*radius/2);
         let ETop = ECenter.shift(0, +ratioLengthE*radius/2);
@@ -114,9 +117,10 @@ let calculations = {
         Z = Z.toward(Zafter, switchZ);
     
         let entityDatas = {
-            K, A,B,G,D, Z, H, Q,
+            K, A,B,G,D, Z, H, Q, givenArcEnd,
             E, DZ:[D,Z], AH:[A,H], BQ:[B,Q], QH:[Q,H], KQ:[K,Q], QZ:[Q,Z],
             ABG: Circle(K, radius), 
+            givenArc,
             BQarc: Circle(K, radius, G.sub(K).angleTo(Q.sub(K)), 90)
         };
         return entityDatas;   
@@ -349,23 +353,33 @@ let calculations = {
 
     Prop12: function(params) {
         let {
-            radius, angleSpiralEnd, angleSpiralRotation, angleB, angleG
+            radius, angleSpiralEnd, angleSpiralRotation, angleB, angleG, angleCursor, 
         } = params;
         let A = newVector();
         let spiral = Spiral(A, radius, 0, angleSpiralEnd, angleSpiralRotation);
-        let B = A.shiftPolar(radius*angleB/360, angleB+angleSpiralRotation);
-        let G = A.shiftPolar(radius*angleG/360, angleG+angleSpiralRotation);
+        let B = spiral.pick(angleB);
+        let G = spiral.pick(angleG);
         let angleD = angleG + (angleG - angleB);
-        let D = A.shiftPolar(radius*angleD/360, angleD+angleSpiralRotation);
+        let D = spiral.pick(angleD);
         let angleE = angleG + 2*(angleG-angleB);
-        let E = A.shiftPolar(radius*angleE/360, angleE+angleSpiralRotation);
+        let E = spiral.pick(angleE);
         let angleZ = angleG + 3*(angleG-angleB);
-        let Z = A.shiftPolar(radius*angleZ/360, angleZ+angleSpiralRotation);
+        let Z = spiral.pick(angleZ);
 
+        let rotEnd = A.shiftPolar(radius*Math.sign(angleSpiralEnd), angleCursor+angleSpiralRotation);
+        let cursor = spiral.pick(angleCursor);
+        let rotB = A.shiftPolar(radius*angleB/360, angleCursor+angleSpiralRotation);
+        let rotG = A.shiftPolar(radius*angleG/360, angleCursor+angleSpiralRotation);
+        let rotD = A.shiftPolar(radius*angleD/360, angleCursor+angleSpiralRotation);
+        let rotE = A.shiftPolar(radius*angleE/360, angleCursor+angleSpiralRotation);
+        let rotZ = A.shiftPolar(radius*angleZ/360, angleCursor+angleSpiralRotation);
+        
         let result = {
             A, B, G, D, E, Z,
             AB:[A,B], AG:[A,G], AD:[A,D], AE:[A,E], AZ:[A,Z],
             spiral,
+            rotB, rotG, rotD, rotE, rotZ,
+            rod:[A, rotEnd]
         };
         return result;
     },
@@ -373,7 +387,7 @@ let calculations = {
     Prop13: function(params) {
         let {
             radius, angleSpiralEnd, angleSpiralRotation, angleG, angleH,
-            lengthZE
+            lengthZE, switchFake,
         } = params;
         let A = newVector();
         let spiral = Spiral(A, radius, 0, angleSpiralEnd, angleSpiralRotation);
@@ -383,13 +397,24 @@ let calculations = {
         let H = A.shiftPolar(radius*angleH/360, (angleH+angleSpiralRotation));
         let angleQ = (angleG + angleH)/2
         let Q = A.shiftPolar(radius*angleQ/360, (angleQ+angleSpiralRotation));
-        let Z = G.toward(H, 0.5+0.5*lengthZE/G.distTo(H));
-        let E = H.toward(G, 0.5+0.5*lengthZE/G.distTo(H));
+        
+        let ptOnTangent = G.shiftPolar(radius/(2*Math.PI), angleG+angleSpiralRotation)
+            .shiftPolar(radius*angleG/360, angleG+90+angleSpiralRotation);
+        let E = G.toward(ptOnTangent, -0.5*lengthZE/G.distTo(ptOnTangent));
+        let Z = E.toward(G, 2);
+
+        // let angleFake = E.sub(G).angleTo(H.sub(G));
+        let EfakeInter = E.toward(H, switchFake);
+        let Efake = G.toward(EfakeInter, E.distTo(G)/EfakeInter.distTo(G));
+        let Zfake = Efake.toward(G, 2);
+
+        // let Z = G.toward(H, 0.5+0.5*lengthZE/G.distTo(H));
+        // let E = H.toward(G, 0.5+0.5*lengthZE/G.distTo(H));
         let ratioCut = 4*(angleG*angleH)*degCos(angleQ-angleG) / ((angleG + angleH)**2);
         let cut = A.toward(Q, ratioCut);
         let result = {
-            A, B, G, D, H, Z, E, Q, cut,
-            AG:[A,G], AH:[A,H], ZE:[Z,E], AQ:[A,Q],
+            A, B, G, D, H, Z, E, Q, cut, Efake, Zfake,
+            AG:[A,G], AH:[A,H], ZE:[Z,E], AQ:[A,Q], ZfEf:[Zfake,Efake],
             spiral,
         };
         return result;
@@ -450,6 +475,54 @@ let calculations = {
             A, G, D, M, L, E, Z, H, Q, 
             AQ: [A, Q], AZ:[A,Z], AH:[A,H], AEm:[A,Em], ALm:[A,Lm],
             circle, QKZ, QKH,
+            spiral,
+        };
+        return result;
+    },
+    Prop16: function (params) {
+        let {
+            radius, angleSpiralRotation, angleB, angleG, angleD, angleT, angleN, angleDAI,
+            ratioLengthDE, ratioLengthDZ, 
+            switchFake, switchT,
+        } = params;
+        let A = newVector();
+        let spiral = Spiral(A, radius, 0, -360, angleSpiralRotation);
+        let B = spiral.pick(angleB);
+        let G = spiral.pick(angleG);
+        let D = spiral.pick(angleD);
+        let Q = spiral.pick(-360);
+        let QKH = Circle(A, radius, 0, 360);
+
+        let ptOnTangent = D.shiftPolar(radius/(2*Math.PI), angleD+angleSpiralRotation)
+            .shiftPolar(radius*angleD/360, angleD+90+angleSpiralRotation);
+        let E = D.toward(ptOnTangent, -1*Math.sign(angleSpiralRotation));
+        let Z = D.toward(ptOnTangent, 1*Math.sign(angleSpiralRotation));
+        let radiusSmall = A.distTo(D);
+        let DTN = Circle(A, radiusSmall, 0, 360);
+        let T = A.shiftPolar(radiusSmall, (1-switchT)*angleT+switchT*(-angleSpiralRotation));
+        let N = A.shiftPolar(radiusSmall, angleN);
+
+        let angleFakeTangent = (switchFake)*90+ (1-switchFake)*E.sub(D).angleTo(A.sub(D))
+        let Efake = D.shiftPolar(D.distTo(E), angleD+angleSpiralRotation-angleFakeTangent);
+        let Zfake = D.shiftPolar(D.distTo(E), angleD+angleSpiralRotation+180-angleFakeTangent);
+
+        let R = A.shiftPolar(radiusSmall, 180+angleD+angleSpiralRotation-angleDAI);
+        let I = A.toward(R, 1/degCos(angleDAI));
+        let L = A.toward(R, 1+angleDAI/(-angleD));
+        let DNT = Circle(A, radiusSmall, -angleSpiralRotation+angleD, -angleSpiralRotation);
+        let DRarc = Circle(A, radiusSmall, -angleSpiralRotation+angleD-angleDAI, -angleSpiralRotation+angleD);
+
+        let S = A.toward(R, radius/radiusSmall);
+        let H = A.toward(D, radius/radiusSmall);
+        let K = A.toward(N, radius/radiusSmall);
+        let HKQ = Circle(A, radius, -angleSpiralRotation+angleD, -angleSpiralRotation);
+        let SHarc = Circle(A, radius, -angleSpiralRotation+angleD-angleDAI, -angleSpiralRotation+angleD);
+
+        let result = {
+            A, B, G, D, Q, E, Z, T, N, Efake, Zfake, R, I, L, S, H, K,
+            AQ:[A,Q], EZ:[E,Z], AD:[A,D], EfZf:[Efake,Zfake], AL:[A,L],
+            RI:[R,I], AR:[A,R], LS:[L,S], DH:[D,H], RL:[R,L],
+            QKH, DTN, DNT, DRarc, HKQ, SHarc,
             spiral,
         };
         return result;
