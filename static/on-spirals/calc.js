@@ -160,7 +160,6 @@ let calculations = {
             ABG:Circle(K, radius),
         }
         return result;
-    
     },
     Prop07: function (params) {
         let {
@@ -311,7 +310,6 @@ let calculations = {
         };
         return result;
     },
-
     Prop10: function(params) {
         let {
             lengthA, lengthBetweenLines
@@ -332,8 +330,8 @@ let calculations = {
         let Ltop = Ktop.shift(lengthBetweenLines);
         let Mtop = Ltop.shift(lengthBetweenLines);
         let Ntop = Mtop.shift(lengthBetweenLines);
-        let Xtop = Ntop.shift(lengthBetweenLines);
-        let Otop = Xtop.shift(lengthBetweenLines);
+        let Ctop = Ntop.shift(lengthBetweenLines);
+        let Otop = Ctop.shift(lengthBetweenLines);
 
         let Btop = Itop.shift(0, -lengthQ);
         let Gtop = Btop.shift(lengthBetweenLines, -lengthQ);
@@ -345,7 +343,7 @@ let calculations = {
 
         let result = {A:[Abot,Atop], 
             B:[Bbot,Btop], G:[Gbot,Gtop], D:[Dbot,Dtop], E:[Ebot,Etop], Z:[Zbot,Ztop], H:[Hbot,Htop], Q:[Qbot,Qtop],
-            I:[Btop,Itop], K:[Gtop,Ktop], L:[Dtop,Ltop], M:[Etop,Mtop], N:[Ztop,Ntop], X:[Htop,Xtop], O:[Qtop,Otop],
+            I:[Btop,Itop], K:[Gtop,Ktop], L:[Dtop,Ltop], M:[Etop,Mtop], N:[Ztop,Ntop], C:[Htop,Ctop], O:[Qtop,Otop],
             Btop, Gtop, Dtop, Etop, Ztop, Htop, Qtop
         };
         return result;
@@ -421,39 +419,49 @@ let calculations = {
     }, 
     Prop14: function (params) {
         let {
-            radius, angleSpiralRotation, angleD, angleE, angleQ,
+            radius, angleSpiralRotation, angleB, angleG, angleD, angleE, angleCursor,
         } = params;
         let A = newVector();
         let spiral = Spiral(A, radius, 0, -360, angleSpiralRotation);
         let circle = Circle(A, radius, 0, 360, 180+angleSpiralRotation);
+        let B = spiral.pick(angleB);
+        let G = spiral.pick(angleG);
         let D = spiral.pick(angleD);
         let H = circle.pick(angleD);
         let E = spiral.pick(angleE);
-        let angleEm = Math.max(angleE, angleQ+360);
+        let angleEm = Math.max(angleE, angleCursor);
         let Em = spiral.pick(angleEm);
         let Z = circle.pick(angleE);
-        let angleDm = Math.max(angleD, angleQ+720);
+        let angleDm = Math.max(angleD, angleCursor+360);
         let Dm = spiral.pick(angleDm);
         let Q = spiral.pick(-360);
-        let QKZ = Circle(A, radius, 0, angleEm, angleSpiralRotation);
-        let QKH = Circle(A, radius, 0, angleDm, angleSpiralRotation);
+        let QKZ = Circle(A, radius, 0, angleEm, -angleSpiralRotation);
+        let QKH = Circle(A, radius, 0, angleDm, -angleSpiralRotation);
+
+        let Qcursor = A.shiftPolar(radius, -angleSpiralRotation+angleCursor);
+        let Acursor = spiral.pick(-(-angleCursor % 360));
+        let arm = [A, Qcursor];
+        let armPart = [A, Acursor];
+        let arcCursor = Circle(A, radius, -angleSpiralRotation, -angleSpiralRotation+angleCursor);
 
         let result = {
-            A, D, E, Z, H, Q, 
-            AQ: [A, Q], AZ:[A,Z], AH:[A,H], AEm:[A,Em], ADm:[A,Dm],
-            circle, QKZ, QKH,
+            A, B, G, D, E, Z, H, Q, Acursor, Qcursor,
+            AQ: [A, Q], AZ:[A,Z], AH:[A,H], AEm:[A,Em], ADm:[A,Dm], arm, armPart,
+            circle, QKZ, QKH, arcCursor,
             spiral,
         };
         return result;
     },
     Prop15: function (params) {
         let {
-            radius, angleSpiralRotation, angleG, angleD, angleL, angleE, angleQ,
+            radius, angleSpiralRotation, angleB, angleG, angleD, angleL, angleE, angleQ,
+            angleCursor,
         } = params;
 
         let A = newVector();
         let circle = Circle(A, radius, 0, 360, 180+angleSpiralRotation);
         let spiral = Spiral(A, radius, 0, -720, angleSpiralRotation);
+        let B = spiral.pick(angleB);
         let G = spiral.pick(angleG);
         let D = spiral.pick(angleD);
         let Q = circle.pick(angleQ);
@@ -462,19 +470,27 @@ let calculations = {
         let M = spiral.pick(-720);
         let L = spiral.pick(angleL);
         let E = spiral.pick(angleE);
+
+        let Qcursor = A.shiftPolar(radius, -angleSpiralRotation+angleCursor);
+        let Acursor = spiral.pick(-(-angleCursor % 720));
         
-        let angleEm = Math.max(angleE+360, angleQ+360);
+        let angleEm = Math.max(angleE, angleCursor+720);
         let Em = spiral.pick(angleEm);
-        let angleLm = Math.max(angleL+360, angleQ+720);
+        let angleLm = Math.max(angleL, angleCursor);
         let Lm = spiral.pick(angleLm);
 
-        let QKZ = Circle(A, radius, 0, angleEm, angleSpiralRotation)
-        let QKH = Circle(A, radius, 0, angleLm, angleSpiralRotation)
+
+        let QKH = Circle(A, radius, 0, angleEm, -angleSpiralRotation);
+        let QKHaddon = Circle(A, radius*1.08, 0, -0.1+Math.min(0, angleEm+360), -angleSpiralRotation);
+        let QKZ = Circle(A, radius, 0, angleLm, -angleSpiralRotation);
+        let QKZaddon = Circle(A, radius*1.04, 0, -0.1+Math.min(0, angleLm+360), -angleSpiralRotation);
 
         let result = {
-            A, G, D, M, L, E, Z, H, Q, 
+            A, B, G, D, M, L, E, Z, H, Q, 
+            Acursor, Qcursor,
+            AE:[A,E], AL:[A,L],
             AQ: [A, Q], AZ:[A,Z], AH:[A,H], AEm:[A,Em], ALm:[A,Lm],
-            circle, QKZ, QKH,
+            circle, QKZ, QKH, QKHaddon, QKZaddon,
             spiral,
         };
         return result;

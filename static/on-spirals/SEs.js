@@ -584,7 +584,271 @@ let specialEffects = {
             ),
 
         ]
+    },
+    Prop08: {
+        stepMax: 6,
+        initialCamSet: {
+            scale: 5,
+            centerX: 0,
+            centerY: 0,
+            centerZ: 0
+        },
+        captions: {
+            K:'Κ', A:'Α', B:'Β', G:'Γ', Q:'Θ', L:'Λ', C:'Ξ', M:'Μ', I:'Ι', N:'Ν', E:'Ε', Z:'Ζ', H:'Η'
+        },
+        initialParams: {
+            radius: 2,
+            angleAKQ: 60,
+            angleBKQ: 36,
+            ratioLengthCG: 1.1,
+            ratioPosZ: 2,
+            ratioLengthZ: 4,
+            ratioPosH: 1.5,
+            ratioLengthH: 3.2,
+            ratioSmallerRatio: 0.99,
+            switchKLleft: 0,
+            switchC: 0,
+            ratioDistortIN: 1,
+            switchB: 0,
+        },
+        setup: (e) => Sequential(
+            Show(200, e.K),
+            Draw(400, e.ABGD),
+            Show(200, e.A),
+            Show(200, e.B),
+            Show(200, e.G),
+            // Show(200, e.D),
+            Draw(300, e.AG),
+            Show(1, e.C),
+            Draw(300, e.CL),
+            // Show(1, e.L),
+        ),
+        forward: [
+            // 0 -> 1
+            (e) => Sequential(
+                Parallel(
+                    Draw(300, e.Z),
+                    Draw(300, e.H),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.Z, 'red', 1.5),
+                    ChangeStyle(200, e.H, 'DarkRed', 1.5),
+                ),
+                Show(1, e.Q),
+                Draw(200, e.QK),
+                Show(1, e.GQ),
+                Parallel(
+                    ChangeStyle(200, e.GQ, 'blue', 1.5),
+                    ChangeStyle(200, e.QK, 'DarkBlue', 1.5),
+                ),
+            ),
+            // 1 -> 2
+            (e) => Sequential(
+                Draw(300, e.KL),
+                Show(1, e.L),
+                Draw(300, e.GK),
+                Show(1, e.GL),
+                Parallel(
+                    ChangeStyle(200, e.GQ, 'black', 1),
+                    ChangeStyle(200, e.QK, 'black', 1),
+                    ChangeStyle(200, e.GK, 'blue', 1.5),
+                    ChangeStyle(200, e.GL, 'DarkBlue', 1.5),
+                ),
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+                ChangeParams(300, {switchC: 1}),
+                Show(1, e.CG),
+                Parallel(
+                    ChangeStyle(200, e.GL, 'black', 1),
+                    ChangeStyle(200, e.CG, 'DarkBlue', 1.5),
+                )
+            ),
+            // 3 -> 4
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.Z, 'black', 1),
+                    ChangeStyle(200, e.H, 'black', 1),
+                    ChangeStyle(200, e.GK, 'black', 1),
+                    ChangeStyle(200, e.CG, 'black', 1)
+                ),
+                Draw(500, e.KLC), 
+            ),
+            // 4 -> 5
+            (e) => Sequential(
+                Draw(300, e.GM),
+                Show(1, e.M),
+                Draw(300, e.KI),
+                Show(1, e.I),
+                Draw(200, e.IN),
+                Show(1, e.N),
+                Parallel(
+                    ChangeStyle(200, e.GM, 'red', 1.5),
+                    ChangeStyle(200, e.IN, 'red', 1.5)
+                )
+            ),
+            // 5 -> 6
+            (e) => Sequential(
+                Show(200, e.E),
 
+            )
+        ]
+    },
+    Prop09: {
+        stepMax: 5,
+        initialCamSet: {
+            scale: 5,
+            centerX: 0,
+            centerY: 0,
+            centerZ: 0
+        },
+        captions: {
+            K:'Κ', A:'Α', B:'Β', G:'Γ', Q:'Θ', L:'Λ', C:'Ξ', M:'Μ', I:'Ι', N:'Ν', E:'Ε', Z:'Ζ', H:'Η'
+        },
+        initialParams: {
+            radiusABGD: 2,
+            angleAKQ: 42,
+            angleBKQ: 36,
+            ratioLengthCG: 1.1,
+            ratioPosZ: 2,
+            ratioLengthZ: 4,
+            ratioPosH: 1.5,
+            ratioLengthH: 1.8,
+            ratioBiggerRatio: 1.01,
+            switchKLleft: 0,
+            switchC: 0,
+            ratioDistortIN: 1,
+            switchB: 0,
+        },
+        setup: (e) => Sequential(
+            Show(200, e.K),
+            Draw(400, e.ABGD),
+            Show(200, e.A),
+            Show(200, e.B),
+            Show(200, e.G),
+            // Show(200, e.D),
+            Draw(300, e.AG),
+            Show(1, e.C),
+            Draw(300, e.CL),
+            // Show(1, e.L),
+        ),
+        forward: [
+            // 0 -> 1
+            (e) => Sequential(
+                Parallel(
+                    Draw(300, e.Z),
+                    Draw(300, e.H),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.Z, 'red', 1.5),
+                    ChangeStyle(200, e.H, 'DarkRed', 1.5),
+                ),
+                Show(1, e.Q),
+                Draw(200, e.QK),
+                Show(1, e.GQ),
+                Parallel(
+                    ChangeStyle(200, e.GQ, 'blue', 1.5),
+                    ChangeStyle(200, e.QK, 'DarkBlue', 1.5),
+                ),
+            ),
+            // 1 -> 2
+            (e) => Sequential(
+                Draw(300, e.KL),
+                Show(1, e.L),
+                Draw(300, e.GK),
+                Show(1, e.GL),
+                Parallel(
+                    ChangeStyle(200, e.GQ, 'black', 1),
+                    ChangeStyle(200, e.QK, 'black', 1),
+                    ChangeStyle(200, e.GK, 'blue', 1.5),
+                    ChangeStyle(200, e.GL, 'DarkBlue', 1.5),
+                ),
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+                ChangeParams(300, {switchC: 1}),
+                Show(1, e.CG),
+                Parallel(
+                    ChangeStyle(200, e.GL, 'black', 1),
+                    ChangeStyle(200, e.CG, 'DarkBlue', 1.5),
+                )
+            ),
+            // 3 -> 4
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.Z, 'black', 1),
+                    ChangeStyle(200, e.H, 'black', 1),
+                    ChangeStyle(200, e.GK, 'black', 1),
+                    ChangeStyle(200, e.CG, 'black', 1)
+                ),
+                Draw(500, e.KLC), 
+            ),
+            // 4 -> 5
+            (e) => Sequential(
+                Draw(300, e.GM),
+                Show(1, e.M),
+                Draw(300, e.KI),
+                Show(1, e.I),
+                Draw(200, e.IN),
+                Show(1, e.N),
+                Parallel(
+                    ChangeStyle(200, e.GM, 'red', 1.5),
+                    ChangeStyle(200, e.IN, 'red', 1.5)
+                )
+            ),
+            // 5 -> 6
+            (e) => Sequential(
+                Show(200, e.E),
+
+            )
+        ]
+    },
+    Prop10: {
+        stepMax: 0,
+        initialCamSet: {
+            scale: 5,
+            centerX: 3.5,
+            centerY: 4,
+            centerZ: 0,
+        },
+        captions: {
+            A:'Α', B:'Β', G:'Γ', D:'Δ', E:'Ε', 
+            Z:'Ζ', H:'Η', Q:'Θ', I:'Ι', K:'Κ',
+            L:'Λ', M:'Μ', N:'Ν', C:'Ξ', O:'Ο'
+        },
+        initialParams: {
+            lengthA: 8,
+            lengthBetweenLines: 1,
+        },
+        setup: (e) => Sequential(
+            Draw(300, e.A),
+            Draw(300, e.B),
+            Show(1, e.Btop),
+            Draw(300, e.G),
+            Show(1, e.Gtop),
+            Draw(300, e.D),
+            Show(1, e.Dtop),
+            Draw(300, e.E),
+            Show(1, e.Etop),
+            Draw(300, e.Z),
+            Show(1, e.Ztop),
+            Draw(300, e.H),
+            Show(1, e.Htop),
+            Draw(300, e.Q),
+            Show(1, e.Qtop),
+
+            Draw(300, e.I),
+            Draw(300, e.K),
+            Draw(300, e.L),
+            Draw(300, e.M),
+            Draw(300, e.N),
+            Draw(300, e.C),
+            Draw(300, e.O),
+
+        ),
+        forward: [
+
+        ]
     },
     Prop12: {
         stepMax: 1,
@@ -643,7 +907,7 @@ let specialEffects = {
         ]
     },
     Prop13: {
-        stepMax: 4,
+        stepMax: 3,
         initialCamSet: {
             scale: 5,
             centerX: 0,
@@ -701,6 +965,167 @@ let specialEffects = {
                 ChangeStyle(1, e.cut, 'red', 1.5),
                 Show(200, e.cut),
             )
+        ]
+    },
+    Prop14: {
+        stepMax: 3,
+        initialCamSet: {
+            scale: 5,
+            centerX: 0,
+            centerY: 0,
+            centerZ: 0
+        },
+        captions: {
+            A:'Α', B:'Β', G:'Γ', D:'Δ', E:'Ε', Z:'Ζ', H:'Η', Q:'Θ',
+            Acursor: 'Α', Qcursor: 'Θ'
+        },
+        initialParams: {
+            radius: 4,
+            angleSpiralRotation: -90,
+            angleB: -90,
+            angleG: -150,
+            angleD: -240,
+            angleE: -270,
+            angleCursor: 0
+        },
+        setup: (e) => Sequential(
+            Draw(500, e.spiral),
+            Show(200, e.A),
+            Show(200, e.B),
+            Show(200, e.G),
+            Show(200, e.D),
+            Show(200, e.E),
+            Show(200, e.Q),
+            Draw(300, e.AQ),
+            Show(1, e.Q),
+            Draw(500, e.circle),
+            Parallel(
+                Draw(300, e.AZ),
+                Draw(300, e.AH),
+            ),
+            Show(1, e.Z),
+            Show(1, e.H)
+        ),
+        forward: [
+            // 0 -> 1
+            (e) => Sequential(
+                ChangeStyle(1, e.Acursor, 'blue', 1.5),
+                ChangeStyle(1, e.armPart, 'blue', 1.5),
+                ChangeStyle(1, e.Qcursor, 'red', 1.5),
+                ChangeStyle(1, e.arcCursor, 'red', 1.5),
+                Show(1, e.Acursor),
+                Show(1, e.Qcursor),
+                Show(1, e.arm),
+                Show(1, e.armPart),
+                Show(1, e.arcCursor),
+                ChangeParams(10000, {angleCursor:-360}),
+                Hide(1, e.Acursor),
+                Hide(1, e.Qcursor),
+                Hide(1, e.arm),
+            ),
+            // 1 -> 2
+            (e) => Sequential(
+                Hide(1, e.armPart),
+                Hide(1, e.arcCursor),
+                Show(1, e.Acursor),
+                Show(1, e.Qcursor),
+                ChangeParams(1, {angleCursor:0}),
+                ChangeStyle(1, e.AEm, 'blue', 1.5),
+                ChangeStyle(1, e.QKZ, 'red', 1.5),
+                Show(1, e.AEm),
+                Show(1, e.QKZ),
+                ChangeParams(10000, {angleCursor:-360}),
+                Hide(1, e.Acursor),
+                Hide(1, e.Qcursor),
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+                Show(1, e.Acursor),
+                Show(1, e.Qcursor),
+                ChangeStyle(1, e.ADm, 'DarkBlue', 1.5),
+                ChangeStyle(1, e.QKH, 'DarkRed', 1.5),
+                Show(1, e.ADm),
+                Show(1, e.QKH),
+                ChangeParams(10000, {angleCursor:-720}),
+                Hide(1, e.Acursor),
+                Hide(1, e.Qcursor),
+            ),
+
+        ]
+    },
+    Prop15: {
+        stepMax: 2,
+        initialCamSet: {
+            scale: 5,
+            centerX: 0,
+            centerY: 0,
+            centerZ: 0
+        },
+        captions: {
+            A:'Α', B:'Β', G:'Γ', D:'Δ', M:'Μ', L:'Λ', E:'Ε', Z:'Ζ', H:'Η', Q:'Θ',
+            Acursor: 'Α', Qcursor: 'Θ'
+        },
+        initialParams: {
+            radius: 2,
+            angleSpiralRotation: -90,
+            angleB: -40,
+            angleG: -90,
+            angleD: -240,
+            angleQ: -360,
+            angleL: -570,
+            angleE: -660,
+            angleCursor: 0
+        },
+        setup: (e) => Sequential(
+            Draw(1000, e.spiral),
+            Show(200, e.A),
+            Show(200, e.B),
+            Show(200, e.G),
+            Show(200, e.D),
+            Show(200, e.Q),
+            Show(200, e.L),
+            Show(200, e.E),
+            Show(200, e.M),
+            Draw(300, e.AQ),
+            Draw(500, e.circle),
+            Parallel(
+                Draw(300, e.AE),
+                Draw(300, e.AL),
+            ),
+            Parallel(
+                Show(200, e.H),
+                Show(200, e.Z)
+            )
+        ),
+        forward: [
+            // 0 -> 1
+            (e) => Sequential(
+                Show(1, e.Acursor),
+                Show(1, e.Qcursor),
+                ChangeStyle(1, e.ALm, 'blue', 1.5),
+                ChangeStyle(1, e.QKZ, 'red', 1.5),
+                ChangeStyle(1, e.QKZaddon, 'red', 1.5),
+                Show(1, e.ALm),
+                Show(1, e.QKZ),
+                Show(1, e.QKZaddon),
+                ChangeParams(20000, {angleCursor:-720}),
+                Hide(1, e.Acursor),
+                Hide(1, e.Qcursor),
+            ),
+            // 1 -> 2
+            (e) => Sequential(
+                Show(1, e.Acursor),
+                Show(1, e.Qcursor),
+                ChangeStyle(1, e.AEm, 'DarkBlue', 1.5),
+                ChangeStyle(1, e.QKH, 'DarkRed', 1.5),
+                ChangeStyle(1, e.QKHaddon, 'DarkRed', 1.5),
+                Show(1, e.AEm),
+                Show(1, e.QKH),
+                Show(1, e.QKHaddon),
+                ChangeParams(20000, {angleCursor:-1440}),
+                Hide(1, e.Acursor),
+                Hide(1, e.Qcursor),
+            ),
         ]
     },
     Prop16: {
@@ -819,7 +1244,6 @@ let specialEffects = {
                 ChangeCamera(500, {scale: 5, centerX:0, centerY:0}),
             )
         ]
-
     },
     Prop18: {
         stepMax: 15,
