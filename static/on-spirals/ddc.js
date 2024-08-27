@@ -1,5 +1,7 @@
+import {
+    CameraSetting, DynamicDiagramConfiguration
+} from '/static/structures.js'
 import {newVector, newPoints as Points, newLine as Line, newCircle as Circle, newSpiral as Spiral} from "/static/construction.js"
-// import {e_x, e_y, origin} from "/static/construction.js"
 import { bisectionSolver, degCos, degSin, degTan } from "/static/analysis.js";
 import {
     newSequentialFX as Sequential, 
@@ -12,27 +14,13 @@ import {
     newCameraChangeFX as ChangeCamera,
 } from '/static/effects.js'
 
-class DynamicDiagramConfiguration {
-    constructor (stepMax, initialCamSet, initialParams, calculation, setupActions, forwardActions, captions) {
-        this.stepMax = stepMax;
-        this.initialCamSet = initialCamSet;
-        this.initialParams = initialParams;
-        this.calculation = calculation;
-        this.setupActions = setupActions;
-        this.forwardActions = forwardActions;
-        this.captions = captions;
-    }
-}
-
 let ddcs = {
     Prop01: new DynamicDiagramConfiguration(
         5,
-        {
-            scale: 5,
-            centerX: 0,
-            centerY: -0.5,
-            centerZ: 0,
-        },
+        new CameraSetting(
+            5, 
+            0, -0.5, 0
+        ),
         {
             lengthGD: 1.2,
             lengthDE: 0.7,
@@ -227,12 +215,10 @@ let ddcs = {
     ),
     Prop02: new DynamicDiagramConfiguration(
         4,
-        {
-            scale: 5,
-            centerX: 2.5,
-            centerY: -0.5,
-            centerZ: 0,
-        },
+        new CameraSetting(
+            5,
+            2.5, -0.5, 0
+        ),
         {
             aspectRatio: 3,
             lengthAB: 5,
@@ -376,12 +362,10 @@ let ddcs = {
     ),
     Prop05: new DynamicDiagramConfiguration(
         4,
-        {
-            scale: 6.3,
-            centerX: 1,
-            centerY: 0,
-            centerZ: 0
-        },
+        new CameraSetting(
+            6.3,
+            1, 0, 0
+        ),
         {
             radius: 2,
             angleAKB: 78,
@@ -501,12 +485,10 @@ let ddcs = {
     ),
     Prop06: new DynamicDiagramConfiguration(
         6,
-        {
-            scale: 5,
-            centerX: 0,
-            centerY: 0,
-            centerZ: 0
-        },
+        new CameraSetting(
+            5,
+            0, 0, 0
+        ),
         {
             radius: 2,
             angleAKQ: 63,
@@ -666,12 +648,10 @@ let ddcs = {
     ),
     Prop07: new DynamicDiagramConfiguration(
         4,
-        {
-            scale: 5,
-            centerX: 0,
-            centerY: 0,
-            centerZ: 0,
-        },
+        new CameraSetting(
+            5,
+            0, 0, 0
+        ),
         {
             radius: 2,
             angleAKQ: 45,
@@ -797,12 +777,10 @@ let ddcs = {
     ),
     Prop08: new DynamicDiagramConfiguration(
         6,
-        {
-            scale: 5,
-            centerX: 0,
-            centerY: 0,
-            centerZ: 0
-        },
+        new CameraSetting(
+            5,
+            0, 0, 0
+        ),
         {
             radius: 2,
             angleAKQ: 60,
@@ -962,12 +940,10 @@ let ddcs = {
     ),
     Prop09: new DynamicDiagramConfiguration(
         5,
-        {
-            scale: 5,
-            centerX: 0,
-            centerY: 0,
-            centerZ: 0
-        },
+        new CameraSetting(
+            5, 
+            0, 0, 0
+        ),
         {
             radiusABGD: 2,
             angleAKQ: 42,
@@ -1127,12 +1103,10 @@ let ddcs = {
     ),
     Prop10: new DynamicDiagramConfiguration(
         0,
-         {
-            scale: 5,
-            centerX: 3.5,
-            centerY: 4,
-            centerZ: 0,
-        },
+        new CameraSetting(
+            5,
+            3.5, 4, 0
+        ),
          {
             lengthA: 8,
             lengthBetweenLines: 1,
@@ -1212,12 +1186,10 @@ let ddcs = {
     ),
     Prop12: new DynamicDiagramConfiguration(
         1,
-        {
-            scale: 5,
-            centerX: 0,
-            centerY: 0,
-            centerZ: 0
-        },
+        new CameraSetting(
+            5, 
+            0, 0, 0
+        ),
          {
             radius: 4,
             angleSpiralEnd: -360,
@@ -1300,12 +1272,10 @@ let ddcs = {
     ),
     Prop13: new DynamicDiagramConfiguration(
         3,
-        {
-            scale: 5,
-            centerX: 0,
-            centerY: 0,
-            centerZ: 0,
-        },
+        new CameraSetting(
+            5,
+            0, 0, 0
+        ),
         {
             radius: 4, 
             angleSpiralEnd: -360,
@@ -1396,12 +1366,10 @@ let ddcs = {
     ),
     Prop14: new DynamicDiagramConfiguration(
         3,
-        {
-            scale: 5,
-            centerX: 0,
-            centerY: 0,
-            centerZ: 0
-        },
+        new CameraSetting(
+            5,
+            0, 0, 0
+        ),
         {
             radius: 4,
             angleSpiralRotation: -90,
@@ -1516,12 +1484,10 @@ let ddcs = {
     ),
     Prop15: new DynamicDiagramConfiguration(
         2,
-        {
-            scale: 5,
-            centerX: 0,
-            centerY: 0,
-            centerZ: 0
-        },
+        new CameraSetting(
+            5,
+            0, 0, 0
+        ),
         {
             radius: 2,
             angleSpiralRotation: -90,
@@ -1634,12 +1600,10 @@ let ddcs = {
     ),
     Prop16: new DynamicDiagramConfiguration(
         5,
-        {
-            scale: 5,
-            centerX: 0,
-            centerY: 0,
-            centerZ: 0
-        },
+        new CameraSetting(
+            5,
+            0, 0, 0
+        ),
         {
             radius: 4,
             angleSpiralRotation: -90,
@@ -1799,12 +1763,10 @@ let ddcs = {
     ),
     Prop18: new DynamicDiagramConfiguration(
         15,
-        {
-            scale: 4.2,
-            centerX: -3,
-            centerY: 0,
-            centerZ: 0,
-        },
+        new CameraSetting(
+            4.2,
+            -3, 0, 0
+        ),
         {
             radius: 1,
             angleSpiralRotation: -90,

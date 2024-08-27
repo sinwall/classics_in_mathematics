@@ -3,13 +3,14 @@ import * as THREE from 'three'
 class BaseFX {
     constructor(duration) {
         this.duration = duration;
+        this.running = false;
     }
     
     attachGeometer(geometer) {
         this.geometer = geometer;
     }
 
-    hasGeometer(geometer) {
+    hasGeometer() {
         return ('geometer' in this);
     }
 
@@ -28,11 +29,11 @@ class BaseFX {
 
     }
 
-    needCamset(t) {return false;}
+    needCamset(t) {return this.needRender(t) || false;}
 
     needBuild(t) {return false;}
 
-    needRender(t) {return this.needCamset(t) || this.needBuild(t) || false;}
+    needRender(t) {return false;}
 
     onBegin() { return 0; }
 
@@ -46,6 +47,7 @@ class BaseFX {
         if (onBegin) {onBegin();}
         let that = this;
         let epoch = Date.now();
+        this.running = true;
         let timer = setInterval(
             function () {
                 let progress = (Date.now() - epoch) / that.duration;
@@ -57,6 +59,7 @@ class BaseFX {
                     that.geometer.build();
                     that.geometer.attachCaption();
                     that.geometer.render();
+                    that.running = false;
                     return;
                 }
                 that.onAction(progress);
@@ -69,12 +72,14 @@ class BaseFX {
     }
 
     terminate() {
-        clearInterval(this.timer);
-        this.onEnd();
-        this.geometer.cameraReady();
-        this.geometer.build();
-        this.geometer.attachCaption();
-        this.geometer.render();
+        if (this.running) {
+            clearInterval(this.timer);
+            this.onEnd();
+            this.geometer.cameraReady();
+            this.geometer.build();
+            this.geometer.attachCaption();
+            this.geometer.render();
+        }
     }
 }
 
@@ -106,11 +111,12 @@ class SequentialFX extends BaseFX {
     }
 
     needRender(t) {
-        return (
-            this.needCamset(t) 
-            || this.needBuild(t) 
-            || this.fxs[this._cursor].needRender((t*this.durationTotal - this._tcumsum)/this.fxs[this._cursor].duration)
-        );
+        return this.fxs[this._cursor].needRender((t*this.durationTotal - this._tcumsum)/this.fxs[this._cursor].duration);
+        // return (
+        //     this.needCamset(t) 
+        //     || this.needBuild(t) 
+        //     || this.fxs[this._cursor].needRender((t*this.durationTotal - this._tcumsum)/this.fxs[this._cursor].duration)
+        // );
     }
 
     onBegin() {
@@ -240,6 +246,8 @@ class DrawingFX extends BaseFX{
         this.timing = timing;
     }
 
+    needBuild(t) {return false;}
+
     needRender(t) {return (t >= 0);}
 
     onBegin() {
@@ -289,7 +297,7 @@ class ShowingFX extends BaseFX {
         this.entity = entity;
         this.timing = timing;
     }
-    
+
     needRender(t) {return (t >= 0);}
 
     onBegin() {
@@ -432,6 +440,8 @@ class ParamChangeFX extends BaseFX {
         return (t >= 0);
     }
 
+    needRender(t) {return (t >= 0);}
+
     onBegin() {
         this._paramsBefore = this.geometer.params;
     }
@@ -473,6 +483,9 @@ class CameraChangeFX extends BaseFX {
         this.timing = timing;
     }
     needCamset(t) {
+        return (t >= 0);
+    }
+    needRender(t) {
         return (t >= 0);
     }
 

@@ -19,6 +19,10 @@ function newGeometricEntity(type, key, name, color=0x000000, size=1., pixelSize=
             return new CircleEntity(type, key, name, color, size, pixelSize);
         case "spiral":
             return new SpiralEntity(type, key, name, color, size, pixelSize);
+        case "cylinder":
+            return new CylinderEntity(type, key, name, color, size, pixelSize);
+        case "cone":
+            return new ConeEntity(type, key, name, color, size, pixelSize);
         default:
             Error();
     }
@@ -350,6 +354,39 @@ class SpiralEntity extends GeometricEntity {
     }
 }
 
+class CylinderEntity extends GeometricEntity {
+    constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
+        super(type, key, name, color, size, pixelSize);
+        color = 0x88ccff;
+        this._obj3d = new THREE.Mesh(
+            new THREE.BufferGeometry(),
+            new THREE.MeshBasicMaterial({color: color, opacity: 0.5, transparent: true})
+        );
+        // this._center = new THREE.Vector3();
+    }
+
+    get captionPosition3d() {
+        return new THREE.Vector3();
+        // let ary = this._obj3d.geometry.getAttribute("position").array;
+        // return (new THREE.Vector3(ary[0], ary[1], ary[2]));
+    }
+
+    setData(value) {
+        let g = new THREE.CylinderGeometry(
+            value.radius, value.radius, value.height, 
+            90, 6, false, 
+            value.start, value.end
+        );
+        g.translate(value.center.x, value.center.y, value.center.z);
+        this._obj3d.geometry = g;
+    }
+
+    setSize(value) {
+        this.size = value;
+        // this._obj3d.material.linewidth = 1.5*value;
+    }
+}
+
 class Geometer {
     constructor(box, width=null, height=null) {
         this.box = box;
@@ -615,7 +652,11 @@ class Geometer {
         camera.top = scale;
         camera.bottom = -scale;
         camera.near = 1; camera.far = 1000;
-        camera.position.set(centerX, centerY, centerZ+10);
+        camera.position.set(
+            centerX + camSet.dist*Math.cos(camSet.elev*Math.PI/180)*Math.cos(camSet.azim*Math.PI/180), 
+            centerY + camSet.dist*Math.cos(camSet.elev*Math.PI/180)*Math.sin(camSet.azim*Math.PI/180), 
+            centerZ + camSet.dist*Math.sin(camSet.elev*Math.PI/180)
+        );
         camera.lookAt(centerX, centerY, centerZ);
         camera.updateProjectionMatrix();
         this.pixelSize = (2*camSet.scale) / this.renderer.getSize().width;

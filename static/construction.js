@@ -293,14 +293,36 @@ function newSpiral(origin, radius, start, end, rotAngle=0, xAxis=null, yAxis=nul
 }
 
 class CylinderData extends EntityData {
-    constructor (center, radius, axis, start, end, centerUpper, radiusSub) {
+    static type = 'cylinder';
+    constructor (center, radius, height, start, end) {
+        super();
         this.center = center;
         this.radius = radius;
-        this.axis = axis;
+        this.height = height;
         this.start = start;
         this.end = end;
 
     }
+}
+
+function newCylinder(center, radius, height, start, end) {
+    return new CylinderData(center, radius, height, start, end);
+}
+
+class ConeData extends EntityData {
+    static type = 'cone';
+    constructor (center, radius, height, start, end) {
+        super();
+        this.center = center;
+        this.radius = radius;
+        this.height = height;
+        this.start = start;
+        this.end = end;
+    }
+}
+
+function newCone(center, radius, height, start, end) {
+    return new ConeData(center, radius, height, start, end);
 }
 
 // class CustomList {
@@ -327,4 +349,4 @@ class CylinderData extends EntityData {
 //     return result;
 // }
 
-export {newVector, Vector, newPoints, newLine, newCircle, newSpiral, isEntityData};
+export {newVector, Vector, newPoints, newLine, newCircle, newSpiral, newCylinder, newCone, isEntityData};
