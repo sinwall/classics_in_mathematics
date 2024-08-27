@@ -292,6 +292,17 @@ function newSpiral(origin, radius, start, end, rotAngle=0, xAxis=null, yAxis=nul
     return new SpiralData(origin, radius, start, end, rotAngle, xAxis, yAxis);
 }
 
+class CylinderData extends EntityData {
+    constructor (center, radius, axis, start, end, centerUpper, radiusSub) {
+        this.center = center;
+        this.radius = radius;
+        this.axis = axis;
+        this.start = start;
+        this.end = end;
+
+    }
+}
+
 // class CustomList {
 //     constructor (...entries) {
 //         this.entries = entries;

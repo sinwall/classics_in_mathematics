@@ -105,7 +105,6 @@ for (let line of biblia) {
         author, authorAlias, bookTitle, bookTitleAlias
     };
 }
-
 let htmlBooks = {};
 
 // let htmlBook = fs.readFileSync('./static/on-spirals/ELH&KOC&KOM-TEI.xml', 'utf-8');

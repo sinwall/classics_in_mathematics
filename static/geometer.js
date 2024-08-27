@@ -383,42 +383,55 @@ class Geometer {
         // let calcFileName = sourcePath + "_calc.js";
         let camera = this.camera;
         let that = this;
-        return Promise.all([
-            this.loadStyle(bookName, sectionName),
-            this.loadGeometryCalculator(bookName, sectionName),
-            this.loadSE(bookName, sectionName)
-        ]).then(function () {
-            that.setup();
-            callback();
-        }).catch(function(reason) {
-            console.log('loading rejected', reason);
-            // that.renderer.domElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-            let text = document.createElement('div');
-            text.classList.add('diagram-warning');
-            text.style.setProperty('position', 'absolute');
-            text.style.setProperty('text-align', 'center');
-            text.style.setProperty('width', that.renderer.domElement.parentNode.style.width);
-            text.innerHTML = '그림이 없는 문서거나<br>그림이 준비되지 않았습니다.';
-            that.renderer.domElement.parentNode.prepend(text);
-            // console.error(reason);
-        })
+        
+        return import(`/static/${bookName}/ddc.js`)
+            .then( function(result) {
+                that.ddc = result.ddcs[sectionName];
+                that.setup();
+                callback();
+            }).catch( function(reason) {
+                that.ddc = null;
+                console.log('Dynamic diagram configuration lot loaded');
+                console.log(reason);
+                let text = document.createElement('div');
+                text.classList.add('diagram-warning');
+                text.style.setProperty('position', 'absolute');
+                text.style.setProperty('text-align', 'center');
+                text.style.setProperty('width', that.renderer.domElement.parentNode.style.width);
+                text.innerHTML = '그림이 없는 문서거나<br>그림이 준비되지 않았습니다.';
+                that.renderer.domElement.parentNode.prepend(text);            
+            });
+        // return Promise.all([
+        //     this.loadStyle(bookName, sectionName),
+        //     this.loadGeometryCalculator(bookName, sectionName),
+        //     this.loadSE(bookName, sectionName)
+        // ]).then(function () {
+        //     that.setup();
+        //     callback();
+        // }).catch(function(reason) {
+        //     console.log('loading rejected', reason);
+        //     // that.renderer.domElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        //     let text = document.createElement('div');
+        //     text.classList.add('diagram-warning');
+        //     text.style.setProperty('position', 'absolute');
+        //     text.style.setProperty('text-align', 'center');
+        //     text.style.setProperty('width', that.renderer.domElement.parentNode.style.width);
+        //     text.innerHTML = '그림이 없는 문서거나<br>그림이 준비되지 않았습니다.';
+        //     that.renderer.domElement.parentNode.prepend(text);
+        //     // console.error(reason);
+        // })
     }
 
     setup() {
         let style = this.style;
         let renderer = this.renderer;
-        if (this.specialEffects) {
-            this.camSetting = Object.assign({}, this.specialEffects.initialCamSet);
-            this.params = Object.assign({}, this.specialEffects.initialParams);
-
-            this.pixelSize = (2*this.specialEffects.initialCamSet.scale) / renderer.getSize().width;
-            // for (let i=0; i<this._objects.length; i++) {
-            //     this._objects[i].setVisibility(false);
-            // }
-            this.stepMax = this.specialEffects.stepMax;
-            this.cameraReady(this.specialEffects.initialCamSet);
-            let built = this.calculateGeometry(this.specialEffects.initialParams);
-
+        if (this.ddc) {
+            this.camSetting = Object.assign({}, this.ddc.initialCamSet);
+            this.params = Object.assign({}, this.ddc.initialParams);
+            this.pixelSize = (2*this.ddc.initialCamSet.scale) / renderer.getSize().width;
+            this.stepMax = this.ddc.stepMax;
+            this.cameraReady(this.ddc.initialCamSet);
+            let built = this.ddc.calculation(this.ddc.initialParams);
             this._objectsDict = {};
             for (let key in built) {
                 let type;
@@ -435,7 +448,7 @@ class Geometer {
                 } else {
                     type = builtData.getType();
                 }
-                if (key in this.specialEffects.captions) {caption = this.specialEffects.captions[key];}
+                if (key in this.ddc.captions) {caption = this.ddc.captions[key];}
                 else {caption = '';}
                 let gObj = newGeometricEntity(type, key, caption);
                 gObj.setVisibility(false);
@@ -443,54 +456,107 @@ class Geometer {
                 this._objectsDict[key] = gObj;
                 this.scene.add(gObj._obj3d);
             }
-            this.build(this.specialEffects.initialParams);
-            this.attachCaption(this.specialEffects.initialCamSet);
+            this.build(this.ddc.initialParams);
+            this.attachCaption(this.ddc.initialCamSet);
 
-            this._fx = this.specialEffects.setup(this._objectsDict);
+            this._fx = this.ddc.setupActions(this._objectsDict);
             this._fx.attachGeometer(this);
             let that = this;
             this._fx.action(50);
 
             this.currentAllParams = new AllParamsSummary(
-                this.specialEffects.initialCamSet,
-                this.specialEffects.initialParams,
+                this.ddc.initialCamSet,
+                this.ddc.initialParams,
                 null
             )
             this.currentAllParams.update(this._fx.summary());
             // this._fx.action(50, null, function() {that.render();});
             this._useStyler = false;
-
-        } else if (style) {
-            this._useStyler = true;
-            this.pixelSize = (2*style.hparamTrend[0].scale) / renderer.getSize().width;
-            this.camSetting = this.style.getCamSetting();
-            this.params = this.style.getParams(0, false);
-
-            this.stepMax = style.stepMax;
-            this._nameToIdx = {};
-            this._objectsDict = {};
-    
-            let objTypes = style.objTypes;
-            let objNames = style.objNames;
-            let objCaptions = style.objCaptions;
-            let objColors = style.objStyleTrend[0];
-            let objSizes = style.objStyleTrend[0];
-            for (let i=0; i<style.nObjs; i++) {
-                let gObj = newGeometricEntity(objTypes[i], objNames[i], objCaptions[i], objColors[i].color, objSizes[i].size, this.pixelSize);
-                gObj.attachCaption(renderer);
-                this._nameToIdx[objNames[i]] = i;
-                this._objectsDict[objNames[i]] = gObj;
-                this.scene.add(gObj._obj3d);
-            }
-            this.buildAndRenderIfLoaded();
-            
         }
+        // else if (this.specialEffects) {
+        //     this.camSetting = Object.assign({}, this.specialEffects.initialCamSet);
+        //     this.params = Object.assign({}, this.specialEffects.initialParams);
+
+        //     this.pixelSize = (2*this.specialEffects.initialCamSet.scale) / renderer.getSize().width;
+        //     // for (let i=0; i<this._objects.length; i++) {
+        //     //     this._objects[i].setVisibility(false);
+        //     // }
+        //     this.stepMax = this.specialEffects.stepMax;
+        //     this.cameraReady(this.specialEffects.initialCamSet);
+        //     let built = this.calculateGeometry(this.specialEffects.initialParams);
+
+        //     this._objectsDict = {};
+        //     for (let key in built) {
+        //         let type;
+        //         let caption;
+        //         let builtData = built[key];
+        //         if (! isEntityData(builtData)) {
+        //             if (builtData instanceof Vector) {
+        //                 type = 'point';
+        //             } else if ((builtData instanceof Array) && (builtData.length == 2)) {
+        //                 type = 'line';
+        //             } else {
+        //                 type = 'points';
+        //             }
+        //         } else {
+        //             type = builtData.getType();
+        //         }
+        //         if (key in this.specialEffects.captions) {caption = this.specialEffects.captions[key];}
+        //         else {caption = '';}
+        //         let gObj = newGeometricEntity(type, key, caption);
+        //         gObj.setVisibility(false);
+        //         gObj.attachCaption(this.renderer);
+        //         this._objectsDict[key] = gObj;
+        //         this.scene.add(gObj._obj3d);
+        //     }
+        //     this.build(this.specialEffects.initialParams);
+        //     this.attachCaption(this.specialEffects.initialCamSet);
+
+        //     this._fx = this.specialEffects.setup(this._objectsDict);
+        //     this._fx.attachGeometer(this);
+        //     let that = this;
+        //     this._fx.action(50);
+
+        //     this.currentAllParams = new AllParamsSummary(
+        //         this.specialEffects.initialCamSet,
+        //         this.specialEffects.initialParams,
+        //         null
+        //     )
+        //     this.currentAllParams.update(this._fx.summary());
+        //     // this._fx.action(50, null, function() {that.render();});
+        //     this._useStyler = false;
+
+        // } else if (style) {
+        //     this._useStyler = true;
+        //     this.pixelSize = (2*style.hparamTrend[0].scale) / renderer.getSize().width;
+        //     this.camSetting = this.style.getCamSetting();
+        //     this.params = this.style.getParams(0, false);
+
+        //     this.stepMax = style.stepMax;
+        //     this._nameToIdx = {};
+        //     this._objectsDict = {};
+    
+        //     let objTypes = style.objTypes;
+        //     let objNames = style.objNames;
+        //     let objCaptions = style.objCaptions;
+        //     let objColors = style.objStyleTrend[0];
+        //     let objSizes = style.objStyleTrend[0];
+        //     for (let i=0; i<style.nObjs; i++) {
+        //         let gObj = newGeometricEntity(objTypes[i], objNames[i], objCaptions[i], objColors[i].color, objSizes[i].size, this.pixelSize);
+        //         gObj.attachCaption(renderer);
+        //         this._nameToIdx[objNames[i]] = i;
+        //         this._objectsDict[objNames[i]] = gObj;
+        //         this.scene.add(gObj._obj3d);
+        //     }
+        //     this.buildAndRenderIfLoaded();
+            
+        // }
 
     }
 
     build(params=null) {
         if (params === null) {params = this.params;}
-        let entityDatas = this.calculateGeometry(params);
+        let entityDatas = this.ddc.calculation(params);
 
         for (let key in this._objectsDict) {
             let gObj = this._objectsDict[key];
@@ -592,15 +658,15 @@ class Geometer {
         return this._objects[this._nameToIdx[name]];
     }
 
-    async loadGeometryCalculator(bookName, sectionName) {
-        // let {calculateGeometry} = await import(fileName);
-        // this.calculateGeometry = calculateGeometry;
-        if (!('calculations' in this)) {
-            let {calculations} = await import(`/static/${bookName}/calc.js`);
-            this.calculations = calculations;
-        }
-        this.calculateGeometry = this.calculations[sectionName];
-    }
+    // async loadGeometryCalculator(bookName, sectionName) {
+    //     // let {calculateGeometry} = await import(fileName);
+    //     // this.calculateGeometry = calculateGeometry;
+    //     if (!('calculations' in this)) {
+    //         let {calculations} = await import(`/static/${bookName}/calc.js`);
+    //         this.calculations = calculations;
+    //     }
+    //     this.calculateGeometry = this.calculations[sectionName];
+    // }
 
     async loadSE(bookName, sectionName) {
         if (!('specialEffectsBundle' in this)) {
@@ -662,16 +728,16 @@ class Geometer {
                 };
             }
             let tempAllParams = new AllParamsSummary(
-                this.specialEffects.initialCamSet,
-                this.specialEffects.initialParams,
+                this.ddc.initialCamSet,
+                this.ddc.initialParams,
                 entities
             );
-            tempAllParams.update(this.specialEffects.setup(this._objectsDict).summary());
+            tempAllParams.update(this.ddc.setupActions(this._objectsDict).summary());
             for (let i=0; i<this.step; i++) {
-                tempAllParams.update(this.specialEffects.forward[i](this._objectsDict).summary());
+                tempAllParams.update(this.ddc.forwardActions[i](this._objectsDict).summary());
             }
             this._fx.terminate();
-            this._fx = this.specialEffects.forward[this.step](this._objectsDict).reversed(tempAllParams);
+            this._fx = this.ddc.forwardActions[this.step](this._objectsDict).reversed(tempAllParams);
             this._fx.attachGeometer(this);
             let that = this;
             this._fx.action(50);
@@ -689,7 +755,7 @@ class Geometer {
             this.buildAndRenderIfLoaded();
         } else {
             this._fx.terminate();
-            this._fx = this.specialEffects.forward[this.step-1](this._objectsDict);
+            this._fx = this.ddc.forwardActions[this.step-1](this._objectsDict);
             this._fx.attachGeometer(this);
             let that = this;
             this._fx.action(50);
@@ -698,20 +764,6 @@ class Geometer {
         }
     }
 
-    // animate(camSetBf, paramsBf, camSetAf, paramsAf, progress) {
-    //     let camSet = {};
-    //     for (let key in camSetBf) {
-    //         camSet[key] = progress*camSetAf[key] + (1-progress)*camSetBf[key];
-    //     }
-    //     let params = {};
-    //     for (let key in paramsBf) {
-    //         params[key] = progress*paramsAf[key] + (1-progress)*paramsBf[key];
-    //     }
-    //     this.cameraReady(camSet);
-    //     this.build(params);
-    //     this.attachCaption(camSet);
-    //     this.render();
-    // }
     toggleOriginal() {
         this.original = !this.original;
         this.buildAndRenderIfLoaded();

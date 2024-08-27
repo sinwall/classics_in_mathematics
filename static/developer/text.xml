@@ -1,0 +1,37 @@
+
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title></title>
+        <author></author>
+      </titleStmt>
+      <publicationStmt>
+        <p>empty statement</p>
+      </publicationStmt>
+      <sourceDesc>
+        <p>empty description</p>
+      </sourceDesc>
+    </fileDesc>
+    <encodingDesc>
+      <tagsDecl>
+      </tagsDecl>
+    </encodingDesc>
+  </teiHeader>
+  <text>
+    <body>
+    <div n="Intro" type="section">
+    <div n="Intro-ELH">
+    <p n="1">aa</p>
+    </div>
+    <div n="Intro-KOC">
+    <p n="1">aa</p>
+    </div>
+    <div n="Intro-KOM">
+    <p n="1">aa</p>
+    </div>
+    </div>
+    </body>
+    <back></back>
+  </text>
+</TEI>
