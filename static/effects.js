@@ -301,20 +301,20 @@ class ShowingFX extends BaseFX {
     needRender(t) {return (t >= 0);}
 
     onBegin() {
-        this._transparent = this.entity._obj3d.material.transparent;
-        this._opacity = this.entity._obj3d.material.opacity;
-        this.entity._obj3d.material.transparent = true;
-        this.entity._obj3d.material.opacity = 0;
+        this._transparent = this.entity.getMaterial().transparent;
+        this._opacity = this.entity.getMaterial().opacity;
+        this.entity.getMaterial().transparent = true;
+        this.entity.getMaterial().opacity = 0;
         this.entity.setVisibility(true);
     }
 
     onAction(t) {
-        this.entity._obj3d.material.opacity = t*this._opacity;
+        this.entity.getMaterial().opacity = t*this._opacity;
     }
 
     onEnd() {
-        this.entity._obj3d.material.opacity = this._opacity;
-        this.entity._obj3d.material.transparent = this._transparent;
+        this.entity.getMaterial().opacity = this._opacity;
+        this.entity.getMaterial().transparent = this._transparent;
         this._transparent = undefined;
         this._opacity = undefined;
     }
@@ -346,20 +346,20 @@ class HidingFX extends BaseFX {
     needRender(t) {return (t >= 0);}
 
     onBegin() {
-        this._transparent = this.entity._obj3d.material.transparent;
-        this._opacity = this.entity._obj3d.material.opacity;
+        this._transparent = this.entity.getMaterial().transparent;
+        this._opacity = this.entity.getMaterial().opacity;
         this.entity.setVisibility(true);
-        this.entity._obj3d.material.transparent = true;
+        this.entity.getMaterial().transparent = true;
     }
 
     onAction(t) {
-        this.entity._obj3d.material.opacity = (1-t)*this._opacity;
+        this.entity.getMaterial().opacity = (1-t)*this._opacity;
     }
 
     onEnd() {
         this.entity.setVisibility(false);
-        this.entity._obj3d.material.opacity = this._opacity;
-        this.entity._obj3d.material.transparent = this._transparent;
+        this.entity.getMaterial().opacity = this._opacity;
+        this.entity.getMaterial().transparent = this._transparent;
         this._transparent = undefined;
         this._opacity = undefined;
     }
@@ -393,17 +393,17 @@ class StyleChangeFX extends BaseFX {
     needRender(t) {return (t >= 0);}
 
     onBegin() {
-        this._colorBefore = this.entity._obj3d.material.color;
+        this._colorBefore = this.entity.getMaterial().color;
         this._sizeBefore = this.entity.size;
     }
 
     onAction(t) {
-        this.entity._obj3d.material.color = this.color.clone().multiplyScalar(t).add(this._colorBefore.clone().multiplyScalar(1-t));
+        this.entity.getMaterial().color = this.color.clone().multiplyScalar(t).add(this._colorBefore.clone().multiplyScalar(1-t));
         this.entity.setSize(this.size*t + this._sizeBefore*(1-t));
     }
 
     onEnd() {
-        this.entity._obj3d.material.color = this.color;
+        this.entity.getMaterial().color = this.color;
         this.entity.setSize(this.size);
         this._colorBefore = undefined;
         this._sizeBefore = undefined;

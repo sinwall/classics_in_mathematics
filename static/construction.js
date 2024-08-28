@@ -112,6 +112,13 @@ class Vector {
     clone() {
         return new Vector(this.x, this.y, this.z);
     }
+    cross(vec) {
+        let result = new Vector();
+        result.x = this.y*vec.z - this.z*vec.y;
+        result.y = this.z*vec.x - this.x*vec.z;
+        result.z = this.x*vec.y - this.y*vec.x;
+        return result;
+    }
     dilate(t) {
         let result = this.clone();
         result.x *= t;
@@ -204,6 +211,23 @@ class EntityData {
 
 function isEntityData(x) {
     return (x instanceof EntityData);
+}
+
+function isMultiObjectsData(x) {
+    return (x instanceof MultiObjectsData);
+}
+
+class MultiObjectsData extends EntityData {
+    static type = 'multi';
+    constructor (type, data) {
+        super();
+        this.subtype = type;
+        this.data = data;
+    }
+}
+
+function newMultiObjects(type, data) {
+    return new MultiObjectsData(type, data);
 }
 
 class PointsData extends EntityData {
@@ -309,6 +333,55 @@ function newCylinder(center, radius, height, start, end) {
     return new CylinderData(center, radius, height, start, end);
 }
 
+class GeneralCylinderData extends EntityData {
+    static type = 'generalCylinder';
+    constructor (baseCenter, baseRadialPt, perpVector, apex, start, end) {
+        super();
+        this.baseCenter = baseCenter;
+        this.baseRadialPt = baseRadialPt;
+        this.perpVector = perpVector;
+        this.apex = apex;
+        if (start === undefined) { start = 0;}
+        this.start = start;
+        if (end === undefined) {end = 360;}
+        this.end = end;
+        
+        this._radius = baseCenter.distTo(baseRadialPt);
+        this.coRadius = this._radius;
+        this._baseCoRadialVec = perpVector.cross( baseRadialPt.sub(baseCenter) );
+        this._baseCoRadialVec = this._baseCoRadialVec.dilate(this.coRadius/this._baseCoRadialVec.norm());
+    }
+}
+
+function newGeneralCylinder(baseCenter, baseRadialPt, perpVector, apex, start, end) {
+    return new GeneralCylinderData(baseCenter, baseRadialPt, perpVector, apex, start, end);
+}
+
+
+class GeneralConeData extends EntityData {
+    static type = 'generalCone';
+    constructor (baseCenter, baseRadialPt, perpVector, apex, start, end) {
+        super();
+        this.baseCenter = baseCenter;
+        this.baseRadialPt = baseRadialPt;
+        this.perpVector = perpVector;
+        this.apex = apex;
+        if (start === undefined) { start = 0;}
+        this.start = start;
+        if (end === undefined) {end = 360;}
+        this.end = end;
+        
+        this._radius = baseCenter.distTo(baseRadialPt);
+        this.coRadius = this._radius;
+        this._baseCoRadialVec = perpVector.cross( baseRadialPt.sub(baseCenter) );
+        this._baseCoRadialVec = this._baseCoRadialVec.dilate(this.coRadius/this._baseCoRadialVec.norm());
+    }
+}
+
+function newGeneralCone(baseCenter, baseRadialPt, perpVector, apex, start, end) {
+    return new GeneralConeData(baseCenter, baseRadialPt, perpVector, apex, start, end);
+}
+
 class ConeData extends EntityData {
     static type = 'cone';
     constructor (center, radius, height, start, end) {
@@ -349,4 +422,9 @@ function newCone(center, radius, height, start, end) {
 //     return result;
 // }
 
-export {newVector, Vector, newPoints, newLine, newCircle, newSpiral, newCylinder, newCone, isEntityData};
+export {
+    newVector, Vector, newPoints, newLine, newCircle, newSpiral, 
+    newCylinder, newCone, newGeneralCylinder, newGeneralCone, 
+    newMultiObjects,
+    isEntityData, isMultiObjectsData
+};
