@@ -23,18 +23,20 @@ let ddcs = {
     Intro: new DynamicDiagramConfiguration(
         5,
         new CameraSetting(
-            5,
+            3,
             0, 0, 0,
             30, 30, 10, false
         ),
         {
             coneRadius: 2,
             coneHeight: 4,
-            nDivision: 10
+            nDivision: 15,
+            switchToSectors: 0,
+            switchToFlat: 0,
         },
         function (params) {
             let {
-                coneRadius, coneHeight, nDivision
+                coneRadius, coneHeight, nDivision, switchToSectors, switchToFlat,
             } = params;
 
             // let A = Vector(3, 0, 0);
@@ -49,35 +51,39 @@ let ddcs = {
             let genCon = GeneralCone(
                 Vector(0, 0, -coneHeight/2), Vector(coneRadius, 0, -coneHeight/2), 
                 Vector(0, 0, 1), Vector(0, 0, coneHeight/2), 
-                0, 90
+                0, 360
             );
             let genCyl = GeneralCylinder(
                 Vector(0, 0, -coneHeight/2), Vector(coneRadius, 0, -coneHeight/2), 
                 Vector(0, 0, 1), Vector(0, 0, coneHeight/2), 
-                0, 90
+                0, 360, true, 
+                true, false,
             );
             let smallCones = [];
             let smallCylinders = [];
             for (let i=0; i<nDivision; i++) {
                 smallCones.push(
                     GeneralCylinder(
-                        Vector(0, 0, -coneHeight/2+i*coneHeight/nDivision), 
+                        Vector(0, 0, -coneHeight/2+(1-switchToFlat)*i*coneHeight/nDivision), 
                         Vector(
-                            (1-i/nDivision)*coneRadius*degCos(-360*i/nDivision), 
-                            (1-i/nDivision)*coneRadius*degSin(-360*i/nDivision), 
-                            -coneHeight/2+i*coneHeight/nDivision), 
-                        Vector(0, 0, 1), Vector(0, 0, -coneHeight/2+(i+1)*coneHeight/nDivision), 
-                        0, 360
+                            (1-i/nDivision)*coneRadius*degCos(-360*(i+1)/nDivision), 
+                            (1-i/nDivision)*coneRadius*degSin(-360*(i+1)/nDivision), 
+                            -coneHeight/2+(1-switchToFlat)*i*coneHeight/nDivision), 
+                        Vector(0, 0, 1), Vector(0, 0, -coneHeight/2+((1-switchToFlat)*i+1)*coneHeight/nDivision), 
+                        0, 360*(1-switchToSectors)+switchToSectors*(360/nDivision), true,
+                        true, true
                     )
                 )
                 smallCylinders.push(
                     GeneralCylinder(
-                        Vector(0, 0, -coneHeight/2+i*coneHeight/nDivision), 
+                        Vector(0, 0, -coneHeight/2+(1-switchToFlat)*i*coneHeight/nDivision), 
                         Vector(
-                            coneRadius*degCos(-360*i/nDivision), coneRadius*degSin(-360*i/nDivision), 
-                            -coneHeight/2+i*coneHeight/nDivision), 
-                        Vector(0, 0, 1), Vector(0, 0, -coneHeight/2+(i+1)*coneHeight/nDivision), 
-                        0, 360
+                            coneRadius*degCos(-360*(i+1)/nDivision), 
+                            coneRadius*degSin(-360*(i+1)/nDivision), 
+                            -coneHeight/2+(1-switchToFlat)*i*coneHeight/nDivision), 
+                        Vector(0, 0, 1), Vector(0, 0, -coneHeight/2+((1-switchToFlat)*i+1)*coneHeight/nDivision), 
+                        0, 360*(1-switchToSectors)+switchToSectors*(360/nDivision), true,
+                        true, true
                     )
                 )
             }
@@ -87,7 +93,7 @@ let ddcs = {
                 // KA:[K,A], KB:[K,B], KG:[K,G],
                 // cyl1, cyl2, cyl3, con1, con2, 
                 genCon, genCyl, 
-                cons: MultiObjects('generalCone', smallCones),
+                cons: MultiObjects('generalCylinder', smallCones),
                 cyls: MultiObjects('generalCylinder', smallCylinders)
             };
             return datas;
@@ -95,6 +101,7 @@ let ddcs = {
          (e) => Sequential(
             ChangeStyle(1, e.genCyl, 0x99ccff),
             ChangeStyle(1, e.cyls, 0x99ccff),
+
             ChangeStyle(1, e.genCon, 0xff99cc),
             ChangeStyle(1, e.cons, 0xff99cc),
             Show(200, e.genCon),
@@ -106,6 +113,13 @@ let ddcs = {
                 Hide(200, e.genCyl),
                 Show(200, e.cons),
                 Show(200, e.cyls),
+            ),
+            (e) => Sequential(
+                ChangeParams(400, {switchToSectors: 1})
+            ),
+            (e) => Sequential(
+                ChangeParams(400, {switchToFlat: 1}),
+                ChangeCamera(400, {elev: -89, azim: 0})
             ),
         ],
         {

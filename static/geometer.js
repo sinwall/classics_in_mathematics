@@ -23,9 +23,9 @@ function newGeometricEntity(type, key, name, color=0x000000, size=1., pixelSize=
         case "cone":
             return new ConeEntity(type, key, name, color, size, pixelSize);
         case "generalCylinder":
-            return new GeneralConeEntity(type, key, name, color, size, pixelSize);
-        case "generalCone":
             return new GeneralCylinderEntity(type, key, name, color, size, pixelSize);
+        case "generalCone":
+            return new GeneralConeEntity(type, key, name, color, size, pixelSize);
         case "multi":
             return new MultiObjectsEntity(type, key, name, color, size, pixelSize, subtype)
         default:
@@ -47,10 +47,15 @@ class GeometricEntity {
         this._caption.classList.add('unselectable');
         this._caption.style.position = 'absolute';
         this._caption.textContent = name;
+
+        this.hasSubObject = false;
     }
 
     addToScene(scene) {
         scene.add(this._obj3d);
+        if (this.hasSubObject) {
+            scene.add(this._subObj);
+        }
     }
 
     attachCaption (renderer) {
@@ -59,8 +64,28 @@ class GeometricEntity {
     getMaterial() {
         return this.material;
     }
+    getSubMaterial() {
+        if (this.hasSubObject) {
+            return this.subMaterial;
+        }
+    }
     get visible() {
         return this._obj3d.visible;
+    }
+    newDefaultMaterial(dim, color, size, pixelSize) {
+        color = color || this.color;
+        size = size || this.size;
+        pixelSize = pixelSize || this.pixelSize;
+        switch (dim) {
+            case 0:
+                return new THREE.PointsMaterial({color: color, size: 4*size*pixelSize});
+            case 1:
+                return new THREE.LineBasicMaterial({color: color, linewidth: 1.5*size});
+            case 2:
+                let material = new THREE.MeshBasicMaterial({color: color, opacity: 0.5, transparent: true});
+                material.side = THREE.DoubleSide;
+                return material;
+        }
     }
     setCaptionPosition(top, left) {
         this._caption.style.top = top;
@@ -83,10 +108,12 @@ class GeometricEntity {
     setVisibility(value) {
         if (typeof(value) == "number") { value = (value == 1); }
         this._obj3d.visible = value;
+        if (this.hasSubObject) {
+            this._subObj.visible = value;
+        }
         if (value) { this._caption.style.visibility = "visible"; }
         else {this._caption.style.visibility = "hidden"; }
     }
-
 }
 
 class MultiObjectsEntity extends GeometricEntity {
@@ -96,11 +123,13 @@ class MultiObjectsEntity extends GeometricEntity {
         this.children = [];
         
         if (['point', 'points'].includes(this.subtype)) {
-            this.commonMaterial = new THREE.PointsMaterial({color: color, size: 4*size*pixelSize});
+            this.commonMaterial = this.newDefaultMaterial(0);
         } else if (['line', 'circle', 'spiral'].includes(this.subtype)) {
-            this.commonMaterial = new THREE.LineBasicMaterial({color: color, linewidth: 1.5*size});
+            this.commonMaterial = this.newDefaultMaterial(1);
         } else {
-            this.commonMaterial = new THREE.MeshBasicMaterial({color: color, opacity: 0.5, transparent: true});
+            this.commonMaterial = this.newDefaultMaterial(2);
+            this.commonSubMaterial = this.newDefaultMaterial(1);
+            this.hasSubObject = true;
         }
     }
 
@@ -111,6 +140,10 @@ class MultiObjectsEntity extends GeometricEntity {
 
     getMaterial() {
         return this.commonMaterial;
+    }
+
+    getSubMaterial() {
+        return this.commonSubMaterial;
     }
 
     get visible() {
@@ -162,6 +195,9 @@ class MultiObjectsEntity extends GeometricEntity {
                 newEntity._obj3d.material = this.commonMaterial;
                 newEntity.addToScene(this.scene);
                 newEntity.setVisibility(false);
+                if (this.hasSubObject) {
+                    newEntity._subObj.material = this.commonSubMaterial;
+                }
                 this.children.push(newEntity);
             }
         } else {
@@ -182,7 +218,7 @@ class MultiObjectsEntity extends GeometricEntity {
 class PointEntity extends GeometricEntity {
     constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
         super(type, key, name, color, size, pixelSize);
-        this.material = new THREE.PointsMaterial({color: color, size: 4*size*pixelSize});
+        this.material = this.newDefaultMaterial(0);
         this._obj3d = new THREE.Points(
             new THREE.BufferGeometry(),
             this.material
@@ -207,7 +243,7 @@ class PointEntity extends GeometricEntity {
 class PointsEntity extends GeometricEntity {
     constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
         super(type, key, name, color, size, pixelSize);
-        this.material = new THREE.PointsMaterial({color: color, size: 4*size*pixelSize});
+        this.material = this.newDefaultMaterial(0);
         this._obj3d = new THREE.Points(
             new THREE.BufferGeometry(),
             this.material
@@ -232,7 +268,7 @@ class PointsEntity extends GeometricEntity {
 class LineEntity extends GeometricEntity {
     constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
         super(type, key, name, color, size, pixelSize);
-        this.material = new THREE.LineBasicMaterial({color: color, linewidth: 1.5*size});
+        this.material = this.newDefaultMaterial(1);
         this._obj3d = new THREE.Line(
             new THREE.BufferGeometry(),
             this.material
@@ -266,7 +302,7 @@ class LineEntity extends GeometricEntity {
 class CircleEntity extends GeometricEntity {
     constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
         super(type, key, name, color, size, pixelSize);
-        this.material = new THREE.LineBasicMaterial({color: color, linewidth: 1.5*size});
+        this.material = this.newDefaultMaterial(1);
         let g = new THREE.BufferGeometry()
         g.setAttribute(
             "position", 
@@ -306,7 +342,7 @@ class CircleEntity extends GeometricEntity {
 class SpiralEntity extends GeometricEntity {
     constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
         super(type, key, name, color, size, pixelSize);
-        this.material = new THREE.LineBasicMaterial({color: color, linewidth: 1.5*size});
+        this.material = this.newDefaultMaterial(1);
         this._obj3d = new THREE.Line(
             new THREE.BufferGeometry(),
             this.material
@@ -340,7 +376,6 @@ class SpiralEntity extends GeometricEntity {
 class CylinderEntity extends GeometricEntity {
     constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
         super(type, key, name, color, size, pixelSize);
-        color = 0x88ccff;
         this.material = new THREE.MeshBasicMaterial({color: color, opacity: 0.5, transparent: true})
         this._obj3d = new THREE.Mesh(
             new THREE.BufferGeometry(),
@@ -372,7 +407,6 @@ class CylinderEntity extends GeometricEntity {
 class ConeEntity extends GeometricEntity {
     constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
         super(type, key, name, color, size, pixelSize);
-        color = 0x88ccff;
         this.material = new THREE.MeshBasicMaterial({color: color, opacity: 0.5, transparent: true});
         this._obj3d = new THREE.Mesh(
             new THREE.BufferGeometry(),
@@ -405,10 +439,16 @@ class GeneralCylinderEntity extends GeometricEntity {
     constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
         super(type, key, name, color, size, pixelSize);
         color = 0x88ccff;
-        this.material = new THREE.MeshBasicMaterial({color: color, opacity: 0.5, transparent: true});
+        this.material = this.newDefaultMaterial(2);
         this._obj3d = new THREE.Mesh(
             new THREE.BufferGeometry(),
             this.material
+        );
+        this.hasSubObject = true;
+        this.subMaterial = this.newDefaultMaterial(1);
+        this._subObj = new THREE.Line(
+            new THREE.BufferGeometry(),
+            this.subMaterial
         );
     }
 
@@ -418,28 +458,41 @@ class GeneralCylinderEntity extends GeometricEntity {
 
     setData(value) {
         let points = [value.baseCenter, value.apex];
-        let angularResolution = 120;
-        let indices = [
-            0, 2, 2*angularResolution, 
-            1, 2*angularResolution+1, 3,
-            2*angularResolution, 2, 2*angularResolution+1,
-            2*angularResolution+1, 2, 3
-        ];
-        let dt = 2*Math.PI/angularResolution
-        for (let i=0; i<angularResolution; i++) {
-            let added1 = value.baseCenter.toward(value.baseRadialPt, Math.cos(i*dt)).add(
-                value._baseCoRadialVec.dilate(Math.sin(i*dt))
+        // let angularResolution = 120;
+        let indices = [];
+        let dt = 6;
+        for (let i=0; i*dt<=(value.end-value.start); i++) {
+            let angle = (value.start + i*dt)*Math.PI/180;
+            let added1 = value.baseCenter.toward(value.baseRadialPt, Math.cos(angle)).add(
+                value._baseCoRadialVec.dilate(Math.sin(angle))
             )
             let added2 = added1.add(value.apex.sub(value.baseCenter));
             points.push(added1, added2);
         }
-        for (let i=1; i<angularResolution; i++) {
-            indices.push(0, 2*i+2, 2*i,  1, 2*i+1, 2*i+3,  2*i, 2*i+2, 2*i+1,  2*i+1, 2*i+2, 2*i+3);
+        for (let i=0; i<(points.length-4)/2; i++) {
+            if (value.upper) {
+                indices.push(1, 2*i+3, 2*i+5);
+            }
+            if (value.lower) {
+                indices.push(0, 2*i+4, 2*i+2);    
+            }
+            indices.push(2*i+2, 2*i+4, 2*i+3,  2*i+3, 2*i+4, 2*i+5);
         }
-        let g = new THREE.BufferGeometry();
+        let g = this._obj3d.geometry;
         g.setFromPoints(points);
         g.setIndex(indices);
-        this._obj3d.geometry = g;
+        if (value.boundary) {
+            g = this._subObj.geometry;
+            g.setFromPoints(points);
+            let indices_sub = [];
+            for (let i=0; i<(points.length-4)/2; i++) {
+                indices_sub.push(2*i+2, 2*i+4, 2*i+3, 2*i+5);
+            }
+            g.setIndex(indices_sub)
+        } else {
+            this._subObj.geometry.setFromPoints([]);
+            this._subObj.geometry.setIndex([]);
+        }
     }
 
     setSize(value) {
@@ -451,7 +504,7 @@ class GeneralConeEntity extends GeometricEntity {
     constructor(type, key, name, color=0x000000, size=1., pixelSize=1,) {
         super(type, key, name, color, size, pixelSize);
         color = 0x88ccff;
-        this.material = new THREE.MeshBasicMaterial ({color: color, opacity: 0.5, transparent: true});
+        this.material = this.newDefaultMaterial(2);
         this._obj3d = new THREE.Mesh(
             new THREE.BufferGeometry(),
             this.material
@@ -464,18 +517,19 @@ class GeneralConeEntity extends GeometricEntity {
 
     setData(value) {
         let points = [value.baseCenter, value.apex];
-        let angularResolution = 120;
-        let indices = [0, 2, angularResolution+1, 1, angularResolution+1, 2];
-        let dt = 2*Math.PI/angularResolution
-        for (let i=0; i<angularResolution; i++) {
+        // let angularResolution = 120;
+        let indices = [];
+        let dt = 3;
+        for (let i=0; i*dt<=(value.end-value.start); i++) {
+            let angle = (value.start + i*dt)*Math.PI/180;
             points.push(
-                value.baseCenter.toward(value.baseRadialPt, Math.cos(i*dt)).add(
-                    value._baseCoRadialVec.dilate(Math.sin(i*dt))
+                value.baseCenter.toward(value.baseRadialPt, Math.cos(angle)).add(
+                    value._baseCoRadialVec.dilate(Math.sin(angle))
                 )
             );
         }
-        for (let i=1; i<angularResolution; i++) {
-            indices.push(0, i+2, i+1, 1, i+1, i+2);
+        for (let i=0; i<points.length-3; i++) {
+            indices.push(0, i+3, i+2, 1, i+2, i+3);
         }
         let g = new THREE.BufferGeometry();
         g.setFromPoints(points);
@@ -514,6 +568,7 @@ class Geometer {
         this.original = false;
 
         this.currentAnimation = null;
+        this._objectsDict = {};
     }
 
     loadSource(bookName, sectionName, callback) {
@@ -547,7 +602,6 @@ class Geometer {
         this.stepMax = this.ddc.stepMax;
         this.cameraReady(this.ddc.initialCamSet);
         let built = this.ddc.calculation(this.ddc.initialParams);
-        this._objectsDict = {};
         for (let key in built) {
             let type;
             let caption;
@@ -683,7 +737,6 @@ class Geometer {
 
     render() {
         this.renderer.render(this.scene, this.camera);
-        // console.log(this.scene);
     }
 
     stepBack() {

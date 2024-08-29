@@ -335,7 +335,7 @@ function newCylinder(center, radius, height, start, end) {
 
 class GeneralCylinderData extends EntityData {
     static type = 'generalCylinder';
-    constructor (baseCenter, baseRadialPt, perpVector, apex, start, end) {
+    constructor (baseCenter, baseRadialPt, perpVector, apex, start, end, boundary, upper, lower) {
         super();
         this.baseCenter = baseCenter;
         this.baseRadialPt = baseRadialPt;
@@ -345,6 +345,9 @@ class GeneralCylinderData extends EntityData {
         this.start = start;
         if (end === undefined) {end = 360;}
         this.end = end;
+        this.boundary = Boolean(boundary);
+        this.upper = Boolean(upper);
+        this.lower = Boolean(lower);
         
         this._radius = baseCenter.distTo(baseRadialPt);
         this.coRadius = this._radius;
@@ -353,14 +356,14 @@ class GeneralCylinderData extends EntityData {
     }
 }
 
-function newGeneralCylinder(baseCenter, baseRadialPt, perpVector, apex, start, end) {
-    return new GeneralCylinderData(baseCenter, baseRadialPt, perpVector, apex, start, end);
+function newGeneralCylinder(baseCenter, baseRadialPt, perpVector, apex, start, end, boundary, upper, lower) {
+    return new GeneralCylinderData(baseCenter, baseRadialPt, perpVector, apex, start, end, boundary, upper, lower);
 }
 
 
 class GeneralConeData extends EntityData {
     static type = 'generalCone';
-    constructor (baseCenter, baseRadialPt, perpVector, apex, start, end) {
+    constructor (baseCenter, baseRadialPt, perpVector, apex, start, end, boundary, upper, lower) {
         super();
         this.baseCenter = baseCenter;
         this.baseRadialPt = baseRadialPt;
@@ -370,6 +373,9 @@ class GeneralConeData extends EntityData {
         this.start = start;
         if (end === undefined) {end = 360;}
         this.end = end;
+        this.boundary = Boolean(boundary);
+        this.upper = Boolean(upper);
+        this.lower = Boolean(lower);
         
         this._radius = baseCenter.distTo(baseRadialPt);
         this.coRadius = this._radius;
@@ -378,8 +384,8 @@ class GeneralConeData extends EntityData {
     }
 }
 
-function newGeneralCone(baseCenter, baseRadialPt, perpVector, apex, start, end) {
-    return new GeneralConeData(baseCenter, baseRadialPt, perpVector, apex, start, end);
+function newGeneralCone(baseCenter, baseRadialPt, perpVector, apex, start, end, boundary, upper, lower) {
+    return new GeneralConeData(baseCenter, baseRadialPt, perpVector, apex, start, end, boundary, upper, lower);
 }
 
 class ConeData extends EntityData {
