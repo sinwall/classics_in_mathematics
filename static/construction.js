@@ -207,6 +207,19 @@ class EntityData {
     getType () {
         return this.constructor.type;
     }
+    isEqualTo(other) {
+        for (let key in this) {
+            if (!(key in other) || (other[key] != this[key])) {
+                return false;
+            }
+        }
+        for (let key in other) {
+            if (!(key in this) || (other[key] != this[key])) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
 
 function isEntityData(x) {

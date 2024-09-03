@@ -48,10 +48,26 @@ class DiagramNavigator {
         this.checkOriginal.style.visibility = 'hidden';
         this.setStepsItems();
 
+        this._hiddenA = document.createElement('a');
+        this.buttonDownload = document.createElement('button');
+        this.buttonDownload.innerHTML = 'Save image';
+        this.buttonDownload.onclick = function () {
+            if (geometer.renderer.tagName == 'canvas') {
+                that._hiddenA.download = '1mage.png';
+                that._hiddenA.href = geometer.renderer.domElement.toDataURL();
+            } else {
+                that._hiddenA.download = '1mage.svg';
+                that._hiddenA.href = 'data:image/svg+xml,'+encodeURIComponent(geometer.renderer.domElement.outerHTML);
+            }
+            that._hiddenA.click();
+            // console.log(geometer.renderer.domElement.toDataURL());
+        }
+
         this.outerDiv.appendChild(this.buttonPrev);
         this.outerDiv.appendChild(this.selector);
         this.outerDiv.appendChild(this.buttonNext);
         this.outerDiv.appendChild(this.checkOriginal);
+        this.outerDiv.appendChild(this.buttonDownload);
         // this.outerDiv.appendChild(document.createTextNode('original'));
         this.parentNode.appendChild(this.outerDiv);
     }

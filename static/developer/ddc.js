@@ -25,7 +25,8 @@ let ddcs = {
         new CameraSetting(
             3,
             0, 0, 0,
-            30, 30, 10, false
+            30, -120, 10, 
+            90
         ),
         {
             coneRadius: 2,
@@ -61,16 +62,18 @@ let ddcs = {
             );
             let smallCones = [];
             let smallCylinders = [];
+            let eps = 0.001;
             for (let i=0; i<nDivision; i++) {
+                let localSwitch = Math.max(0, Math.min(1, 2*(switchToSectors-(nDivision-1-i)/(2*nDivision-2))));
                 smallCones.push(
                     GeneralCylinder(
-                        Vector(0, 0, -coneHeight/2+(1-switchToFlat)*i*coneHeight/nDivision), 
+                        Vector(0, 0, -coneHeight/2+(1-switchToFlat)*i*coneHeight/nDivision -eps), 
                         Vector(
-                            (1-i/nDivision)*coneRadius*degCos(-360*(i+1)/nDivision), 
-                            (1-i/nDivision)*coneRadius*degSin(-360*(i+1)/nDivision), 
-                            -coneHeight/2+(1-switchToFlat)*i*coneHeight/nDivision), 
-                        Vector(0, 0, 1), Vector(0, 0, -coneHeight/2+((1-switchToFlat)*i+1)*coneHeight/nDivision), 
-                        0, 360*(1-switchToSectors)+switchToSectors*(360/nDivision), true,
+                            (1-i/nDivision)*coneRadius*degCos(360*i/nDivision +90), 
+                            (1-i/nDivision)*coneRadius*degSin(360*i/nDivision +90), 
+                            -coneHeight/2+(1-switchToFlat)*i*coneHeight/nDivision -eps), 
+                        Vector(0, 0, 1), Vector(0, 0, -coneHeight/2+((1-switchToFlat)*i+1)*coneHeight/nDivision +eps), 
+                        0, 360*(1-localSwitch)+localSwitch*(360/nDivision), true,
                         true, true
                     )
                 )
@@ -78,15 +81,24 @@ let ddcs = {
                     GeneralCylinder(
                         Vector(0, 0, -coneHeight/2+(1-switchToFlat)*i*coneHeight/nDivision), 
                         Vector(
-                            coneRadius*degCos(-360*(i+1)/nDivision), 
-                            coneRadius*degSin(-360*(i+1)/nDivision), 
+                            coneRadius*degCos(360*(i)/nDivision +90), 
+                            coneRadius*degSin(360*(i)/nDivision +90), 
                             -coneHeight/2+(1-switchToFlat)*i*coneHeight/nDivision), 
                         Vector(0, 0, 1), Vector(0, 0, -coneHeight/2+((1-switchToFlat)*i+1)*coneHeight/nDivision), 
-                        0, 360*(1-switchToSectors)+switchToSectors*(360/nDivision), true,
+                        0, 360*(1-localSwitch)+localSwitch*(360/nDivision), true,
                         true, true
                     )
                 )
             }
+            let spiral = Spiral(
+                Vector(),
+                coneRadius,
+                0, -360, -90
+            )
+            let circle = Circle(
+                Vector(),
+                coneRadius
+            )
             let datas = {
                 // A, B, G,K,
 
@@ -94,7 +106,8 @@ let ddcs = {
                 // cyl1, cyl2, cyl3, con1, con2, 
                 genCon, genCyl, 
                 cons: MultiObjects('generalCylinder', smallCones),
-                cyls: MultiObjects('generalCylinder', smallCylinders)
+                cyls: MultiObjects('generalCylinder', smallCylinders),
+                spiral, circle
             };
             return datas;
         },
@@ -115,16 +128,23 @@ let ddcs = {
                 Show(200, e.cyls),
             ),
             (e) => Sequential(
-                ChangeParams(400, {switchToSectors: 1})
+                ChangeParams(3000, {switchToSectors: 1})
             ),
             (e) => Sequential(
                 ChangeParams(400, {switchToFlat: 1}),
-                ChangeCamera(400, {elev: -89, azim: 0})
+                ChangeCamera(400, {elev: 90, upAngleFromY: 0})
             ),
+            (e) => Sequential(
+                Show(200, e.spiral),
+                Show(200, e.circle),
+                Hide(200, e.cons),
+                Hide(200, e.cyls),
+            )
         ],
         {
             A:'Α', B:'Β', G:'Γ', D:'Δ', E:'Ε', K:'Κ', L:'Λ', Z:'Ζ', H:'Η', Q:'Θ', 
         },
+        'WebGLRenderer'
     )
 };
 

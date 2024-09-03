@@ -1,5 +1,7 @@
 import * as THREE from 'three'
+import {WebGLRenderer} from 'three'
 import {SVGRenderer} from 'three/addons/renderers/SVGRenderer.js'
+import {CSS3DRenderer} from 'three/addons/renderers/CSS3DRenderer.js'
 import {Vector, isEntityData, isMultiObjectsData} from "./construction.js"
 import { AllParamsSummary } from './effects.js'
 
@@ -82,8 +84,17 @@ class GeometricEntity {
             case 1:
                 return new THREE.LineBasicMaterial({color: color, linewidth: 1.5*size});
             case 2:
-                let material = new THREE.MeshBasicMaterial({color: color, opacity: 0.5, transparent: true});
-                material.side = THREE.DoubleSide;
+                let material = new THREE.MeshBasicMaterial({
+                    color: color, 
+                    opacity: 0.5, 
+                    transparent: true,
+                    side: THREE.DoubleSide,
+                    // wireframe: true
+                    // polygonOffset: true,
+                    // polygonOffsetFactor: 0,
+                    // polygonOffsetUnits: 1,
+                });
+
                 return material;
         }
     }
@@ -96,6 +107,14 @@ class GeometricEntity {
         this.color = value;
         if (this._obj3d.material.color.getHex() == value) {return;}
         this._obj3d.material.color.set( value );
+    }
+
+    setDataIfRenewed(data) {
+        if (isEntityData(data) && ('_oldData' in this) && (data.isEqualTo(this._oldData))) {
+            return;
+        }
+        this.setData(data);
+        this._oldData = data;
     }
 
     setPixelSize(value) {
@@ -446,7 +465,7 @@ class GeneralCylinderEntity extends GeometricEntity {
         );
         this.hasSubObject = true;
         this.subMaterial = this.newDefaultMaterial(1);
-        this._subObj = new THREE.Line(
+        this._subObj = new THREE.LineSegments(
             new THREE.BufferGeometry(),
             this.subMaterial
         );
@@ -478,6 +497,9 @@ class GeneralCylinderEntity extends GeometricEntity {
             }
             indices.push(2*i+2, 2*i+4, 2*i+3,  2*i+3, 2*i+4, 2*i+5);
         }
+        if (value.end < value.start + 360) {
+            indices.push(0, 2, 1,  1, 2, 3,  0, 1, points.length-2, 1, points.length-1, points.length-2);
+        }
         let g = this._obj3d.geometry;
         g.setFromPoints(points);
         g.setIndex(indices);
@@ -486,7 +508,10 @@ class GeneralCylinderEntity extends GeometricEntity {
             g.setFromPoints(points);
             let indices_sub = [];
             for (let i=0; i<(points.length-4)/2; i++) {
-                indices_sub.push(2*i+2, 2*i+4, 2*i+3, 2*i+5);
+                indices_sub.push(2*i+2, 2*i+4,  2*i+3, 2*i+5);
+            }
+            if (value.end < value.start + 360) {
+                indices.push(0, 1,  0, 2,  1, 3,  0, points.length-2,  1, points.length-1);
             }
             g.setIndex(indices_sub)
         } else {
@@ -542,6 +567,20 @@ class GeneralConeEntity extends GeometricEntity {
     }
 }
 
+
+function getRendererSize(renderer) {
+    let result = {width:0, height:0};
+    if (renderer instanceof SVGRenderer) {
+        result = renderer.getSize();
+    } else if (renderer instanceof WebGLRenderer) {
+        let temp = new THREE.Vector2();
+        renderer.getSize(temp);
+        result.width = temp.x;
+        result.height = temp.y;
+    } 
+    return result;
+}
+
 class Geometer {
     constructor(box, width=null, height=null) {
         this.box = box;
@@ -550,16 +589,14 @@ class Geometer {
         this.width = width;
         this.height = height;
 
-        let renderer = new SVGRenderer();
-        // let renderer = new THREE.WebGLRenderer();
-        // const renderer = new CSS3DRenderer();
-        renderer.setSize(width, height, false);
-        box.appendChild(renderer.domElement);
         
+        this.renderer = new SVGRenderer();
+        this.renderer.overdraw = 0;
+        this.box.appendChild(this.renderer.domElement);
+
         let scene = new THREE.Scene();
         let camera = new THREE.OrthographicCamera();
     // constructor(renderer, scene, camera) {
-        this.renderer = renderer;
         this.scene = scene;
         this.camera = camera;
 
@@ -586,22 +623,37 @@ class Geometer {
                 console.log(reason);
                 let text = document.createElement('div');
                 text.classList.add('diagram-warning');
-                text.style.setProperty('position', 'absolute');
+                // text.style.setProperty('position', 'absolute');
                 text.style.setProperty('text-align', 'center');
-                text.style.setProperty('width', that.renderer.domElement.parentNode.style.width);
+                text.style.setProperty('width', that.box.style.width);
                 text.innerHTML = '그림이 없는 문서거나<br>그림이 준비되지 않았습니다.';
-                that.renderer.domElement.parentNode.prepend(text);            
+                that.box.prepend(text);            
             });
     }
 
     setup() {
-        let renderer = this.renderer;
+        if (this.renderer) {
+            this.renderer.domElement.remove();
+            this.renderer = undefined;
+        }
+        if (this.ddc.renderer == 'SVGRenderer') {
+            this.renderer = new SVGRenderer();
+            this.renderer.overdraw = 0;
+        }
+        if (this.ddc.renderer == 'WebGLRenderer') {
+            this.renderer = new WebGLRenderer({ preserveDrawingBuffer: true });
+            this.scene.background = new THREE.Color(0xffffff);
+        }
+        this.box.prepend(this.renderer.domElement);
+        this.renderer.setSize(this.width, this.height, false);
+
         this.camSetting = Object.assign({}, this.ddc.initialCamSet);
         this.params = Object.assign({}, this.ddc.initialParams);
-        this.pixelSize = (2*this.ddc.initialCamSet.scale) / renderer.getSize().width;
+        this.pixelSize = (2*this.ddc.initialCamSet.scale) / getRendererSize(this.renderer).width;
         this.stepMax = this.ddc.stepMax;
         this.cameraReady(this.ddc.initialCamSet);
         let built = this.ddc.calculation(this.ddc.initialParams);
+        this._previousBuiltData = built;
         for (let key in built) {
             let type;
             let caption;
@@ -653,7 +705,7 @@ class Geometer {
 
         for (let key in this._objectsDict) {
             let gObj = this._objectsDict[key];
-            gObj.setData(entityDatas[key]);
+            gObj.setDataIfRenewed(entityDatas[key]);
             gObj.setPixelSize(this.pixelSize);
         }
     }
@@ -668,7 +720,7 @@ class Geometer {
                 camSet.centerY,
                 camSet.centerZ
             )).project(this.camera);
-            let renderSize = this.renderer.getSize();
+            let renderSize = getRendererSize(this.renderer);
             gObj.setCaptionPosition(
                 renderSize.height*0.5*(-cy+dy+1) - this.renderer.domElement.parentNode.offsetTop,
                 renderSize.width*0.5*(cx-dx+1) + this.renderer.domElement.parentNode.offsetLeft
@@ -676,13 +728,12 @@ class Geometer {
         }
     }
 
-    buildAndRenderIfLoaded() {
-        // if (!this._loaded) {return;}
-        this.cameraReady();
-        this.build();
-        this.attachCaption();
-        this.render();
-    }
+    // buildAndRenderIfLoaded() {
+    //     this.cameraReady();
+    //     this.build();
+    //     this.attachCaption();
+    //     this.render();
+    // }
 
     cameraReady (camSet) {
         if (!camSet) { camSet = this.camSetting; }
@@ -695,17 +746,16 @@ class Geometer {
         camera.right = scale;
         camera.top = scale;
         camera.bottom = -scale;
-        camera.near = 1; camera.far = 1000;
+        camera.near = 1; camera.far = 50;
         camera.position.set(
             centerX + camSet.dist*Math.cos(camSet.elev*Math.PI/180)*Math.cos(camSet.azim*Math.PI/180), 
             centerY + camSet.dist*Math.cos(camSet.elev*Math.PI/180)*Math.sin(camSet.azim*Math.PI/180), 
             centerZ + camSet.dist*Math.sin(camSet.elev*Math.PI/180)
         );
         camera.lookAt(centerX, centerY, centerZ);
-        if (camSet.yIsUp) {camera.up.set(0, 1, 0);}
-        else {camera.up.set(0, 0, 1);}
+        camera.up.set(0, Math.cos(camSet.upAngleFromY*Math.PI/180), Math.sin(camSet.upAngleFromY*Math.PI/180));
         camera.updateProjectionMatrix();
-        this.pixelSize = (2*camSet.scale) / this.renderer.getSize().width;
+        this.pixelSize = (2*camSet.scale) / getRendererSize(this.renderer).width;
         for (let key in this._objectsDict) {
             let gObj = this._objectsDict[key];
             gObj.setPixelSize(this.pixelSize);
@@ -721,13 +771,15 @@ class Geometer {
         for (let key in this._objectsDict) {
             this._objectsDict[key]._caption.remove();
         }
-        this.render();
+        if (this.renderer) {
+            this.render();
+        }
         if (this._fx) {this._fx.terminate();this._fx = null;}
         this._objectsDict = {};
         this.step = 0;
         this.original = false;
 
-        let warnBox = this.renderer.domElement.parentNode.querySelector('.diagram-warning');
+        let warnBox = this.box.querySelector('.diagram-warning');
         if (warnBox) {warnBox.remove();}
     }
 
