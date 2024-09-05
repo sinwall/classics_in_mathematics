@@ -52,11 +52,12 @@ class DiagramNavigator {
         this.buttonDownload = document.createElement('button');
         this.buttonDownload.innerHTML = 'Save image';
         this.buttonDownload.onclick = function () {
-            if (geometer.renderer.tagName == 'canvas') {
-                that._hiddenA.download = '1mage.png';
+            let filename = `image-step${String(geometer.step).padStart(2, 0)}`
+            if (geometer.renderer.domElement.tagName == 'CANVAS') {
+                that._hiddenA.download = `${filename}.png`;
                 that._hiddenA.href = geometer.renderer.domElement.toDataURL();
-            } else {
-                that._hiddenA.download = '1mage.svg';
+            } else if (geometer.renderer.domElement.tagName == 'SVG') {
+                that._hiddenA.download = `${filename}.svg`;
                 that._hiddenA.href = 'data:image/svg+xml,'+encodeURIComponent(geometer.renderer.domElement.outerHTML);
             }
             that._hiddenA.click();
