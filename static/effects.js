@@ -1,8 +1,63 @@
 import * as THREE from 'three'
 
+class LinearTiming {
+    constructor() {
+        ;
+    }
+    warp(t) {
+        return t;
+    }
+}
+
+
+class BezierTiming {
+    constructor(p1x, p1y, p2x, p2y) {
+        this.p1x = p1x;
+        this.p1y = p1y;
+        this.p2x = p2x;
+        this.p2y = p2y;
+
+        let N = 100;
+        let xs = [0];
+        let ys = [0];
+        let cntr = 1;
+        let xb0 = 0;
+        let yb0 = 0;
+        for (let i=0; i<=N; i++) {
+            let t = (i/N);
+            let xb1 = 3*t*(1-t)*(1-t)*this.p1x + 3*t*t*(1-t)*this.p2x + t*t*t;
+            let yb1 = 3*t*(1-t)*(1-t)*this.p1y + 3*t*t*(1-t)*this.p2y + t*t*t;
+            while ((xb0 <= cntr/N) && (cntr/N < xb1)) {
+                xs.push( cntr/N );
+                ys.push( ((xb1 - cntr/N)*yb0 + (cntr/N - xb0)*yb1)/(xb1-xb0) );
+                cntr += 1;
+            }
+            xb0 = xb1;
+            yb0 = yb1;
+        }
+        xs.push(1);
+        ys.push(1);
+        this.N = N;
+        this.ys = ys;
+    }
+    warp(t) {
+        if (t <= 0) {
+            return 0;
+        } else if (t >= 1) {
+            return 1;
+        } else {
+            let k = Math.floor(t*this.N);
+            return (k+1-t*this.N)*this.ys[k] + (t*this.N - k)*this.ys[k+1];
+        }
+    }
+}
+
+const LinearClock = new LinearTiming();
+const DefaultEasedClock = new BezierTiming(0.25, 0.1, 0.25, 1);
+
 class BaseFX {
     constructor(duration) {
-        this.duration = duration;
+        this.duration = Math.max(duration, 1);
         this.running = false;
     }
     
@@ -95,6 +150,10 @@ class SequentialFX extends BaseFX {
             this.duration = durationTotal;
         }
         this.durationTotal = durationTotal;
+
+        this._delayedCamsetNeed = false;
+        this._delayedBuildNeed = false;
+        this._delayedRenderNeed = false;
     }
 
     attachGeometer(geometer) {
@@ -103,15 +162,30 @@ class SequentialFX extends BaseFX {
     }
 
     needCamset(t) {
-        return this.fxs[this._cursor].needCamset((t*this.durationTotal - this._tcumsum)/this.fxs[this._cursor].duration);
+        if (this._delayedCamsetNeed) {
+            this._delayedCamsetNeed = false;
+            return true;
+        } else {
+            return this.fxs[this._cursor].needCamset((t*this.durationTotal - this._tcumsum)/this.fxs[this._cursor].duration);
+        }
     }
 
     needBuild(t) {
-        return this.fxs[this._cursor].needBuild((t*this.durationTotal - this._tcumsum)/this.fxs[this._cursor].duration);
+        if (this._delayedBuildNeed) {
+            this._delayedBuildNeed = false;
+            return true;
+        } else {
+            return this.fxs[this._cursor].needBuild((t*this.durationTotal - this._tcumsum)/this.fxs[this._cursor].duration);
+        }
     }
 
     needRender(t) {
-        return this.fxs[this._cursor].needRender((t*this.durationTotal - this._tcumsum)/this.fxs[this._cursor].duration);
+        if (this._delayedRenderNeed) {
+            this._delayedRenderNeed = false;
+            return true;
+        } else {
+            return this.fxs[this._cursor].needRender((t*this.durationTotal - this._tcumsum)/this.fxs[this._cursor].duration);
+        }
         // return (
         //     this.needCamset(t) 
         //     || this.needBuild(t) 
@@ -128,7 +202,10 @@ class SequentialFX extends BaseFX {
     onAction(t) {
         let elapsed = t*this.durationTotal;
         while (elapsed >= this._tcumsum + this.fxs[this._cursor].duration) {
-            this.fxs[this._cursor].onEnd();
+            this.fxs[this._cursor].onEnd(); 
+            this._delayedCamsetNeed = this.fxs[this._cursor].needCamset(1);
+            this._delayedBuildNeed = this.fxs[this._cursor].needBuild(1);
+            this._delayedRenderNeed = this.fxs[this._cursor].needRender(1);
             this._tcumsum += this.fxs[this._cursor].duration;
             this._cursor ++;
             this.fxs[this._cursor].onBegin();
@@ -427,7 +504,8 @@ class StyleChangeFX extends BaseFX {
         this.entity.getMaterial().color = this.color.clone().multiplyScalar(t).add(this._colorBefore.clone().multiplyScalar(1-t));
         this.entity.setSize(this.size*t + this._sizeBefore*(1-t));
         if (this.entity.hasSubObject) {
-            this.entity.getSubMaterial().color = this.entity.getMaterial().color;
+            ;
+            // this.entity.getSubMaterial().color = this.entity.getMaterial().color;
         }
     }
 
@@ -437,7 +515,8 @@ class StyleChangeFX extends BaseFX {
         this._colorBefore = undefined;
         this._sizeBefore = undefined;
         if (this.entity.hasSubObject) {
-            this.entity.getSubMaterial().color = this.color;
+            ;
+            // this.entity.getSubMaterial().color = this.color;
         }
     }
 
@@ -465,7 +544,7 @@ class ParamChangeFX extends BaseFX {
     constructor(duration, params, timing) {
         super(duration);
         this.params = params;
-        this.timing = timing;
+        this.timing = DefaultEasedClock;
     }
 
     needBuild(t) {
@@ -475,10 +554,14 @@ class ParamChangeFX extends BaseFX {
     needRender(t) {return (t >= 0);}
 
     onBegin() {
-        this._paramsBefore = this.geometer.params;
+        this._paramsBefore = {};
+        for (let key in this.params) {
+            this._paramsBefore[key] = this.geometer.params[key];
+        }
     }
 
     onAction(t) {
+        t = this.timing.warp(t);
         for (let key in this.params) {
             this.geometer.params[key] = t*this.params[key] + (1-t)*this._paramsBefore[key];
         }
@@ -522,7 +605,10 @@ class CameraChangeFX extends BaseFX {
     }
 
     onBegin() {
-        this._camsetsBefore = this.geometer.camSetting;
+        this._camsetsBefore = {};
+        for (let key in this.camSetting) {
+            this._camsetsBefore[key] = this.geometer.camSetting[key];
+        }
     }
 
     onAction(t) {
@@ -556,6 +642,31 @@ function newCameraChangeFX(duration, camsets, timing) {
     return new CameraChangeFX(duration, camsets, timing);
 }
 
+class IdleFX extends BaseFX {
+    constructor(duration) {
+        super(duration);
+    }
+    onBegin() {
+        ;
+    }
+    onAction(t) {
+        ;
+    }
+    onEnd() {
+        ;
+    }
+    reversed() {
+        return new IdleFX(this.duration);
+    }
+    summary() {
+        return new AllParamsSummary();
+    }
+}
+
+function newIdleFX(duration) {
+    return new IdleFX(duration);
+}
+
 class AllParamsSummary {
     constructor(camSetting, params, entities) {
         this.camSetting = Object.assign({}, camSetting);
@@ -584,5 +695,6 @@ class AllParamsSummary {
 export {
     newShowingFX, newHidingFX, newDrawingFX, newStyleChangeFX, 
     newSequentialFX, newParallelFX, newParamChangeFX, newCameraChangeFX,
+    newIdleFX,
     AllParamsSummary
 };

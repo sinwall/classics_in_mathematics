@@ -1,7 +1,16 @@
 import {
     CameraSetting, DynamicDiagramConfiguration
 } from '/static/structures.js'
-import {newVector, newPoints as Points, newLine as Line, newCircle as Circle, newSpiral as Spiral} from "/static/construction.js"
+import {
+    newMultiObjects as MultiObjects,
+    newVector as Vector, 
+    newPoints as Points, 
+    newLine as Line, 
+    newCircle as Circle, 
+    newSpiral as Spiral,
+    newPolygon as Polygon,
+    newSector as Sector,
+} from "/static/construction.js"
 import { bisectionSolver, degCos, degSin, degTan } from "/static/analysis.js";
 import {
     newSequentialFX as Sequential, 
@@ -12,6 +21,7 @@ import {
     newStyleChangeFX as ChangeStyle, 
     newParamChangeFX as ChangeParams,
     newCameraChangeFX as ChangeCamera,
+    newIdleFX as Wait,
 } from '/static/effects.js'
 
 let ddcs = {
@@ -40,7 +50,7 @@ let ddcs = {
                 posHx, posHy, inverseVelocity, lockLK
             } = params;
         
-            let D = newVector();
+            let D = Vector();
             let G = D.shift(-lengthGD);
             let E = D.shift(lengthDE);
             let A = D.toward(G, ratioAD);
@@ -234,7 +244,7 @@ let ddcs = {
                 aspectRatio, lengthAB, ratioLength, 
                 ratioPosD, ratioPosH, ratioLengthGD, ratioLengthDE,
                 velocityInverse} = params;
-            let A = newVector();
+            let A = Vector();
             let B = A.shift(lengthAB);
             let D = A.shift(lengthAB*ratioPosD);
             let G = D.shift(-ratioLengthGD*D.distTo(A));
@@ -381,7 +391,7 @@ let ddcs = {
                 radius, angleAKB, angleGivenArc, ratioBD, ratioBZ,
                 ratioLengthE, ratioLongerPos, switchZ
             } = params;
-            let K = newVector();
+            let K = Vector();
             let B = K.shift(0, radius);
             let A = K.shift(-radius*Math.sin(angleAKB*Math.PI/180), radius*Math.cos(angleAKB*Math.PI/180));
             let G = K.shift(radius);
@@ -509,11 +519,14 @@ let ddcs = {
                 ratioLengthZ, ratioPosZ, ratioLengthH, ratioPosH,
                 ratioPosN, ratioLeftTail, switchN, ratioBNmagn
             } = params;
-            let K = newVector();
+            let K = Vector();
             let A = K.shift(-radius*Math.sin(angleAKQ*Math.PI/180), radius*Math.cos(angleAKQ*Math.PI/180));
             let bnLength = ratioBNmagn*radius/(ratioLengthZ/ratioLengthH)
             function getBNlength(halfBKG) {
-                return radius*Math.cos((angleAKQ-2*halfBKG)*Math.PI/180)/Math.sin((angleAKQ-halfBKG)*Math.PI/180) - bnLength
+                return (
+                    radius*Math.cos((angleAKQ-2*halfBKG)*Math.PI/180)/Math.sin((angleAKQ-halfBKG)*Math.PI/180) 
+                    - bnLength
+                );
             }
             let halfBKG = 0;
             if (switchN) { halfBKG = bisectionSolver(getBNlength, 0, 0.9*angleAKQ); }
@@ -527,7 +540,10 @@ let ddcs = {
             let Ztop = Zbottom.shift(0, radius*ratioLengthZ);
             let Hbottom = K.shift(-radius*ratioPosH, -0.5*radius*ratioLengthH);
             let Htop = Hbottom.shift(0, radius*ratioLengthH);
-            let N = K.shift((1-switchN)*radius*ratioPosN + switchN*radius*Math.cos(halfBKG*Math.PI/180)/Math.sin((angleAKQ-halfBKG)*Math.PI/180))
+            let N = (
+                K.shift((1-switchN)*radius*ratioPosN 
+                + switchN*radius*Math.cos(halfBKG*Math.PI/180)/Math.sin((angleAKQ-halfBKG)*Math.PI/180))
+            );
             let leftTail = K.shift(-radius*ratioLeftTail)
             let L = K.shift(radius*(1/Math.sin(angleAKQ*Math.PI/180)))
             let E = K.toward(B, G.y/B.y);
@@ -673,7 +689,7 @@ let ddcs = {
                 ratioLengthZ, ratioPosZ, ratioLengthH, ratioPosH,
                 ratioL, switchIN, ratioAngleI, ratioN, ratioRightEnd, ratioLeftTail
             } = params;
-            let K = newVector();
+            let K = Vector();
             let A = K.shiftPolar(radius, 90+angleAKQ);
             let G = K.shiftPolar(radius, 90-angleAKQ);
             let Q = A.toward(G, posPerp);
@@ -692,7 +708,10 @@ let ddcs = {
             halfGKI = (1-switchIN)*ratioAngleI*angleAKQ + switchIN*halfGKI
     
             let I = K.shiftPolar(radius, 90-(angleAKQ + halfGKI*2));
-            let N = K.shift((ratioN*(1-switchIN) + switchIN)*radius*(degSin(angleAKQ) + degCos(angleAKQ)/degTan(angleAKQ+halfGKI)));
+            let N = K.shift(
+                (ratioN*(1-switchIN) + switchIN)*radius
+                *(degSin(angleAKQ) + degCos(angleAKQ)/degTan(angleAKQ+halfGKI))
+            );
             let leftTail = K.shift(-radius*ratioLeftTail);
             let E = K.toward(I, A.y/I.y);
             let result = {
@@ -802,7 +821,7 @@ let ddcs = {
                 ratioPosZ, ratioLengthZ, ratioPosH, ratioLengthH, ratioSmallerRatio,
                 switchKLleft, switchC, ratioDistortIN, switchB
             } = params;
-            let K = newVector();
+            let K = Vector();
             let A = K.shiftPolar(radius, 90+angleAKQ);
             let G = K.shiftPolar(radius, 90-angleAKQ);
             let L = K.shift(radius/degSin(angleAKQ));
@@ -965,7 +984,7 @@ let ddcs = {
                 ratioPosZ, ratioLengthZ, ratioPosH, ratioLengthH, ratioBiggerRatio,
                 switchKLleft, switchC, ratioDistortIN, switchB
             } = params;
-            let K = newVector();
+            let K = Vector();
             let A = K.shiftPolar(radiusABGD, 90+angleAKQ);
             let G = K.shiftPolar(radiusABGD, 90-angleAKQ);
             let ABGD = Circle(K, radiusABGD);
@@ -1009,8 +1028,10 @@ let ddcs = {
     
             let result = {
                 K, A, B, G, Q, L, C, M, I, N, E,
-                Z:[Zbot,Ztop], H:[Hbot,Htop], AG:[A,G], GQ:[G,Q], QK:[Q,K], GK:[G,K], GL:[G,L], KL, CL:[C,L], GM:[G,M], 
-                IN:[I,N], KN:[K,N], CI:[C,I], KE:[K,E], GE:[G,E], IL:[I,L], KI:[K,I], CG:[C,G], KB:[K,B], IG:[I,G], BE:[B,E], 
+                Z:[Zbot,Ztop], H:[Hbot,Htop], AG:[A,G], GQ:[G,Q], 
+                QK:[Q,K], GK:[G,K], GL:[G,L], KL, CL:[C,L], GM:[G,M], 
+                IN:[I,N], KN:[K,N], CI:[C,I], KE:[K,E], GE:[G,E], 
+                IL:[I,L], KI:[K,I], CG:[C,G], KB:[K,B], IG:[I,G], BE:[B,E], 
                 ABGD, KLC
             };
             return result;
@@ -1116,7 +1137,7 @@ let ddcs = {
                 lengthA, lengthBetweenLines
             } = params;
             let lengthQ = lengthA / 8;
-            let Abot = newVector();
+            let Abot = Vector();
             let Bbot = Abot.shift(lengthBetweenLines);
             let Gbot = Bbot.shift(lengthBetweenLines);
             let Dbot = Gbot.shift(lengthBetweenLines);
@@ -1143,8 +1164,10 @@ let ddcs = {
             let Qtop = Htop.shift(lengthBetweenLines, -lengthQ);
     
             let result = {A:[Abot,Atop], 
-                B:[Bbot,Btop], G:[Gbot,Gtop], D:[Dbot,Dtop], E:[Ebot,Etop], Z:[Zbot,Ztop], H:[Hbot,Htop], Q:[Qbot,Qtop],
-                I:[Btop,Itop], K:[Gtop,Ktop], L:[Dtop,Ltop], M:[Etop,Mtop], N:[Ztop,Ntop], C:[Htop,Ctop], O:[Qtop,Otop],
+                B:[Bbot,Btop], G:[Gbot,Gtop], D:[Dbot,Dtop], 
+                E:[Ebot,Etop], Z:[Zbot,Ztop], H:[Hbot,Htop], Q:[Qbot,Qtop],
+                I:[Btop,Itop], K:[Gtop,Ktop], L:[Dtop,Ltop], 
+                M:[Etop,Mtop], N:[Ztop,Ntop], C:[Htop,Ctop], O:[Qtop,Otop],
                 Btop, Gtop, Dtop, Etop, Ztop, Htop, Qtop
             };
             return result;
@@ -1202,7 +1225,7 @@ let ddcs = {
             let {
                 radius, angleSpiralEnd, angleSpiralRotation, angleB, angleG, angleCursor, 
             } = params;
-            let A = newVector();
+            let A = Vector();
             let spiral = Spiral(A, radius, 0, angleSpiralEnd, angleSpiralRotation);
             let B = spiral.pick(angleB);
             let G = spiral.pick(angleG);
@@ -1290,7 +1313,7 @@ let ddcs = {
                 radius, angleSpiralEnd, angleSpiralRotation, angleG, angleH,
                 lengthZE, switchFake,
             } = params;
-            let A = newVector();
+            let A = Vector();
             let spiral = Spiral(A, radius, 0, angleSpiralEnd, angleSpiralRotation);
             let B = A.shiftPolar(radius*0.5*angleG/360, (0.5*angleG+angleSpiralRotation));
             let G = A.shiftPolar(radius*angleG/360, (angleG+angleSpiralRotation));
@@ -1383,7 +1406,7 @@ let ddcs = {
             let {
                 radius, angleSpiralRotation, angleB, angleG, angleD, angleE, angleCursor,
             } = params;
-            let A = newVector();
+            let A = Vector();
             let spiral = Spiral(A, radius, 0, -360, angleSpiralRotation);
             let circle = Circle(A, radius, 0, 360, 180+angleSpiralRotation);
             let B = spiral.pick(angleB);
@@ -1444,7 +1467,7 @@ let ddcs = {
                 Show(1, e.arm),
                 Show(1, e.armPart),
                 Show(1, e.arcCursor),
-                ChangeParams(10000, {angleCursor:-360}),
+                ChangeParams(2000, {angleCursor:-360}),
                 Hide(1, e.Acursor),
                 Hide(1, e.Qcursor),
                 Hide(1, e.arm),
@@ -1460,7 +1483,7 @@ let ddcs = {
                 ChangeStyle(1, e.QKZ, 'red', 1.5),
                 Show(1, e.AEm),
                 Show(1, e.QKZ),
-                ChangeParams(10000, {angleCursor:-360}),
+                ChangeParams(2000, {angleCursor:-360}),
                 Hide(1, e.Acursor),
                 Hide(1, e.Qcursor),
             ),
@@ -1472,7 +1495,7 @@ let ddcs = {
                 ChangeStyle(1, e.QKH, 'DarkRed', 1.5),
                 Show(1, e.ADm),
                 Show(1, e.QKH),
-                ChangeParams(10000, {angleCursor:-720}),
+                ChangeParams(2000, {angleCursor:-720}),
                 Hide(1, e.Acursor),
                 Hide(1, e.Qcursor),
             ),
@@ -1505,7 +1528,7 @@ let ddcs = {
                 angleCursor,
             } = params;
     
-            let A = newVector();
+            let A = Vector();
             let circle = Circle(A, radius, 0, 360, 180+angleSpiralRotation);
             let spiral = Spiral(A, radius, 0, -720, angleSpiralRotation);
             let B = spiral.pick(angleB);
@@ -1574,7 +1597,7 @@ let ddcs = {
                 Show(1, e.ALm),
                 Show(1, e.QKZ),
                 Show(1, e.QKZaddon),
-                ChangeParams(20000, {angleCursor:-720}),
+                ChangeParams(2000, {angleCursor:-720}),
                 Hide(1, e.Acursor),
                 Hide(1, e.Qcursor),
             ),
@@ -1588,7 +1611,7 @@ let ddcs = {
                 Show(1, e.AEm),
                 Show(1, e.QKH),
                 Show(1, e.QKHaddon),
-                ChangeParams(20000, {angleCursor:-1440}),
+                ChangeParams(2000, {angleCursor:-1440}),
                 Hide(1, e.Acursor),
                 Hide(1, e.Qcursor),
             ),
@@ -1624,7 +1647,7 @@ let ddcs = {
                 ratioLengthDE, ratioLengthDZ, 
                 switchFake, switchT,
             } = params;
-            let A = newVector();
+            let A = Vector();
             let spiral = Spiral(A, radius, 0, -360, angleSpiralRotation);
             let B = spiral.pick(angleB);
             let G = spiral.pick(angleG);
@@ -1789,7 +1812,7 @@ let ddcs = {
                 ratioLengthDE, ratioLengthDZ, 
                 switchFake, switchT, switchR
             } = params;
-            let A = newVector();
+            let A = Vector();
             let spiral = Spiral(A, radius, 0, -720, angleSpiralRotation);
             let B = spiral.pick(angleB);
             let G = spiral.pick(angleG);
@@ -1991,7 +2014,7 @@ let ddcs = {
                 radius, angleSpiralRotation, angleB, angleG, angleD, angleH, 
                 ratioLA, ratioQN, ratioMQ, caseNum,
             } = params;
-            let A = newVector();
+            let A = Vector();
     
             let circle = Circle(A, radius, 0, 360, 180+angleSpiralRotation);
             let spiral = Spiral(A, radius, 0, -400, angleSpiralRotation);
@@ -2008,7 +2031,7 @@ let ddcs = {
             let ZLmid = L.toward(Z, 0.5);
             let QHmid = Q.toward(H, 0.5);
     
-            let P = newVector();
+            let P = Vector();
             N = Z.toward(Q, 1+ratioQN);
             if (caseNum >= 1) {
                 N = QHmid;
@@ -2161,6 +2184,191 @@ let ddcs = {
         ],
         {
             A:'Α', B:'Β', G:'Γ', D:'Δ', Q:'Θ', Z:'Ζ', H:'Η', L:'Λ', N:'Ν', R:'Ρ', X:'Χ', M:'Μ', P:'Π',
+        }
+    ),
+    Prop21: new DynamicDiagramConfiguration(
+        4,
+        new CameraSetting(
+            5.5, 
+            0, 0, 0
+        ),
+        {
+            radius: 4,
+            angleSpiralEnd: -360,
+            angleSpiralRotation: -90,
+            bisectionDepth: 3,
+            switchRadial: 0,
+            switchArc: 0,
+            switchSector: 0
+        },
+        function (params) {
+            let {
+                radius, angleSpiralEnd, angleSpiralRotation, bisectionDepth,
+                switchRadial, switchArc, switchSector
+            } = params;
+            let Q = Vector();
+            let ZHIA = Circle(Q, radius);
+            let ABGD = Spiral(Q, radius, 0, angleSpiralEnd, angleSpiralRotation);
+            let A = Q.shiftPolar(radius, -angleSpiralRotation);
+            let Z = Q.shiftPolar(radius, -angleSpiralRotation+90);
+            let H = Q.toward(A, -1);
+            let I = Q.toward(Z, -1);
+
+            let bisector1 = Q.shiftPolar(radius, -angleSpiralRotation+90/2);
+            let bisector2 = Q.shiftPolar(radius, -angleSpiralRotation+90/4);
+            let bisector3 = Q.shiftPolar(radius, -angleSpiralRotation+90/8);
+            let K = bisector3;
+
+            let given = Polygon(
+                [Vector(4, 3.6, 0), Vector(5, 4, 0), 
+                    Vector(5.4, 5, 0), Vector(3.8, 5.3, 0)], true);
+            let AQK = Sector(Q, radius, -angleSpiralRotation, -angleSpiralRotation+90/8, true);
+            
+            let angleAQK = 90/8;
+
+            let radials = [];
+            for (let i=1; i<=30; i++) {
+                let localSwitch = Math.min(1, Math.max(0, i-30+30*switchRadial));
+                radials.push(Line(Q, Q.toward(ABGD.pick(-angleAQK*i), localSwitch*(i+1)/i)));
+            }
+            radials = MultiObjects('line', radials);
+
+            let L = ABGD.pick(-360+angleAQK);
+            let O = Q.toward(A, 1-angleAQK/360);
+            let M = Q.shiftPolar(radius*(1-angleAQK/360), -angleSpiralRotation+2*angleAQK);
+            let OM = Circle(Q, radius*(1-angleAQK/360), -angleSpiralRotation, -angleSpiralRotation+2*angleAQK);
+
+            let N = ABGD.pick(-360+2*angleAQK);
+            let P = K.toward(L, 2);
+            let R = Q.shiftPolar(radius*(1-2*angleAQK/360), -angleSpiralRotation+3*angleAQK);
+            let PR = Circle(
+                Q, radius*(1-2*angleAQK/360), 
+                -angleSpiralRotation+angleAQK, -angleSpiralRotation+3*angleAQK
+            );
+
+            let X = ABGD.pick(-360+3*angleAQK);
+            let S = M.toward(N, 2);
+            let T = Q.shiftPolar(radius*(1-3*angleAQK/360), -angleSpiralRotation+4*angleAQK);
+            let ST = Circle(
+                Q, radius*(1-3*angleAQK/360), 
+                -angleSpiralRotation+2*angleAQK, -angleSpiralRotation+4*angleAQK
+            );
+
+            let arcs = [];
+            for (let i=1; i<=29; i++) {
+                let localSwitch = Math.min(1, Math.max(0, i-29+29*switchArc));
+                arcs.push(
+                    Circle(
+                        Q, radius*i*(angleAQK/360), 
+                        -angleSpiralRotation-(i+1-2*localSwitch)*angleAQK, -angleSpiralRotation-(i+1)*angleAQK)
+                );
+            }
+            arcs = MultiObjects('circle', arcs);
+
+            let sectors = [];
+            for (let i=1; i<=31; i++) {
+                let localSwitch = Math.min(1, Math.max(0, 1-i+31*switchSector));
+                sectors.push(
+                    Sector(
+                        Q, radius*i*(angleAQK/360),
+                        -angleSpiralRotation-(i+1-localSwitch)*angleAQK, 
+                        -angleSpiralRotation-(i-localSwitch)*angleAQK
+                    )
+                );
+            }
+            sectors = MultiObjects('sector', sectors);
+
+            let result = {
+                Q, A, Z, H, I, K,
+                L, O, M,  N, P, R, X, S, T,
+                QA:[Q,A], AH:[A,H], ZI:[Z,I], 
+                QB1:[Q,bisector1], QB2:[Q,bisector2], QB3:[Q,bisector3],
+                given, AQK,
+                ZHIA, ABGD, OM, PR, ST,
+                radials, arcs, sectors
+            };
+            return result;
+        },
+        (e) => Sequential(
+            Draw(500, e.ABGD),
+            Show(1, e.Q),
+            Draw(300, e.QA),
+            Show(1, e.A),
+            Draw(500, e.ZHIA),
+            Draw(400, e.AH),
+            Show(1, e.H),
+            Show(1, e.Z),
+            Draw(400, e.ZI),
+            Show(1, e.I),
+            ChangeStyle(1, e.given, 0xdddddd),
+            Show(400, e.given)
+        ),
+        [
+            // 0 -> 1
+            (e) => Sequential(
+                Draw(400, e.QB1),
+                Wait(400),
+                Draw(400, e.QB2),
+                Hide(400, e.QB1),
+                Draw(400, e.QB3),
+                Hide(400, e.QB2),
+                Show(1, e.K),
+                ChangeStyle(1, e.AQK, 'blue'),
+                Parallel(
+                    Show(200, e.AQK),
+                    ChangeStyle(200, e.given, 'red')
+                )
+            ),
+            // 1 -> 2
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.given, 'white'),
+                    ChangeStyle(200, e.AQK, 'white'),
+                ),
+                Show(1, e.radials),
+                ChangeStyle(1, e.radials, 'grey'),
+                ChangeParams(3000, {switchRadial: 1})
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+                Show(200, e.L),
+                Show(1, e.O),
+                Draw(200, e.OM),
+                Show(1, e.M),
+
+                Wait(200),
+
+                Show(200, e.N),
+                Show(1, e.P), 
+                Draw(200, e.PR),
+                Show(1, e.R),
+
+                Wait(200),
+                Draw(200, e.ST),
+
+                Wait(200),
+                Show(1, e.arcs),
+                ChangeStyle(1, e.arcs, 'grey'),
+                ChangeParams(3000, {switchArc: 1})
+            ),
+            // 3 -> 4
+            (e) => Sequential(
+                ChangeStyle(1, e.sectors, 'grey'),
+                Parallel(
+                    Show(200, e.X),
+                    Show(200, e.S),
+                    Show(200, e.T),
+                    Show(200, e.sectors)
+                ),
+                ChangeParams(4000, {switchSector: 1}),
+                ChangeStyle(200, e.AQK, 'blue')
+            )
+        ],
+        {
+            A:'Α', Q:'Θ', Z:'Ζ', H:'Η', I:'Ι', K:'Κ', 
+            L:'Λ', O:'Ο', M:'Μ',
+            N:'Ν', P:'Π', R:'Ρ',
+            X:'Χ', S:'Σ', T:'Τ'
         }
     )
 }

@@ -20,6 +20,10 @@ function newGeometricEntity(type, key, name, color=0x000000, size=1., pixelSize=
             return new CircleEntity(type, key, name, color, size, pixelSize);
         case "spiral":
             return new SpiralEntity(type, key, name, color, size, pixelSize);
+        case 'polygon':
+            return new PolygonEntity(type, key, name, color, size, pixelSize);
+        case 'sector':
+            return new SectorEntity(type, key, name, color, size, pixelSize)
         case "cylinder":
             return new CylinderEntity(type, key, name, color, size, pixelSize);
         case "cone":
@@ -195,14 +199,7 @@ class MultiObjectsEntity extends GeometricEntity {
         // this.children = [];
         let valueLength = value.data.length;
         for (let i=0; i<Math.min(valueLength, this.children.length); i++) {
-            // this.children.push(
-            //     newGeometricEntity(
-            //         value.subtype, this.key, `${this.name}_${i}`, 
-            //         this.color, this.size, this.pixelSize
-            //     )
-            // )
             this.children[i].setData(value.data[i]);
-            // this.children[i]._obj3d.material = this.commonMaterial;
         }
         if (valueLength > this.children.length) {
             for (let i=this.children.length; i<valueLength; i++) {
@@ -308,7 +305,11 @@ class LineEntity extends GeometricEntity {
     }
 
     setData(value) {
-        this._obj3d.geometry.setFromPoints(value);
+        if (value instanceof Array) {
+            this._obj3d.geometry.setFromPoints(value);
+        } else {
+            this._obj3d.geometry.setFromPoints([value.begin, value.end]);
+        }
     }
 
     setSize(value) {
@@ -344,10 +345,18 @@ class CircleEntity extends GeometricEntity {
 
     setData(value) {
         let pointsOnCircle = [];
-        let resolution = Math.ceil(this.resolution*Math.abs(value.end-value.start)/360)
-        for (let i=0; i<=resolution; i++) {
-            let theta = value.start + (i/resolution)*(value.end-value.start);
-            pointsOnCircle.push(value.pick(theta));
+        let dt = 1;
+        // let resolution = Math.ceil(this.resolution*Math.abs(value.end-value.start)/360)
+        if (value.start <= value.end) {
+            for (let i=0; i*dt+value.start<=value.end; i++) {
+                let theta = value.start + i*dt;
+                pointsOnCircle.push(value.pick(theta));
+            }
+        } else {
+            for (let i=0; i*dt+value.start>=value.end; i--) {
+                let theta = value.start + i*dt;
+                pointsOnCircle.push(value.pick(theta));
+            }
         }
         this._obj3d.geometry.setFromPoints(pointsOnCircle);
     }
@@ -389,6 +398,116 @@ class SpiralEntity extends GeometricEntity {
     setSize(value) {
         this.size = value;
         this._obj3d.material.linewidth = 1.5*value;
+    }
+}
+
+class PolygonEntity extends GeometricEntity {
+    constructor(type, key, name, color=0x000000, size=1., pixelSize=1) {
+        super(type, key, name, color, size, pixelSize);
+        this.material = this.newDefaultMaterial(2);
+        this._obj3d = new THREE.Mesh(
+            new THREE.BufferGeometry(),
+            this.material
+        );
+        this.hasSubObject = true;
+        this.subMaterial = this.newDefaultMaterial(1);
+        this._subObj = new THREE.LineSegments(
+            new THREE.BufferGeometry(),
+            this.subMaterial
+        );
+
+        this._indicesMesh = [];
+    }
+
+    get captionPosition3d() {
+        return (new THREE.Vector3());
+    }
+
+    setData(value) {
+        let g = this._obj3d.geometry;
+        let points = value.vertices;
+        let n = points.length;
+        g.setFromPoints(points);
+        let indices = [n-1, 0, 1];
+        for (let i=1; 2*i+1<n; i++) {
+            indices.push(n-i, i, i+1);
+            if (2*i != n-2) {
+                indices.push(n-i-1, n-i, i+1);
+            }
+        }
+        g.setIndex(indices);
+        if (value.boundary) {
+            g = this._subObj.geometry;
+            g.setFromPoints(points);
+            let indices = [n-1, 0];
+            for (let i=1; i<n; i++) {
+                indices.push(i-1, i);
+            }
+            g.setIndex(indices);
+        } else {
+            g = this._subObj.geometry;
+            g.setFromPoints(points);
+            g.setIndex([]);
+        }
+    }
+
+    setSize(value) {
+        this.size = value;
+    }
+}
+
+class SectorEntity extends GeometricEntity {
+    constructor(type, key, name, color=0x000000, size=1., pixelSize=1) {
+        super(type, key, name, color, size, pixelSize);
+        this.material = this.newDefaultMaterial(2);
+        this._obj3d = new THREE.Mesh(
+            new THREE.BufferGeometry(),
+            this.material
+        );
+        this.hasSubObject = true;
+        this.subMaterial = this.newDefaultMaterial(1);
+        this._subObj = new THREE.LineSegments(
+            new THREE.BufferGeometry(),
+            this.subMaterial
+        );
+    }
+
+    get captionPosition3d() {
+        return (new THREE.Vector3());
+    }
+
+    setData(value) {
+        let dt = 1;
+        let points = [value.center];
+        for (let t=value.start; t<=value.end; t+=dt) {
+            points.push( value.center.shiftPolar(value.radius, t) );
+        }
+        let indices = [];
+        for (let i=1; value.start+i*dt<=value.end; i++) {
+            indices.push( 0, i, i+1);
+        }
+        let g = this._obj3d.geometry;
+        g.setFromPoints(points);
+        g.setIndex(indices);
+        if (value.boundary) {
+            g = this._subObj.geometry;
+            g.setFromPoints(points);
+            indices = [];
+            for (let i=1; value.start+i*dt<=value.end; i++) {
+                indices.push( i, i+1 )
+            }
+            if (value.end < value.start+360) {
+                indices.push( 0, 1,  points.length-1, 0 )
+            }
+            g.setIndex(indices)
+        } else {g = this._subObj.geometry;
+            g.setFromPoints(points);
+            g.setIndex([]);
+        }
+    }
+
+    setSize(value) {
+        this.size = value;
     }
 }
 
@@ -682,7 +801,7 @@ class Geometer {
             gObj.addToScene(this.scene);
         }
         this.build(this.ddc.initialParams);
-        this.attachCaption(this.ddc.initialCamSet);
+        // this.attachCaption(this.ddc.initialCamSet);
 
         this._fx = this.ddc.setupActions(this._objectsDict);
         this._fx.attachGeometer(this);
