@@ -342,6 +342,17 @@ function newPolygon(vertices, boundary) {
     return new PolygonData(vertices, boundary);
 }
 
+function newGridRectangle(x, y, dx, dy, z, boundary) {
+    z = z || 0;
+    if (boundary === undefined) {
+        boundary = true;
+    }
+    return new PolygonData(
+        [new Vector(x, y, z), new Vector(x+dx, y, z), new Vector(x+dx,y+dy,z), new Vector(x,y+dy,z)],
+        boundary
+    );
+}
+
 class SectorData extends EntityData {
     static type = 'sector';
     constructor (center, radius, start, end, boundary) {
@@ -473,7 +484,7 @@ function newCone(center, radius, height, start, end) {
 
 export {
     newVector, Vector, newPoints, newLine, newCircle, newSpiral, 
-    newPolygon, newSector, newCylinder, newCone, newGeneralCylinder, newGeneralCone, 
+    newPolygon, newGridRectangle, newSector, newCylinder, newCone, newGeneralCylinder, newGeneralCone, 
     newMultiObjects,
     isEntityData, isMultiObjectsData
 };

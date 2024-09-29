@@ -9,6 +9,7 @@ import {
     newCircle as Circle, 
     newSpiral as Spiral,
     newPolygon as Polygon,
+    newGridRectangle as GridRectangle,
     newSector as Sector,
 } from "/static/construction.js"
 import { bisectionSolver, degCos, degSin, degTan } from "/static/analysis.js";
@@ -1123,7 +1124,7 @@ let ddcs = {
         }
     ),
     Prop10: new DynamicDiagramConfiguration(
-        0,
+        2,
         new CameraSetting(
             5,
             3.5, 4, 0
@@ -1131,12 +1132,28 @@ let ddcs = {
          {
             lengthA: 8,
             lengthBetweenLines: 1,
+            offsetRectX: -11,
+            offsetRectY: -3,
+            gapRect: 0.25,
+            offsetSqX: 0,
+            offsetSqY: -2,
+            offsetLongX: 10,
+            offsetLongY: -2,
+            offsetRhsX: -2,
+            offsetRhsY: -14,
+            gapRhs1: 0.25,
+            gapRhs2: 0.25,
         },
         function(params) {
             let {
-                lengthA, lengthBetweenLines
+                lengthA, lengthBetweenLines,
+                offsetRectX, offsetRectY, gapRect,
+                offsetSqX, offsetSqY,
+                offsetLongX, offsetLongY, 
+                offsetRhsX, offsetRhsY, gapRhs1, gapRhs2,
             } = params;
-            let lengthQ = lengthA / 8;
+            let numLines = 8
+            let lengthQ = lengthA / numLines;
             let Abot = Vector();
             let Bbot = Abot.shift(lengthBetweenLines);
             let Gbot = Bbot.shift(lengthBetweenLines);
@@ -1163,12 +1180,107 @@ let ddcs = {
             let Htop = Ztop.shift(lengthBetweenLines, -lengthQ);
             let Qtop = Htop.shift(lengthBetweenLines, -lengthQ);
     
+            let rectAA = GridRectangle(offsetRectX, offsetRectY-lengthA, lengthA, lengthA, 0);
+
+            let lengthB = lengthA*(numLines-1)/numLines;
+            let rectBB = GridRectangle(offsetRectX+gapRect, offsetRectY+gapRect-lengthA, lengthB, lengthB, -1);
+            let rectIB = GridRectangle(offsetRectX+gapRect+lengthB, offsetRectY+gapRect-lengthA, lengthQ, lengthB, -1);
+            let rectBI = GridRectangle(offsetRectX+gapRect, offsetRectY+gapRect-lengthQ, lengthB, lengthQ, -1);
+            let rectII = GridRectangle(offsetRectX+gapRect+lengthB, offsetRectY+gapRect-lengthQ, lengthQ, lengthQ, -1);
+
+            let lengthG = lengthB*(numLines-2)/(numLines-1);
+            let lengthH = lengthQ*2;
+            let rectGG = GridRectangle(offsetRectX+2*gapRect, offsetRectY+2*gapRect-lengthA, lengthG, lengthG, -2);
+            let rectKG = GridRectangle(offsetRectX+2*gapRect+lengthG, offsetRectY+2*gapRect-lengthA, lengthH, lengthG, -2);
+            let rectGK = GridRectangle(offsetRectX+2*gapRect, offsetRectY+2*gapRect-lengthH, lengthG, lengthH, -2);
+            let rectKK = GridRectangle(offsetRectX+2*gapRect+lengthG, offsetRectY+2*gapRect-lengthH, lengthH, lengthH, -2);
+
+            let lengthD = lengthG*(numLines-3)/(numLines-2);
+            let lengthZ = lengthH*(3/2);
+            let rectDD = GridRectangle(offsetRectX+3*gapRect, offsetRectY+3*gapRect-lengthA, lengthD, lengthD, -3);
+            let rectLD = GridRectangle(offsetRectX+3*gapRect+lengthD, offsetRectY+3*gapRect-lengthA, lengthZ, lengthD, -3);
+            let rectDL = GridRectangle(offsetRectX+3*gapRect, offsetRectY+3*gapRect-lengthZ, lengthD, lengthZ, -3);
+            let rectLL = GridRectangle(offsetRectX+3*gapRect+lengthD, offsetRectY+3*gapRect-lengthZ, lengthZ, lengthZ, -3);
+
+            let lengthE = lengthD*(numLines-4)/(numLines-3);
+            let rectEE = GridRectangle(offsetRectX+4*gapRect, offsetRectY+4*gapRect-lengthA, lengthE, lengthE, -4);
+            let rectME = GridRectangle(offsetRectX+4*gapRect+lengthE, offsetRectY+4*gapRect-lengthA, lengthE, lengthE, -4);
+            let rectEM = GridRectangle(offsetRectX+4*gapRect, offsetRectY+4*gapRect-lengthE, lengthE, lengthE, -4);
+            let rectMM = GridRectangle(offsetRectX+4*gapRect+lengthE, offsetRectY+4*gapRect-lengthE, lengthE, lengthE, -4);
+            
+            let rectZZ = GridRectangle(offsetRectX+5*gapRect, offsetRectY+5*gapRect-lengthA, lengthZ, lengthZ, -5);
+            let rectNZ = GridRectangle(offsetRectX+5*gapRect+lengthZ, offsetRectY+5*gapRect-lengthA, lengthD, lengthZ, -5);
+            let rectZN = GridRectangle(offsetRectX+5*gapRect, offsetRectY+5*gapRect-lengthD, lengthZ, lengthD, -5);
+            let rectNN = GridRectangle(offsetRectX+5*gapRect+lengthZ, offsetRectY+5*gapRect-lengthD, lengthD, lengthD, -5);
+            
+            let rectHH = GridRectangle(offsetRectX+6*gapRect, offsetRectY+6*gapRect-lengthA, lengthH, lengthH, -6);
+            let rectCH = GridRectangle(offsetRectX+6*gapRect+lengthH, offsetRectY+6*gapRect-lengthA, lengthG, lengthH, -6);
+            let rectHC = GridRectangle(offsetRectX+6*gapRect, offsetRectY+6*gapRect-lengthG, lengthH, lengthG, -6);
+            let rectCC = GridRectangle(offsetRectX+6*gapRect+lengthH, offsetRectY+6*gapRect-lengthG, lengthG, lengthG, -6);
+            
+            let rectQQ = GridRectangle(offsetRectX+7*gapRect, offsetRectY+7*gapRect-lengthA, lengthQ, lengthQ, -7);
+            let rectOQ = GridRectangle(offsetRectX+7*gapRect+lengthQ, offsetRectY+7*gapRect-lengthA, lengthB, lengthQ, -7);
+            let rectQO = GridRectangle(offsetRectX+7*gapRect, offsetRectY+7*gapRect-lengthB, lengthQ, lengthB, -7);
+            let rectOO = GridRectangle(offsetRectX+7*gapRect+lengthQ, offsetRectY+7*gapRect-lengthB, lengthB, lengthB, -7);
+            
+            let sqA = GridRectangle(offsetSqX, offsetSqY-lengthA, lengthA, lengthA, 0);
+
+            let longAQ = GridRectangle(offsetLongX, offsetLongY-lengthQ, lengthA, lengthQ, 0);
+            let longBQ = GridRectangle(offsetLongX, offsetLongY-2*lengthQ, lengthB, lengthQ, 0);
+            let longGQ = GridRectangle(offsetLongX, offsetLongY-3*lengthQ, lengthG, lengthQ, 0);
+            let longDQ = GridRectangle(offsetLongX, offsetLongY-4*lengthQ, lengthD, lengthQ, 0);
+            let longEQ = GridRectangle(offsetLongX, offsetLongY-5*lengthQ, lengthE, lengthQ, 0);
+            let longZQ = GridRectangle(offsetLongX, offsetLongY-6*lengthQ, lengthZ, lengthQ, 0);
+            let longHQ = GridRectangle(offsetLongX, offsetLongY-7*lengthQ, lengthH, lengthQ, 0);
+            let longQQ = GridRectangle(offsetLongX, offsetLongY-8*lengthQ, lengthQ, lengthQ, 0);
+
+            let sqQ1 = GridRectangle(offsetRhsX, offsetRhsY-lengthQ, lengthQ, lengthQ, 0);
+            let sqH1 = GridRectangle(offsetRhsX+gapRhs1, offsetRhsY+gapRhs1-lengthH, lengthH, lengthH, -1);
+            let sqZ1 = GridRectangle(offsetRhsX+2*gapRhs1, offsetRhsY+2*gapRhs1-lengthZ, lengthZ, lengthZ, -2);
+            let sqE1 = GridRectangle(offsetRhsX+3*gapRhs1, offsetRhsY+3*gapRhs1-lengthE, lengthE, lengthE, -3);
+            let sqD1 = GridRectangle(offsetRhsX+4*gapRhs1, offsetRhsY+4*gapRhs1-lengthD, lengthD, lengthD, -4);
+            let sqG1 = GridRectangle(offsetRhsX+5*gapRhs1, offsetRhsY+5*gapRhs1-lengthG, lengthG, lengthG, -5);
+            let sqB1 = GridRectangle(offsetRhsX+6*gapRhs1, offsetRhsY+6*gapRhs1-lengthB, lengthB, lengthB, -6);
+            let sqA1 = GridRectangle(offsetRhsX+7*gapRhs1, offsetRhsY+7*gapRhs1-lengthA, lengthA, lengthA, -7);
+            
+            let offsetRhsX2 = offsetRhsX - gapRhs2;
+            let offsetRhsY2 = offsetRhsY + gapRhs2;
+            let sqQ2 = GridRectangle(offsetRhsX2, offsetRhsY2-lengthQ, lengthQ, lengthQ, 0-numLines);
+            let sqH2 = GridRectangle(offsetRhsX2+gapRhs1, offsetRhsY2+gapRhs1-lengthH, lengthH, lengthH, -1-numLines);
+            let sqZ2 = GridRectangle(offsetRhsX2+2*gapRhs1, offsetRhsY2+2*gapRhs1-lengthZ, lengthZ, lengthZ, -2-numLines);
+            let sqE2 = GridRectangle(offsetRhsX2+3*gapRhs1, offsetRhsY2+3*gapRhs1-lengthE, lengthE, lengthE, -3-numLines);
+            let sqD2 = GridRectangle(offsetRhsX2+4*gapRhs1, offsetRhsY2+4*gapRhs1-lengthD, lengthD, lengthD, -4-numLines);
+            let sqG2 = GridRectangle(offsetRhsX2+5*gapRhs1, offsetRhsY2+5*gapRhs1-lengthG, lengthG, lengthG, -5-numLines);
+            let sqB2 = GridRectangle(offsetRhsX2+6*gapRhs1, offsetRhsY2+6*gapRhs1-lengthB, lengthB, lengthB, -6-numLines);
+            let sqA2 = GridRectangle(offsetRhsX2+7*gapRhs1, offsetRhsY2+7*gapRhs1-lengthA, lengthA, lengthA, -7-numLines);
+
+            let offsetRhsX3 = offsetRhsX - 2*gapRhs2;
+            let offsetRhsY3 = offsetRhsY + 2*gapRhs2;
+            let sqQ3 = GridRectangle(offsetRhsX3, offsetRhsY3-lengthQ, lengthQ, lengthQ, 0-numLines*2);
+            let sqH3 = GridRectangle(offsetRhsX3+gapRhs1, offsetRhsY3+gapRhs1-lengthH, lengthH, lengthH, -1-numLines*2);
+            let sqZ3 = GridRectangle(offsetRhsX3+2*gapRhs1, offsetRhsY3+2*gapRhs1-lengthZ, lengthZ, lengthZ, -2-numLines*2);
+            let sqE3 = GridRectangle(offsetRhsX3+3*gapRhs1, offsetRhsY3+3*gapRhs1-lengthE, lengthE, lengthE, -3-numLines*2);
+            let sqD3 = GridRectangle(offsetRhsX3+4*gapRhs1, offsetRhsY3+4*gapRhs1-lengthD, lengthD, lengthD, -4-numLines*2);
+            let sqG3 = GridRectangle(offsetRhsX3+5*gapRhs1, offsetRhsY3+5*gapRhs1-lengthG, lengthG, lengthG, -5-numLines*2);
+            let sqB3 = GridRectangle(offsetRhsX3+6*gapRhs1, offsetRhsY3+6*gapRhs1-lengthB, lengthB, lengthB, -6-numLines*2);
+            let sqA3 = GridRectangle(offsetRhsX3+7*gapRhs1, offsetRhsY3+7*gapRhs1-lengthA, lengthA, lengthA, -7-numLines*2);
+
             let result = {A:[Abot,Atop], 
                 B:[Bbot,Btop], G:[Gbot,Gtop], D:[Dbot,Dtop], 
                 E:[Ebot,Etop], Z:[Zbot,Ztop], H:[Hbot,Htop], Q:[Qbot,Qtop],
                 I:[Btop,Itop], K:[Gtop,Ktop], L:[Dtop,Ltop], 
                 M:[Etop,Mtop], N:[Ztop,Ntop], C:[Htop,Ctop], O:[Qtop,Otop],
-                Btop, Gtop, Dtop, Etop, Ztop, Htop, Qtop
+                Btop, Gtop, Dtop, Etop, Ztop, Htop, Qtop,
+                rectAA, 
+                rectBB, rectIB, rectBI, rectII,  rectGG, rectKG, rectGK, rectKK,
+                rectDD, rectLD, rectDL, rectLL,  rectEE, rectME, rectEM, rectMM,
+                rectZZ, rectNZ, rectZN, rectNN,  rectHH, rectCH, rectHC, rectCC,
+                rectQQ, rectOQ, rectQO, rectOO,
+                sqA,
+                longAQ, longBQ, longGQ, longDQ, longEQ, longZQ, longHQ, longQQ,
+                sqQ1, sqH1, sqZ1, sqE1, sqD1, sqG1, sqB1, sqA1,
+                sqQ2, sqH2, sqZ2, sqE2, sqD2, sqG2, sqB2, sqA2,
+                sqQ3, sqH3, sqZ3, sqE3, sqD3, sqG3, sqB3, sqA3,
             };
             return result;
         },
@@ -1197,11 +1309,268 @@ let ddcs = {
             Draw(300, e.C),
             Draw(300, e.O),
 
-        ),
-         [
+            Parallel(
+                ChangeStyle(0, e.rectAA, 0xdddddd),
+    
+                ChangeStyle(0, e.rectBB, 0xdddddd),
+                ChangeStyle(0, e.rectIB, 0xdddddd),
+                ChangeStyle(0, e.rectBI, 0xdddddd),
+                ChangeStyle(0, e.rectII, 0xdddddd),
+    
+                ChangeStyle(0, e.rectGG, 0xdddddd),
+                ChangeStyle(0, e.rectKG, 0xdddddd),
+                ChangeStyle(0, e.rectGK, 0xdddddd),
+                ChangeStyle(0, e.rectKK, 0xdddddd),
+    
+                ChangeStyle(0, e.rectDD, 0xdddddd),
+                ChangeStyle(0, e.rectLD, 0xdddddd),
+                ChangeStyle(0, e.rectDL, 0xdddddd),
+                ChangeStyle(0, e.rectLL, 0xdddddd),
+    
+                ChangeStyle(0, e.rectEE, 0xdddddd),
+                ChangeStyle(0, e.rectME, 0xdddddd),
+                ChangeStyle(0, e.rectEM, 0xdddddd),
+                ChangeStyle(0, e.rectMM, 0xdddddd),
+    
+                ChangeStyle(0, e.rectZZ, 0xdddddd),
+                ChangeStyle(0, e.rectNZ, 0xdddddd),
+                ChangeStyle(0, e.rectZN, 0xdddddd),
+                ChangeStyle(0, e.rectNN, 0xdddddd),
+    
+                ChangeStyle(0, e.rectHH, 0xdddddd),
+                ChangeStyle(0, e.rectCH, 0xdddddd),
+                ChangeStyle(0, e.rectHC, 0xdddddd),
+                ChangeStyle(0, e.rectCC, 0xdddddd),
+    
+                ChangeStyle(0, e.rectQQ, 0xdddddd),
+                ChangeStyle(0, e.rectOQ, 0xdddddd),
+                ChangeStyle(0, e.rectQO, 0xdddddd),
+                ChangeStyle(0, e.rectOO, 0xdddddd),
 
+                ChangeStyle(0, e.sqA, 0xdddddd),
+                
+                ChangeStyle(0, e.longAQ, 0xdddddd),
+                ChangeStyle(0, e.longBQ, 0xdddddd),
+                ChangeStyle(0, e.longGQ, 0xdddddd),
+                ChangeStyle(0, e.longDQ, 0xdddddd),
+                ChangeStyle(0, e.longEQ, 0xdddddd),
+                ChangeStyle(0, e.longZQ, 0xdddddd),
+                ChangeStyle(0, e.longHQ, 0xdddddd),
+                ChangeStyle(0, e.longQQ, 0xdddddd),
+
+                ChangeStyle(0, e.sqA1, 0xdddddd),
+                ChangeStyle(0, e.sqB1, 0xdddddd),
+                ChangeStyle(0, e.sqG1, 0xdddddd),
+                ChangeStyle(0, e.sqD1, 0xdddddd),
+                ChangeStyle(0, e.sqE1, 0xdddddd),
+                ChangeStyle(0, e.sqZ1, 0xdddddd),
+                ChangeStyle(0, e.sqH1, 0xdddddd),
+                ChangeStyle(0, e.sqQ1, 0xdddddd),
+
+                ChangeStyle(0, e.sqA2, 0xdddddd),
+                ChangeStyle(0, e.sqB2, 0xdddddd),
+                ChangeStyle(0, e.sqG2, 0xdddddd),
+                ChangeStyle(0, e.sqD2, 0xdddddd),
+                ChangeStyle(0, e.sqE2, 0xdddddd),
+                ChangeStyle(0, e.sqZ2, 0xdddddd),
+                ChangeStyle(0, e.sqH2, 0xdddddd),
+                ChangeStyle(0, e.sqQ2, 0xdddddd),
+                
+                ChangeStyle(0, e.sqA3, 0xdddddd),
+                ChangeStyle(0, e.sqB3, 0xdddddd),
+                ChangeStyle(0, e.sqG3, 0xdddddd),
+                ChangeStyle(0, e.sqD3, 0xdddddd),
+                ChangeStyle(0, e.sqE3, 0xdddddd),
+                ChangeStyle(0, e.sqZ3, 0xdddddd),
+                ChangeStyle(0, e.sqH3, 0xdddddd),
+                ChangeStyle(0, e.sqQ3, 0xdddddd),
+            )
+        ),
+        [
+            (e) => Sequential(
+                ChangeCamera(400, {scale: 16, centerY: -6}),
+                Parallel(
+                    Show(200, e.rectQQ),
+                    Show(200, e.rectOQ),
+                    Show(200, e.rectQO),
+                    Show(200, e.rectOO),
+                ),
+                Parallel(
+                    Show(200, e.rectHH),
+                    Show(200, e.rectCH),
+                    Show(200, e.rectHC),
+                    Show(200, e.rectCC),
+                ),
+                Parallel(
+                    Show(200, e.rectZZ),
+                    Show(200, e.rectNZ),
+                    Show(200, e.rectZN),
+                    Show(200, e.rectNN),
+                ),
+                Parallel(
+                    Show(200, e.rectEE),
+                    Show(200, e.rectME),
+                    Show(200, e.rectEM),
+                    Show(200, e.rectMM),
+                ),
+                Parallel(
+                    Show(200, e.rectDD),
+                    Show(200, e.rectLD),
+                    Show(200, e.rectDL),
+                    Show(200, e.rectLL),
+                ),
+                Parallel(
+                    Show(200, e.rectGG),
+                    Show(200, e.rectKG),
+                    Show(200, e.rectGK),
+                    Show(200, e.rectKK),
+                ),
+                Parallel(
+                    Show(200, e.rectBB),
+                    Show(200, e.rectIB),
+                    Show(200, e.rectBI),
+                    Show(200, e.rectII),
+                ),
+                Show(200, e.rectAA),
+                Show(200, e.sqA),
+                Parallel(
+                    Show(200, e.longAQ),
+                    Show(200, e.longBQ),
+                    Show(200, e.longGQ),
+                    Show(200, e.longDQ),
+                    Show(200, e.longEQ),
+                    Show(200, e.longZQ),
+                    Show(200, e.longHQ),
+                    Show(200, e.longQQ),
+                ),
+                Show(200, e.sqA3),
+                Show(200, e.sqB3),
+                Show(200, e.sqG3),
+                Show(200, e.sqD3),
+                Show(200, e.sqE3),
+                Show(200, e.sqZ3),
+                Show(200, e.sqH3),
+                Show(200, e.sqQ3),
+                
+                Show(200, e.sqA2),
+                Show(200, e.sqB2),
+                Show(200, e.sqG2),
+                Show(200, e.sqD2),
+                Show(200, e.sqE2),
+                Show(200, e.sqZ2),
+                Show(200, e.sqH2),
+                Show(200, e.sqQ2),
+
+                Show(200, e.sqA1),
+                Show(200, e.sqB1),
+                Show(200, e.sqG1),
+                Show(200, e.sqD1),
+                Show(200, e.sqE1),
+                Show(200, e.sqZ1),
+                Show(200, e.sqH1),
+                Show(200, e.sqQ1),
+            ),
+            // 1 -> 2
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.rectAA, 'red'),
+                    ChangeStyle(200, e.sqA, 'red'),
+                    ChangeStyle(200, e.sqA1, 'red'),
+                    ChangeStyle(200, e.sqA2, 'red')
+                ),
+                Parallel(
+                    Hide(200, e.rectAA),
+                    Hide(200, e.sqA),
+                    Hide(200, e.sqA1),
+                    Hide(200, e.sqA2),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectBB, 'red'),
+                    ChangeStyle(200, e.rectII, 'red'),
+                    ChangeStyle(200, e.sqB1, 'red'),
+                    ChangeStyle(200, e.sqQ1, 'red')
+                ),
+                Parallel(
+                    Hide(200, e.rectBB),
+                    Hide(200, e.rectII),
+                    Hide(200, e.sqB1),
+                    Hide(200, e.sqQ1),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectGG, 'red'),
+                    ChangeStyle(200, e.rectKK, 'red'),
+                    ChangeStyle(200, e.sqG1, 'red'),
+                    ChangeStyle(200, e.sqH1, 'red')
+                ),
+                Parallel(
+                    Hide(200, e.rectGG),
+                    Hide(200, e.rectKK),
+                    Hide(200, e.sqG1),
+                    Hide(200, e.sqH1),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectDD, 'red'),
+                    ChangeStyle(200, e.rectLL, 'red'),
+                    ChangeStyle(200, e.sqD1, 'red'),
+                    ChangeStyle(200, e.sqZ1, 'red')
+                ),
+                Parallel(
+                    Hide(200, e.rectDD),
+                    Hide(200, e.rectLL),
+                    Hide(200, e.sqD1),
+                    Hide(200, e.sqZ1),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectEE, 'red'),
+                    ChangeStyle(200, e.rectMM, 'red'),
+                    ChangeStyle(200, e.sqE1, 'red'),
+                    ChangeStyle(200, e.sqE2, 'red')
+                ),
+                Parallel(
+                    Hide(200, e.rectEE),
+                    Hide(200, e.rectMM),
+                    Hide(200, e.sqE1),
+                    Hide(200, e.sqE2),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectZZ, 'red'),
+                    ChangeStyle(200, e.rectNN, 'red'),
+                    ChangeStyle(200, e.sqZ2, 'red'),
+                    ChangeStyle(200, e.sqD2, 'red')
+                ),
+                Parallel(
+                    Hide(200, e.rectZZ),
+                    Hide(200, e.rectNN),
+                    Hide(200, e.sqZ2),
+                    Hide(200, e.sqD2),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectHH, 'red'),
+                    ChangeStyle(200, e.rectCC, 'red'),
+                    ChangeStyle(200, e.sqH2, 'red'),
+                    ChangeStyle(200, e.sqG2, 'red')
+                ),
+                Parallel(
+                    Hide(200, e.rectHH),
+                    Hide(200, e.rectCC),
+                    Hide(200, e.sqH2),
+                    Hide(200, e.sqG2),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectQQ, 'red'),
+                    ChangeStyle(200, e.rectOO, 'red'),
+                    ChangeStyle(200, e.sqQ2, 'red'),
+                    ChangeStyle(200, e.sqB2, 'red')
+                ),
+                Parallel(
+                    Hide(200, e.rectQQ),
+                    Hide(200, e.rectOO),
+                    Hide(200, e.sqQ2),
+                    Hide(200, e.sqB2),
+                ),
+            )
         ],
-         {
+        {
             A:'Α', B:'Β', G:'Γ', D:'Δ', E:'Ε', 
             Z:'Ζ', H:'Η', Q:'Θ', I:'Ι', K:'Κ',
             L:'Λ', M:'Μ', N:'Ν', C:'Ξ', O:'Ο'
@@ -2369,6 +2738,323 @@ let ddcs = {
             L:'Λ', O:'Ο', M:'Μ',
             N:'Ν', P:'Π', R:'Ρ',
             X:'Χ', S:'Σ', T:'Τ'
+        }
+    ),
+    Prop22: new DynamicDiagramConfiguration(
+        3,
+        new CameraSetting(
+            11, 
+            0, 0, 0
+        ),
+        {
+            radius: 4,
+            angleSpiralEnd: -720,
+            angleSpiralRotation: -90,
+            bisectionDepth: 3,
+            switchRadial: 0,
+            switchArc: 0,
+            switchSector: 0
+        },
+        function (params) {
+            let {
+                radius, angleSpiralEnd, angleSpiralRotation, bisectionDepth,
+                switchRadial, switchArc, switchSector
+            } = params;
+            let Q = Vector();
+            let AZH = Circle(Q, 2*radius);
+            let ABGDE = Spiral(Q, radius, 0, angleSpiralEnd, angleSpiralRotation);
+            let A = ABGDE.pick(-720);
+            let E = ABGDE.pick(-360);
+            let Z = Q.shiftPolar(2*radius, -angleSpiralRotation+90);
+            let H = Q.toward(A, -1);
+            let I = Q.toward(Z, -1);
+
+            let bisector1 = Q.shiftPolar(2*radius, -angleSpiralRotation+90/2);
+            let bisector2 = Q.shiftPolar(2*radius, -angleSpiralRotation+90/4);
+            let bisector3 = Q.shiftPolar(2*radius, -angleSpiralRotation+90/8);
+            let K = bisector3;
+
+            let given = Polygon(
+                [Vector(8, 7.2, 0), Vector(10, 8, 0), 
+                    Vector(10.8, 10, 0), Vector(7.6, 10.6, 0)], true);
+            let QKA = Sector(Q, 2*radius, -angleSpiralRotation, -angleSpiralRotation+90/8, true);
+            
+            let angleAQK = 90/8;
+            let R = ABGDE.pick(-360-angleAQK);
+            let QER = Sector(Q, radius, -angleSpiralRotation-90/8, -angleSpiralRotation, true)
+
+            let radials = [];
+            for (let i=1; i<=32; i++) {
+                let localSwitch = Math.min(1, Math.max(0, i-31+31*switchRadial));
+                radials.push(Line(Q, Q.toward(ABGDE.pick(-360-angleAQK*i), localSwitch*(i+33)/(i+32))));
+            }
+            radials = MultiObjects('line', radials);
+
+            let arcs = [];
+            for (let i=1; i<=31; i++) {
+                let localSwitch = Math.min(1, Math.max(0, i-30+30*switchArc));
+                arcs.push(
+                    Circle(
+                        Q, radius*(32+i)*(angleAQK/360), 
+                        -angleSpiralRotation-(i+1-2*localSwitch)*angleAQK, -angleSpiralRotation-(i+1)*angleAQK)
+                );
+            }
+            arcs = MultiObjects('circle', arcs);
+
+
+            let sectors = [];
+            for (let i=1; i<=31; i++) {
+                let localSwitch = Math.min(1, Math.max(0, 1-i+32*switchSector));
+                sectors.push(
+                    Sector(
+                        Q, radius*(i+32)*(angleAQK/360),
+                        -angleSpiralRotation-(i+1-localSwitch)*angleAQK, 
+                        -angleSpiralRotation-(i-localSwitch)*angleAQK
+                    )
+                );
+            }
+            sectors = MultiObjects('sector', sectors);
+
+            let result = {
+                Q, A, Z, H, I, K, E, R,
+                QA:[Q,A], EA:[E,A], AH:[A,H], ZI:[Z,I], 
+                QB1:[Q,bisector1], QB2:[Q,bisector2], QB3:[Q,bisector3],
+                given, QKA, QER,
+                AZH, ABGDE,
+                radials, arcs, sectors
+            };
+            return result;
+        },
+        (e) => Sequential(
+            Draw(500, e.ABGDE),
+            Show(1, e.Q),
+            Draw(300, e.QA),
+            Show(1, e.A),
+            Show(1, e.E),
+            Draw(300, e.EA),
+            Draw(500, e.AZH),
+            Draw(400, e.AH),
+            Show(1, e.H),
+            Show(1, e.Z),
+            Draw(400, e.ZI),
+            Show(1, e.I),
+            ChangeStyle(1, e.given, 0xdddddd),
+            Show(400, e.given)
+        ),
+        [
+            // 0 -> 1
+            (e) => Sequential(
+                Draw(400, e.QB1),
+                Wait(400),
+                Draw(400, e.QB2),
+                Hide(400, e.QB1),
+                Draw(400, e.QB3),
+                Hide(400, e.QB2),
+                Show(0, e.K),
+                ChangeStyle(0, e.QKA, 'blue'),
+                Parallel(
+                    Show(200, e.QKA),
+                    ChangeStyle(200, e.given, 'red')
+                )
+            ),
+            // 1 -> 2
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.given, 'white'),
+                    ChangeStyle(200, e.QKA, 'white'),
+                ),
+                Show(0, e.radials),
+                ChangeStyle(0, e.radials, 'grey'),
+                ChangeParams(3000, {switchRadial: 1}),
+                Show(0, e.arcs),
+                ChangeStyle(0, e.arcs, 'grey'),
+                ChangeParams(3000, {switchArc: 1})
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+                ChangeStyle(0, e.sectors, 'grey'),
+                ChangeStyle(0, e.QER, 'red'),
+                Parallel(
+                    Show(200, e.sectors),
+                    Show(200, e.QER)
+                ),
+                Wait(200),
+                Hide(200, e.QER),
+                ChangeParams(4000, {switchSector: 1}),
+                ChangeStyle(200, e.QKA, 'blue')
+            )
+        ],
+        {
+            A:'Α', Q:'Θ', Z:'Ζ', H:'Η', I:'Ι', K:'Κ', E:'Ε',
+            R:'Ρ',
+        }
+    ),
+    Prop23: new DynamicDiagramConfiguration(
+        3,
+        new CameraSetting(
+            5.5, 
+            0, 0, 0
+        ),
+        {
+            radius: 4,
+            angleSpiralStart: -60,
+            angleSpiralEnd: -330,
+            angleSpiralRotation: -90,
+            bisectionDepth: 3,
+            switchRadial: 0,
+            switchArc: 0,
+            switchSector: 0
+        },
+        function (params) {
+            let {
+                radius, angleSpiralStart, angleSpiralEnd, angleSpiralRotation, bisectionDepth,
+                switchRadial, switchArc, switchSector
+            } = params;
+            let Q = Vector();
+            let radiusA = radius*(-angleSpiralEnd/360)
+            let AZH = Circle(Q, radiusA);
+            let ABGDE = Spiral(Q, radius, angleSpiralStart, angleSpiralEnd, angleSpiralRotation);
+            let A = ABGDE.pick(angleSpiralEnd);
+            let E = ABGDE.pick(angleSpiralStart);
+            let Z = Q.toward(E, angleSpiralEnd/angleSpiralStart);
+            // let H = Q.toward(A, -1);
+            // let I = Q.toward(Z, -1);
+            let angleAQK = (angleSpiralStart-angleSpiralEnd)/32;
+            let bisector1 = Q.shiftPolar(radiusA, -angleSpiralRotation+angleSpiralEnd+angleAQK*16);
+            let bisector2 = Q.shiftPolar(radiusA, -angleSpiralRotation+angleSpiralEnd+angleAQK*8);
+            let bisector3 = Q.shiftPolar(radiusA, -angleSpiralRotation+angleSpiralEnd+angleAQK*4);
+            let bisector4 = Q.shiftPolar(radiusA, -angleSpiralRotation+angleSpiralEnd+angleAQK*2);
+            let bisector5 = Q.shiftPolar(radiusA, -angleSpiralRotation+angleSpiralEnd+angleAQK);
+            let K = bisector5;
+
+            let given = Polygon(
+                [Vector(4, 3.6, 0), Vector(5, 4, 0), 
+                    Vector(5.4, 5, 0), Vector(3.8, 5.3, 0)], true);
+            let QAK = Sector(
+                Q, radiusA, 
+                -angleSpiralRotation+angleSpiralEnd, -angleSpiralRotation+angleSpiralEnd+angleAQK, 
+                true);
+            
+            let R = ABGDE.pick(angleSpiralStart-angleAQK);
+            let QER = Sector(
+                Q, radiusA*(angleSpiralStart/angleSpiralEnd), 
+                -angleSpiralRotation+angleSpiralStart-angleAQK, 
+                -angleSpiralRotation+angleSpiralStart, 
+                true)
+
+            let radials = [];
+            for (let i=1; i<=31; i++) {
+                let localSwitch = Math.min(1, Math.max(0, i-31+31*switchRadial));
+                radials.push(
+                    Line(
+                        Q, 
+                        Q.toward(
+                            ABGDE.pick(angleSpiralStart-angleAQK*i), 
+                            localSwitch*(i+1+(-angleSpiralStart/angleAQK))/(i+(-angleSpiralStart/angleAQK))
+                        )
+                    )
+                );
+            }
+            radials = MultiObjects('line', radials);
+
+            let arcs = [];
+            for (let i=1; i<=31; i++) {
+                let localSwitch = Math.min(1, Math.max(0, i-31+31*switchArc));
+                arcs.push(
+                    Circle(
+                        Q, radius*(-angleSpiralStart+i*angleAQK)/360, 
+                        -angleSpiralRotation+angleSpiralStart-(i+1-2*localSwitch)*angleAQK, 
+                        -angleSpiralRotation+angleSpiralStart-(i+1)*angleAQK
+                    )
+                );
+            }
+            arcs = MultiObjects('circle', arcs);
+
+            let sectors = [];
+            for (let i=1; i<=31; i++) {
+                let localSwitch = Math.min(1, Math.max(0, 1-i+32*switchSector));
+                sectors.push(
+                    Sector(
+                        Q, radius*(-angleSpiralStart+i*angleAQK)/360,
+                        -angleSpiralRotation+angleSpiralStart-(i+1-localSwitch)*angleAQK, 
+                        -angleSpiralRotation+angleSpiralStart-(i-localSwitch)*angleAQK
+                    )
+                );
+            }
+            sectors = MultiObjects('sector', sectors);
+
+            let result = {
+                Q, A, Z, K, E, R,
+                QA:[Q,A], QE:[Q,E], EZ:[E,Z],
+                QB1:[Q,bisector1], QB2:[Q,bisector2], QB3:[Q,bisector3], QB4:[Q,bisector4], QB5:[Q,bisector5],
+                given, QAK, QER,
+                ABGDE, AZH,
+                radials, arcs, sectors
+            };
+            return result;
+        },
+        (e) => Sequential(
+            Draw(500, e.ABGDE),
+            Show(1, e.Q),
+            Draw(300, e.QA),
+            Show(1, e.A),
+            Draw(300, e.QE),
+            Show(1, e.E),
+            Draw(300, e.EZ),
+            Draw(500, e.AZH),
+            Show(1, e.Z),
+            ChangeStyle(1, e.given, 0xdddddd),
+            Show(400, e.given)
+        ),
+        [
+            // 0 -> 1
+            (e) => Sequential(
+                Draw(200, e.QB1),
+                Wait(200),
+                Draw(200, e.QB2),
+                Hide(200, e.QB1),
+                Draw(200, e.QB3),
+                Hide(200, e.QB2),
+                Draw(200, e.QB4),
+                Hide(200, e.QB3),
+                Draw(200, e.QB5),
+                Hide(200, e.QB4),
+                Show(0, e.K),
+                ChangeStyle(1, e.QAK, 'blue'),
+                Parallel(
+                    Show(200, e.QAK),
+                    ChangeStyle(200, e.given, 'red')
+                )
+            ),
+            // 1 -> 2
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.given, 'white'),
+                    ChangeStyle(200, e.QAK, 'white'),
+                ),
+                Show(1, e.radials),
+                ChangeStyle(1, e.radials, 'grey'),
+                ChangeParams(3000, {switchRadial: 1}),
+                Show(1, e.arcs),
+                ChangeStyle(1, e.arcs, 'grey'),
+                ChangeParams(3000, {switchArc: 1})
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+                ChangeStyle(0, e.sectors, 'grey'),
+                ChangeStyle(0, e.QER, 'red'),
+                Parallel(
+                    Show(200, e.sectors),
+                    Show(200, e.QER)
+                ),
+                Wait(200),
+                Hide(200, e.QER),
+                ChangeParams(4000, {switchSector: 1}),
+                ChangeStyle(200, e.QAK, 'blue')
+            )
+        ],
+        {
+            A:'Α', Q:'Θ', Z:'Ζ', H:'Η', I:'Ι', K:'Κ', E:'Ε',
         }
     )
 }
