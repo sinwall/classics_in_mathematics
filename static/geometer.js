@@ -23,7 +23,9 @@ function newGeometricEntity(type, key, name, color=0x000000, size=1., pixelSize=
         case 'polygon':
             return new PolygonEntity(type, key, name, color, size, pixelSize);
         case 'sector':
-            return new SectorEntity(type, key, name, color, size, pixelSize)
+            return new SectorEntity(type, key, name, color, size, pixelSize);
+        case "spiral-circular-sector": 
+            return new SpiralCircularSectorEntity(type, key, name, color, size, pixelSize);
         case "cylinder":
             return new CylinderEntity(type, key, name, color, size, pixelSize);
         case "cone":
@@ -35,6 +37,7 @@ function newGeometricEntity(type, key, name, color=0x000000, size=1., pixelSize=
         case "multi":
             return new MultiObjectsEntity(type, key, name, color, size, pixelSize, subtype)
         default:
+            console.log(`Warning: unknown type ${type}`)
             Error();
     }
 }
@@ -436,6 +439,8 @@ class PolygonEntity extends GeometricEntity {
             }
         }
         g.setIndex(indices);
+        g.computeBoundingBox();
+        g.computeBoundingSphere();
         if (value.boundary) {
             g = this._subObj.geometry;
             g.setFromPoints(points);
@@ -444,6 +449,8 @@ class PolygonEntity extends GeometricEntity {
                 indices.push(i-1, i);
             }
             g.setIndex(indices);
+            g.computeBoundingBox();
+            g.computeBoundingSphere();
         } else {
             g = this._subObj.geometry;
             g.setFromPoints(points);
@@ -473,18 +480,92 @@ class SectorEntity extends GeometricEntity {
     }
 
     get captionPosition3d() {
-        return (new THREE.Vector3());
+        if ('_oldData' in this) {
+            return this._oldData.center.asTHREE();
+        } else {
+            return (new THREE.Vector3());
+        }
     }
 
     setData(value) {
         let dt = 1;
         let points = [value.center];
-        for (let t=value.start; t<=value.end; t+=dt) {
+        let sign = value.end > value.start? 1 : -1;
+        
+        for (let t=value.start; sign*t<=sign*value.end; t+=sign*dt) {
             points.push( value.center.shiftPolar(value.radius, t) );
         }
         let indices = [];
-        for (let i=1; value.start+i*dt<=value.end; i++) {
+        for (let i=1; sign*value.start+i*dt<=sign*value.end; i++) {
             indices.push( 0, i, i+1);
+        }
+        let g = this._obj3d.geometry;
+        g.setFromPoints(points);
+        g.setIndex(indices);
+        g.computeBoundingBox();
+        g.computeBoundingSphere();
+        if (value.boundary) {
+            g = this._subObj.geometry;
+            g.setFromPoints(points);
+            indices = [];
+            for (let i=1; sign*value.start+i*dt<=sign*value.end; i++) {
+                indices.push( i, i+1 )
+            }
+            if (value.end < value.start+360) {
+                indices.push( 0, 1,  points.length-1, 0 )
+            }
+            g.setIndex(indices);
+            g.computeBoundingBox();
+            g.computeBoundingSphere();
+        } else {g = this._subObj.geometry;
+            g.setFromPoints(points);
+            g.setIndex([]);
+        }
+    }
+
+    setSize(value) {
+        this.size = value;
+    }
+}
+
+class SpiralCircularSectorEntity extends GeometricEntity {
+    constructor(type, key, name, color=0x000000, size=1., pixelSize=1) {
+        super(type, key, name, color, size, pixelSize);
+        this.material = this.newDefaultMaterial(2);
+        this._obj3d = new THREE.Mesh(
+            new THREE.BufferGeometry(),
+            this.material
+        );
+        this.hasSubObject = true;
+        this.subMaterial = this.newDefaultMaterial(1);
+        this._subObj = new THREE.LineSegments(
+            new THREE.BufferGeometry(),
+            this.subMaterial
+        );
+    }
+
+    get captionPosition3d() {
+        return (new THREE.Vector3());
+    }
+
+    setData(value) {
+        let dt = 1;
+        let points = [];
+        let sign = value.end > value.start? 1 : -1;
+        for (let t=value.start; sign*t<=sign*value.end; t+=sign*dt) {
+            points.push( value.center.shiftPolar(value.radius, t) );
+        }
+        for (let t=value.start; sign*t<=sign*value.end; t+=sign*dt) {
+            points.push( value.center.shiftPolar(
+                value.radius+(t-value.start)/(value.end-value.start)*value.radiusDelta,
+                t) 
+            );
+        }
+
+        let n = points.length / 2;
+        let indices = [];
+        for (let i=0; sign*(value.start+sign*(i+1)*dt)<=sign*value.end; i++) {
+            indices.push( i+1, i, n+i+1, i, n+i, n+i+1 );
         }
         let g = this._obj3d.geometry;
         g.setFromPoints(points);
@@ -494,10 +575,11 @@ class SectorEntity extends GeometricEntity {
             g.setFromPoints(points);
             indices = [];
             for (let i=1; value.start+i*dt<=value.end; i++) {
-                indices.push( i, i+1 )
+                indices.push( i-1,  i );
+                indices.push( i+n-1, i+n );
             }
             if (value.end < value.start+360) {
-                indices.push( 0, 1,  points.length-1, 0 )
+                indices.push( 0, n,  n-1, 2*n-1 );
             }
             g.setIndex(indices)
         } else {g = this._subObj.geometry;
@@ -826,6 +908,12 @@ class Geometer {
             let gObj = this._objectsDict[key];
             gObj.setDataIfRenewed(entityDatas[key]);
             gObj.setPixelSize(this.pixelSize);
+            // if (key == 'equalSectors') {
+            //     for (let i=0; i<32; i++) {
+            //         gObj.children[i]._obj3d.updateMatrixWorld(true);
+            //         gObj.children[i]._obj3d.parent.updateMatrixWorld(true);
+            //     }
+            // }
         }
     }
 

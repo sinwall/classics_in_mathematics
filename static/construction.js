@@ -235,7 +235,19 @@ class MultiObjectsData extends EntityData {
     constructor (type, data) {
         super();
         this.subtype = type;
+        if (data === undefined) {
+            data = [];
+        }
         this.data = data;
+    }
+
+    push(...vals) {
+        this.data.push(...vals);
+    }
+
+    expel(index) {
+        let expelled = this.data.splice(index, 1);
+        return expelled[0];
     }
 }
 
@@ -371,6 +383,26 @@ function newSector(center, radius, start, end, boundary) {
     return new SectorData(center, radius, start, end, boundary);
 }
 
+class SpiralCirularSectorData extends EntityData {
+    static type = 'spiral-circular-sector';
+    constructor (center, radius, start, end, radiusDelta, boundary) {
+        super();
+        this.center = center;
+        this.radius = radius;
+        if (start === undefined) { start = 0;}
+        this.start = start;
+        if (end == undefined) {end = 360;}
+        this.end = end;
+        this.radiusDelta = radiusDelta;
+        this.boundary = boundary;
+    }
+}
+
+function newSpiralCircularSector(center, radius, start, end, radiusDelta, boundary) {
+    return new SpiralCirularSectorData(center, radius, start, end, radiusDelta, boundary);
+}
+
+
 class CylinderData extends EntityData {
     static type = 'cylinder';
     constructor (center, radius, height, start, end) {
@@ -484,7 +516,8 @@ function newCone(center, radius, height, start, end) {
 
 export {
     newVector, Vector, newPoints, newLine, newCircle, newSpiral, 
-    newPolygon, newGridRectangle, newSector, newCylinder, newCone, newGeneralCylinder, newGeneralCone, 
+    newPolygon, newGridRectangle, newSector, newSpiralCircularSector,
+    newCylinder, newCone, newGeneralCylinder, newGeneralCone, 
     newMultiObjects,
     isEntityData, isMultiObjectsData
 };
