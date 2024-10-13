@@ -4361,7 +4361,696 @@ let ddcs = {
             A:'Α', Q:'Θ', qp:'Ϙ',
             qmark1: '?', qmark2: '???'
         },
-    )
+    ),
+    Prop25: new DynamicDiagramConfiguration(
+        10,
+        new CameraSetting(
+            12,
+            6, 0, 0,
+        ),
+        {
+            radius: 3,
+            angleSpiralRotation: -90,
+            angleSpiralStart: -360,
+            angleSpiralEnd: -720,
+
+            X7to12: 12,
+            Y7to12: 0,
+            XqpCenter: 12,
+            YqpCenter: -6,
+
+            ratioRAA: 1.05,
+            nDivision: 32,
+            switchSpokes: 0,
+
+            Xresidue: 1,
+            Yresidue: 0.2,
+
+            switchSmallToLarge: 0
+        },
+        function (params) {
+            let {
+                radius, angleSpiralRotation, angleSpiralStart, angleSpiralEnd,
+                X7to12, Y7to12,
+                XqpCenter, YqpCenter,
+                ratioRAA,
+                nDivision,
+                switchSpokes,
+                Xresidue, Yresidue,
+                switchSmallToLarge,
+            } = params;
+
+            let Q = Vector();
+            let spiral1st = Spiral(Q, radius, -0, -360, angleSpiralRotation);
+            let ABGDE = Spiral(Q, radius, angleSpiralStart, angleSpiralEnd, angleSpiralRotation);
+            let E = ABGDE.pick(angleSpiralStart);
+            let A = ABGDE.pick(angleSpiralEnd);
+            let AZHI = Circle(Q, 2*radius, 0, 360);
+            let disk = Sector(Q, radius, 0, 360, false);
+
+            let area7to12 = MultiObjects('polygon');
+            area7to12.push(
+                GridRectangle(X7to12-radius, Y7to12-radius, radius, radius),
+                GridRectangle(X7to12-radius, Y7to12, radius, radius),
+                GridRectangle(X7to12, Y7to12, radius/3, radius),
+            );
+            let area2of12 = MultiObjects('polygon');
+            area2of12.push(
+                GridRectangle(X7to12+radius/3, Y7to12, radius/3, radius),
+                GridRectangle(X7to12+2*radius/3, Y7to12, radius/3, radius),
+            );
+            let area12circum = MultiObjects('line');
+            area12circum.push(
+                Line(Vector(X7to12-radius, Y7to12-radius), Vector(X7to12+radius, Y7to12-radius)),
+                Line(Vector(X7to12+radius, Y7to12-radius), Vector(X7to12+radius, Y7to12+radius)),
+                Line(Vector(X7to12+radius, Y7to12+radius), Vector(X7to12-radius, Y7to12+radius)),
+                Line(Vector(X7to12-radius, Y7to12+radius), Vector(X7to12-radius, Y7to12-radius)),
+            )
+            let auxLines = MultiObjects('line');
+            auxLines.push(
+                Line(
+                    Vector(X7to12-radius/3, Y7to12-radius),
+                    Vector(X7to12-radius/3, Y7to12+radius),
+                ),
+                Line(
+                    Vector(X7to12-2*radius/3, Y7to12-radius),
+                    Vector(X7to12-2*radius/3, Y7to12+radius),
+                ),
+                Line(
+                    Vector(X7to12+radius/3, Y7to12-radius),
+                    Vector(X7to12+radius/3, Y7to12+radius),
+                ),
+                Line(
+                    Vector(X7to12+2*radius/3, Y7to12-radius),
+                    Vector(X7to12+2*radius/3, Y7to12+radius),
+                ),
+                Line(
+                    Vector(X7to12+radius/3, Y7to12),
+                    Vector(X7to12+radius, Y7to12),
+                )
+            );
+
+            let qpCenter = Q.shift(XqpCenter, YqpCenter);
+            let qpRadius = 2*radius*Math.sqrt(7/12);
+            let qp = Sector(qpCenter, qpRadius, 0, 360, true);
+            let qpSmall = Sector(
+                qpCenter.shift(0,0,1+switchSmallToLarge), 
+                (ratioRAA**(2*switchSmallToLarge-1))*qpRadius, 0, 360, false);
+            let qpSmaller = Sector(
+                qpCenter.shift(0,0,2-switchSmallToLarge), 
+                (ratioRAA**(4*switchSmallToLarge-2))*qpRadius, 0, 360, false);
+            let qmark1 = qpCenter.shift(qpRadius/Math.sqrt(2), qpRadius/Math.sqrt(2));
+
+            let spiralSector = SpiralCircularSector(
+                Q, radius, 
+                -angleSpiralRotation+angleSpiralStart, -angleSpiralRotation+angleSpiralEnd, 
+                radius,
+                false
+            );
+
+            let outerSectors = MultiObjects('sector');
+            for (let i=1; i<=nDivision; i++) {
+                outerSectors.push(
+                    Sector(
+                        Q.shift(0,0,(2*switchSmallToLarge-1)), 
+                        radius*(1+(i-switchSmallToLarge)/nDivision),
+                        -angleSpiralRotation+angleSpiralStart + ((i-1)/nDivision)*(angleSpiralEnd-angleSpiralStart),
+                        -angleSpiralRotation+angleSpiralStart + (i/nDivision)*(angleSpiralEnd-angleSpiralStart),
+                        true,
+                    )
+                );
+            }
+
+            let spokes = MultiObjects('line');
+            for (let i=1; i<nDivision; i++) {
+                spokes.push(
+                    Line(Q.shift(0,0,-4), 
+                        Q.shift(0,0,-4).shiftPolar(
+                        2*radius*switchSpokes,
+                        -angleSpiralRotation+angleSpiralStart+(i/nDivision)*(angleSpiralEnd-angleSpiralStart)
+                    ))
+                )
+            }
+
+            let residueVertices = [
+                Vector(Xresidue+(1-switchSmallToLarge)*radius+0.5, Yresidue, 1+switchSmallToLarge),
+                Vector(Xresidue+(1-switchSmallToLarge)*radius+1.5, Yresidue, 1+switchSmallToLarge),
+                Vector(Xresidue+(1-switchSmallToLarge)*radius+0.9, Yresidue-1.3, 1+switchSmallToLarge),
+            ];
+            let residueAll = Polygon(residueVertices, true);
+            let qmark2 = Q.shift(Xresidue+qpRadius+1,Yresidue);
+
+            let result = {
+                Q, A, E,
+                QA:[Q,A], QE:[Q,E],
+
+                AZHI, ABGDE, spiral1st,
+                area7to12, auxLines, area2of12, area12circum,
+                spiralSector, qp, disk,
+                qpSmall, qpSmaller, qmark1,
+                outerSectors, spokes, 
+                
+                residueAll, qmark2
+            };
+            return result;
+        },
+        (e) => Sequential(
+            Show(200, e.Q),
+            Draw(400, e.spiral1st),
+            Show(0, e.E),
+            Draw(400, e.ABGDE),
+            Show(0, e.A),
+            Draw(300, e.QA),
+            Draw(300, e.QE),
+            Draw(500, e.AZHI),
+            ChangeStyle(0, e.area7to12, 'red'),
+            ChangeStyle(0, e.area2of12, 'black'),
+            ChangeStyle(0, e.spiralSector, 'red'),
+            ChangeStyle(0, e.disk, 'red'),
+            ChangeStyle(0, e.area12circum, 'blue', 1.5),
+            Parallel(
+                ChangeStyle(200, e.AZHI, 'blue', 1.5),
+                Show(200, e.area12circum)
+            ),
+            Parallel(
+                ChangeStyle(200, e.spiral1st, 0xdddddd),
+                Show(200, e.area7to12),
+                // Show(200, e.area2of12),
+                Show(200, e.auxLines),
+                Show(200, e.spiralSector),
+                Show(200, e.disk)
+            )
+        ),
+        [
+            // 0 -> 1
+            (e) => Sequential(
+                ChangeStyle(0, e.qp, 'red'),
+                Parallel(
+                    ChangeParams(400, {Y7to12:6}),
+                    Hide(200, e.auxLines)
+                ),
+                Parallel(
+                    Show(200, e.qp),
+                    ChangeStyle(200, e.spiralSector, 0xdddddd),
+                    ChangeStyle(200, e.disk, 0xdddddd)
+                )
+            ),
+            // 1 -> 2
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.qp, 0xffffff),
+                    ChangeStyle(200, e.AZHI, 'black', 1),
+                    ChangeStyle(200, e.area12circum, 'black', 1),
+                    ChangeStyle(200, e.area7to12, 0xdddddd)
+                ),
+                ChangeStyle(0, e.qpSmaller, 'red'),
+                Parallel(
+                    ChangeStyle(200, e.spiralSector, 'red'),
+                    ChangeStyle(200, e.disk, 'red'),
+                    Show(200, e.qpSmaller),
+                    Show(200, e.qmark1)
+                )
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+                ChangeStyle(0, e.qpSmall, 'blue'),
+                ChangeStyle(0, e.outerSectors, 'blue'),
+                Parallel(
+                    Show(200, e.qpSmall),
+                    Show(200, e.outerSectors)
+                )
+            ),
+            // 3 -> 4
+            (e) => Sequential(
+                Parallel(
+                    Hide(200, e.qpSmaller),
+                    Hide(200, e.spiralSector),
+                    Hide(200, e.disk),
+                    Hide(200, e.ABGDE)
+                ),
+                Show(0, e.spokes),
+                ChangeStyle(0, e.spokes, 0xdddddd),
+                ChangeStyle(0, e.residueAll, 'red'),
+                ChangeParams(400, {switchSpokes: 1}),
+                Parallel(
+                    ChangeStyle(200, e.AZHI, 'blue', 1.5),
+                    // ChangeStyle(200, e.spokes, 'red', 1.5),
+                    ChangeStyle(200, e.outerSectors, 'red'),
+                    Show(200, e.residueAll),
+
+                    ChangeStyle(200, e.area12circum, 'blue', 1.5),
+                    ChangeStyle(200, e.area7to12, 'red'),
+                    Hide(200, e.qpSmall)
+                )
+            ),
+            // 4 -> 5
+            (e) => Sequential(
+                ChangeStyle(200, e.qp, 'red'),
+                Show(0, e.qmark2),
+            ),
+            // 5 -> 6
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.qp, 'white'),
+                    ChangeStyle(200, e.AZHI, 'black', 1),
+                    Hide(200, e.qmark1),
+                    Hide(200, e.qmark2),
+                    Hide(200, e.residueAll),
+                    Hide(200, e.outerSectors),
+                    Hide(200, e.qpSmall),
+                    Hide(200, e.spokes),
+                    ChangeStyle(200, e.area12circum, 'black', 1),
+                    ChangeStyle(200, e.area7to12, 0xdddddd),
+
+                ),
+                Show(200, e.ABGDE),
+                ChangeParams(0, {switchSmallToLarge: 1}),
+                Parallel(
+                    Show(200, e.spiralSector),
+                    Show(200, e.disk),
+                    Show(200, e.qpSmaller),
+                    Show(200, e.qmark1),
+
+                )
+            ),
+            // 6 -> 7
+            (e) => Sequential(
+                ChangeStyle(0, e.outerSectors, 'blue'),
+                Parallel(
+                    Show(200, e.outerSectors),
+                    Show(200, e.qpSmall),
+                )
+            ),
+            // 7 -> 8
+            (e) => Sequential(
+                Parallel(
+                    Hide(200, e.qpSmaller),
+                    Hide(200, e.spiralSector),
+                    Hide(200, e.disk),
+                    Hide(200, e.ABGDE)
+                ),
+                Show(0, e.spokes),
+                ChangeStyle(0, e.spokes, 0xdddddd),
+                ChangeStyle(0, e.residueAll, 'white'),
+                ChangeParams(400, {switchSpokes: 1}),
+                Parallel(
+                    Hide(200, e.qpSmaller),
+                    ChangeStyle(200, e.outerSectors, 'red'),
+                    Show(200, e.residueAll),
+                    ChangeStyle(200, e.AZHI, 'blue', 1.5),
+
+                    ChangeStyle(200, e.area12circum, 'blue', 1.5),
+                    ChangeStyle(200, e.area7to12, 'red')
+                ),
+            ),
+            // 8 -> 9
+            (e) => Sequential(
+                Parallel(
+                    Hide(200, e.qpSmall),
+                    ChangeStyle(200, e.qp, 'red'),
+                ),
+                Show(200, e.qmark2)
+            ),
+            // 9 -> 10
+            (e) => Sequential(
+                Parallel(
+                    ChangeParams(400, {Y7to12: 0}),
+                    Hide(200, e.outerSectors),
+                    Hide(200, e.qmark1),
+                    Hide(200, e.qmark2),
+                    Hide(200, e.spokes),
+                    Hide(200, e.residueAll),
+                    Hide(200, e.qp)
+                ),
+                Parallel(
+                    Show(200, e.spiralSector),
+                    Show(200, e.ABGDE),
+                    Show(200, e.disk),
+                )
+            )
+        ],
+        {
+            A:'Α', E:'Ε', Q:'Θ', qp:'Ϙ',
+            qmark1: '?', qmark2: '???'
+        },
+    ),
+    Prop26: new DynamicDiagramConfiguration(
+        10,
+        new CameraSetting(
+            7.5,
+            3, 0, 0,
+        ),
+        {
+            radius: 4,
+            angleSpiralStart: -60,
+            angleSpiralEnd: -330,
+            angleSpiralRotation: -90,
+
+            Xrectangle: 7.5,
+            Yrectangle: 0,
+            XqpCenter: 7.5,
+            YqpCenter: -3,
+
+            ratioRAA: 1.05,
+            nDivision: 32,
+            gapBtwCopies: 0.25,
+            switchSpokes: 0,
+
+            Xresidue: 1,
+            Yresidue: 0.2,
+
+            switchSmallToLarge: 0
+        },
+        function (params) {
+            let {
+                radius, angleSpiralRotation, angleSpiralStart, angleSpiralEnd,
+                Xrectangle, Yrectangle,
+                XqpCenter, YqpCenter,
+                ratioRAA,
+                nDivision,
+                switchSpokes,
+                Xresidue, Yresidue,
+                switchSmallToLarge,
+            } = params;
+
+            let Q = Vector();
+            let ABGDE = Spiral(Q, radius, angleSpiralStart, angleSpiralEnd, angleSpiralRotation);
+            let E = ABGDE.pick(angleSpiralStart);
+            let A = ABGDE.pick(angleSpiralEnd);
+            let Z = Q.toward(E, Math.abs(angleSpiralEnd/angleSpiralStart));
+            // let circle = Circle(Q, radius, 0, 360);
+            let lengthAQ = radius*Math.abs(angleSpiralEnd/360);
+            let lengthEQ = radius*Math.abs(angleSpiralStart/360);
+            let AQZ = Circle(Q, lengthAQ, -angleSpiralRotation+angleSpiralStart, -angleSpiralRotation+angleSpiralEnd);
+
+            let rectangleAnd1of3 = MultiObjects('polygon');
+            rectangleAnd1of3.push(
+                GridRectangle(Xrectangle-0.5*lengthAQ, Yrectangle-0.5*lengthAQ, lengthEQ, lengthEQ),
+                GridRectangle(Xrectangle-0.5*lengthAQ, Yrectangle-0.5*lengthAQ+lengthEQ, lengthEQ, lengthAQ-lengthEQ),
+                GridRectangle(
+                    Xrectangle-0.5*lengthAQ+lengthEQ, Yrectangle-0.5*lengthAQ+lengthEQ, 
+                    lengthAQ-lengthEQ, (lengthAQ-lengthEQ)/3
+                ),
+            );
+            let rest2of3 = MultiObjects('polygon');
+            rest2of3.push(
+                GridRectangle(
+                    Xrectangle-0.5*lengthAQ+lengthEQ, 
+                    Yrectangle-0.5*lengthAQ+lengthEQ + (lengthAQ-lengthEQ)/3, 
+                    lengthAQ-lengthEQ, (lengthAQ-lengthEQ)/3
+                ),
+                GridRectangle(
+                    Xrectangle-0.5*lengthAQ+lengthEQ, 
+                    Yrectangle-0.5*lengthAQ+lengthEQ + (lengthAQ-lengthEQ)*2/3, 
+                    lengthAQ-lengthEQ, (lengthAQ-lengthEQ)/3,
+                ),
+            );
+            let rectangleEncloser = MultiObjects('line');
+            rectangleEncloser.push(
+                Line(
+                    Vector(Xrectangle-0.5*lengthAQ, Yrectangle-0.5*lengthAQ), 
+                    Vector(Xrectangle-0.5*lengthAQ, Yrectangle+0.5*lengthAQ)
+                ),
+                Line(
+                    Vector(Xrectangle-0.5*lengthAQ, Yrectangle+0.5*lengthAQ), 
+                    Vector(Xrectangle+0.5*lengthAQ, Yrectangle+0.5*lengthAQ)
+                ),
+                Line(
+                    Vector(Xrectangle+0.5*lengthAQ, Yrectangle+0.5*lengthAQ), 
+                    Vector(Xrectangle+0.5*lengthAQ, Yrectangle-0.5*lengthAQ)
+                ),
+                Line(
+                    Vector(Xrectangle+0.5*lengthAQ, Yrectangle-0.5*lengthAQ),
+                    Vector(Xrectangle-0.5*lengthAQ, Yrectangle-0.5*lengthAQ)
+                ),
+            )
+
+            let qpCenter = Q.shift(XqpCenter, YqpCenter);
+            let qpRadius = Math.sqrt(lengthAQ*lengthEQ+(1/3)*(lengthAQ-lengthEQ)*(lengthAQ-lengthEQ));
+            let qpX = Sector(
+                qpCenter, qpRadius, 
+                -angleSpiralRotation+angleSpiralStart, -angleSpiralRotation+angleSpiralEnd, true);
+            let qpSmall = Sector(
+                qpCenter.shift(0,0,1+switchSmallToLarge), 
+                (ratioRAA**(2*switchSmallToLarge-1))*qpRadius, 
+                -angleSpiralRotation+angleSpiralStart, -angleSpiralRotation+angleSpiralEnd, false);
+            let qpSmaller = Sector(
+                qpCenter.shift(0,0,2-switchSmallToLarge), 
+                (ratioRAA**(4*switchSmallToLarge-2))*qpRadius, 
+                -angleSpiralRotation+angleSpiralStart, -angleSpiralRotation+angleSpiralEnd, false);
+            let qmark1 = qpCenter.shift(qpRadius/Math.sqrt(2), qpRadius/Math.sqrt(2));
+
+            let spiralSector = SpiralCircularSector(
+                Q, lengthEQ, 
+                -angleSpiralRotation+angleSpiralStart, -angleSpiralRotation+angleSpiralEnd, 
+                lengthAQ-lengthEQ,
+                false
+            );
+            let disk = Sector(
+                Q, lengthEQ, 
+                -angleSpiralRotation+angleSpiralStart, -angleSpiralRotation+angleSpiralEnd
+            );
+
+            let outerSectors = MultiObjects('sector');
+            for (let i=1; i<=nDivision; i++) {
+                outerSectors.push(
+                    Sector(
+                        Q.shift(0,0,(2*switchSmallToLarge-1)), 
+                        radius*(
+                            angleSpiralStart
+                            +(i-switchSmallToLarge)/nDivision*(angleSpiralEnd-angleSpiralStart)
+                        )/(-360),
+                        -angleSpiralRotation+angleSpiralStart + ((i-1)/nDivision)*(angleSpiralEnd-angleSpiralStart),
+                        -angleSpiralRotation+angleSpiralStart + (i/nDivision)*(angleSpiralEnd-angleSpiralStart),
+                        true,
+                    )
+                );
+            }
+
+            let spokes = MultiObjects('line');
+            for (let i=1; i<nDivision; i++) {
+                spokes.push(
+                    Line(Q.shift(0,0,-4), 
+                        Q.shift(0,0,-4).shiftPolar(
+                        radius*Math.abs(angleSpiralEnd)/360,
+                        -angleSpiralRotation+angleSpiralStart+(i/nDivision)*(angleSpiralEnd-angleSpiralStart)
+                    ))
+                )
+            }
+
+            let residueVertices = [
+                Vector(Xresidue-(1-switchSmallToLarge)*radius+0.5, Yresidue, 1+switchSmallToLarge),
+                Vector(Xresidue-(1-switchSmallToLarge)*radius+1.5, Yresidue+0.2, 1+switchSmallToLarge),
+                Vector(Xresidue-(1-switchSmallToLarge)*radius+0.9, Yresidue-0.3, 1+switchSmallToLarge),
+            ];
+            let residueAll = Polygon(residueVertices, true);
+            let qmark2 = Q.shift(Xresidue+qpRadius+1,Yresidue);
+
+            let result = {
+                Q, A, E, Z,
+                QA:[Q,A], QE:[Q,E], EZ:[E,Z], QZ:[Q,Z],
+                AQZ, 
+
+                ABGDE,
+                rectangleAnd1of3, rest2of3, rectangleEncloser,
+                spiralSector, disk, qpX,
+                qpSmall, qpSmaller, qmark1,
+                outerSectors, spokes, 
+                
+                residueAll, qmark2
+            };
+            return result;
+        },
+        (e) => Sequential(
+            Show(200, e.Q),
+            Show(0, e.E),
+            Draw(400, e.ABGDE),
+            Show(0, e.A),
+            Draw(300, e.QA),
+            Draw(200, e.QZ),
+            Show(0, e.Z),
+            Draw(500, e.AQZ),
+
+            ChangeStyle(0, e.rectangleAnd1of3, 'red'),
+            ChangeStyle(0, e.rest2of3, 'black'),
+            ChangeStyle(0, e.spiralSector, 'red'),
+            ChangeStyle(0, e.disk, 'red'),
+            ChangeStyle(0, e.rectangleEncloser, 'blue', 1.5),
+            Parallel(
+                ChangeStyle(200, e.AQZ, 'blue', 1.5),
+                ChangeStyle(200, e.QZ, 'blue', 1.5),
+                ChangeStyle(200, e.QA, 'blue', 1.5),
+
+                Show(200, e.rectangleEncloser)
+            ),
+            Parallel(
+                Show(200, e.rectangleAnd1of3),
+                Show(200, e.rest2of3),
+                Show(200, e.spiralSector),
+                Show(200, e.disk),
+            )
+        ),
+        [
+            // 0 -> 1
+            (e) => Sequential(
+                ChangeStyle(0, e.qpX, 'red'),
+                Parallel(
+                    ChangeParams(400, {Yrectangle:3}),
+                    // Hide(200, e.auxLines)
+                ),
+                Parallel(
+                    Show(200, e.qpX),
+                    ChangeStyle(200, e.spiralSector, 0xdddddd),
+                    ChangeStyle(200, e.disk, 0xdddddd)
+                )
+            ),
+            // 1 -> 2
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.qpX, 0xffffff),
+                    ChangeStyle(200, e.AQZ, 'black', 1),
+                    ChangeStyle(200, e.QA, 'black', 1),
+                    ChangeStyle(200, e.QZ, 'black', 1),
+                    ChangeStyle(200, e.rectangleEncloser, 'black', 1),
+                    ChangeStyle(200, e.rectangleAnd1of3, 0xdddddd)
+                ),
+                ChangeStyle(0, e.qpSmaller, 'red'),
+                Parallel(
+                    ChangeStyle(200, e.spiralSector, 'red'),
+                    ChangeStyle(200, e.disk, 'red'),
+                    Show(200, e.qpSmaller),
+                    Show(200, e.qmark1)
+                )
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+                ChangeStyle(0, e.qpSmall, 'blue'),
+                ChangeStyle(0, e.outerSectors, 'blue'),
+                Parallel(
+                    Show(200, e.qpSmall),
+                    Show(200, e.outerSectors)
+                )
+            ),
+            // 3 -> 4
+            (e) => Sequential(
+                Parallel(
+                    Hide(200, e.qpSmaller),
+                    Hide(200, e.spiralSector),
+                    Hide(200, e.disk),
+                    Hide(200, e.ABGDE)
+                ),
+                Show(0, e.spokes),
+                ChangeStyle(0, e.spokes, 0xdddddd),
+                ChangeStyle(0, e.residueAll, 'red'),
+                ChangeParams(400, {switchSpokes: 1}),
+                Parallel(
+                    ChangeStyle(200, e.AQZ, 'blue', 1.5),
+                    ChangeStyle(200, e.QA, 'blue', 1.5),
+                    ChangeStyle(200, e.QZ, 'blue', 1.5),
+                    // ChangeStyle(200, e.spokes, 'red', 1.5),
+                    ChangeStyle(200, e.outerSectors, 'red'),
+                    Show(200, e.residueAll),
+
+                    ChangeStyle(200, e.rectangleEncloser, 'blue', 1.5),
+                    ChangeStyle(200, e.rectangleAnd1of3, 'red'),
+                    Hide(200, e.qpSmall)
+                )
+            ),
+            // 4 -> 5
+            (e) => Sequential(
+                ChangeStyle(200, e.qpX, 'red'),
+                Show(0, e.qmark2),
+            ),
+            // 5 -> 6
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.qpX, 'white'),
+                    ChangeStyle(200, e.AQZ, 'black', 1),
+                    ChangeStyle(200, e.QA, 'black', 1),
+                    ChangeStyle(200, e.QZ, 'black', 1),
+                    Hide(200, e.qmark1),
+                    Hide(200, e.qmark2),
+                    Hide(200, e.residueAll),
+                    Hide(200, e.outerSectors),
+                    Hide(200, e.qpSmall),
+                    Hide(200, e.spokes),
+                    ChangeStyle(200, e.rectangleEncloser, 'black', 1),
+                    ChangeStyle(200, e.rectangleAnd1of3, 0xdddddd),
+
+                ),
+                Show(200, e.ABGDE),
+                ChangeParams(0, {switchSmallToLarge: 1}),
+                Parallel(
+                    Show(200, e.spiralSector),
+                    Show(200, e.disk),
+                    Show(200, e.qpSmaller),
+                    Show(200, e.qmark1),
+
+                )
+            ),
+            // 6 -> 7
+            (e) => Sequential(
+                ChangeStyle(0, e.outerSectors, 'blue'),
+                Parallel(
+                    Show(200, e.outerSectors),
+                    Show(200, e.qpSmall),
+                )
+            ),
+            // 7 -> 8
+            (e) => Sequential(
+                Parallel(
+                    Hide(200, e.qpSmaller),
+                    Hide(200, e.spiralSector),
+                    Hide(200, e.disk),
+                    Hide(200, e.ABGDE)
+                ),
+                Show(0, e.spokes),
+                ChangeStyle(0, e.spokes, 0xdddddd),
+                ChangeStyle(0, e.residueAll, 'white'),
+                ChangeParams(400, {switchSpokes: 1}),
+                Parallel(
+                    Hide(200, e.qpSmaller),
+                    ChangeStyle(200, e.outerSectors, 'red'),
+                    Show(200, e.residueAll),
+                    ChangeStyle(200, e.AQZ, 'blue', 1.5),
+                    ChangeStyle(200, e.QA, 'blue', 1.5),
+                    ChangeStyle(200, e.QZ, 'blue', 1.5),
+
+                    ChangeStyle(200, e.rectangleEncloser, 'blue', 1.5),
+                    ChangeStyle(200, e.rectangleAnd1of3, 'red')
+                ),
+            ),
+            // 8 -> 9
+            (e) => Sequential(
+                Parallel(
+                    Hide(200, e.qpSmall),
+                    ChangeStyle(200, e.qpX, 'red'),
+                ),
+                Show(200, e.qmark2)
+            ),
+            // 9 -> 10
+            (e) => Sequential(
+                Parallel(
+                    ChangeParams(400, {Yrectangle: 0}),
+                    Hide(200, e.outerSectors),
+                    Hide(200, e.qmark1),
+                    Hide(200, e.qmark2),
+                    Hide(200, e.spokes),
+                    Hide(200, e.residueAll),
+                    Hide(200, e.qpX)
+                ),
+                Parallel(
+                    Show(200, e.spiralSector),
+                    Show(200, e.ABGDE),
+                    Show(200, e.disk),
+                )
+            )
+        ],
+        {
+            A:'Α', E:'Ε', Z:'Ζ', Q:'Θ', qpX:'Ϙ',
+            qmark1: '?', qmark2: '???'
+        },
+    ),
 }
 
 export {ddcs};
