@@ -200,6 +200,7 @@ class SequentialFX extends BaseFX {
     }
 
     onAction(t) {
+        if (this._cursor >= this.fxs.length) {return;}
         let elapsed = t*this.durationTotal;
         while (elapsed >= this._tcumsum + this.fxs[this._cursor].duration) {
             this.fxs[this._cursor].onEnd(); 
@@ -208,12 +209,14 @@ class SequentialFX extends BaseFX {
             this._delayedRenderNeed = this.fxs[this._cursor].needRender(1);
             this._tcumsum += this.fxs[this._cursor].duration;
             this._cursor ++;
+            if (this._cursor >= this.fxs.length) {return;}
             this.fxs[this._cursor].onBegin();
         }
         this.fxs[this._cursor].onAction((elapsed - this._tcumsum)/this.fxs[this._cursor].duration);
     }
 
     onEnd() {
+        if (this._cursor >= this.fxs.length) {return;}
         while (this._cursor < this.fxs.length-1) {
             this.fxs[this._cursor].onEnd();
             this._tcumsum += this.fxs[this._cursor].duration;

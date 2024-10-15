@@ -5051,6 +5051,731 @@ let ddcs = {
             qmark1: '?', qmark2: '???'
         },
     ),
+    Prop27: new DynamicDiagramConfiguration(
+        9,
+        new CameraSetting(
+            6,
+            0, 0, 0,
+
+        ),
+        {
+            radius: 1,
+            angleSpiralRotation: -90,
+            numRotation: 5,
+            Xrectangle: 7,
+            Yrectangle: 2,
+            Xflat: 10,
+            Yflat: -1
+        },
+        function (params) {
+            let {
+                radius, angleSpiralRotation, numRotation,
+                Xrectangle, Yrectangle,
+                Xflat, Yflat,
+            } = params;
+
+            let Q = Vector();
+            let A = Q.shiftPolar(radius, -angleSpiralRotation);
+            let B = Q.toward(A, 2);
+            let G = Q.toward(A, 3);
+            let D = Q.toward(A, 4);
+            let E = Q.toward(A, 5);
+            let archeEnd = Q.toward(A, numRotation);
+
+            let spiral = Spiral(
+                Q, radius, -0, -360*numRotation, angleSpiralRotation
+            )
+
+            let K = MultiObjects('spiral-circular-sector');
+            K.push(
+                SpiralCircularSector(
+                    Q, 0, 
+                    -angleSpiralRotation, -angleSpiralRotation-360,
+                    radius
+                )
+            );
+            let L = MultiObjects('spiral-circular-sector');
+            L.push(
+                SpiralCircularSector(
+                    Q, radius,
+                    -angleSpiralRotation, -angleSpiralRotation-360,
+                    radius
+                ),
+                SpiralCircularSector(
+                    Q, radius,
+                    -angleSpiralRotation-360, -angleSpiralRotation,
+                    -radius
+                )
+            );
+            let M = MultiObjects('spiral-circular-sector');
+            M.push(
+                SpiralCircularSector(
+                    Q, 2*radius,
+                    -angleSpiralRotation, -angleSpiralRotation-360,
+                    radius
+                ),
+                SpiralCircularSector(
+                    Q, 2*radius,
+                    -angleSpiralRotation-360, -angleSpiralRotation,
+                    -radius
+                )
+            );
+            let N = MultiObjects('spiral-circular-sector');
+            N.push(
+                SpiralCircularSector(
+                    Q, 3*radius,
+                    -angleSpiralRotation, -angleSpiralRotation-360,
+                    radius
+                ),
+                SpiralCircularSector(
+                    Q, 3*radius,
+                    -angleSpiralRotation-360, -angleSpiralRotation,
+                    -radius
+                )
+            );
+            let C = MultiObjects('spiral-circular-sector');
+            C.push(
+                SpiralCircularSector(
+                    Q, 4*radius,
+                    -angleSpiralRotation, -angleSpiralRotation-360,
+                    radius
+                ),
+                SpiralCircularSector(
+                    Q, 4*radius,
+                    -angleSpiralRotation-360, -angleSpiralRotation,
+                    -radius
+                )
+            );
+            
+            let lettK = Q.shiftPolar(radius*0.5, 150);
+            let lettL = Q.toward(lettK, 1.5/0.5);
+            let lettM = Q.toward(lettK, 2.5/0.5);
+            let lettN = Q.toward(lettK, 3.5/0.5);
+            let lettC = Q.toward(lettK, 4.5/0.5);
+
+            let circles = [];
+            for (let i=1; i<=5; i++) {
+                circles.push(
+                    Circle(Q, radius*i, -angleSpiralRotation, -angleSpiralRotation-360)
+                );
+            }
+
+            let rect1of3 = GridRectangle(Xrectangle-radius, Yrectangle-radius, radius, radius/3, 0, true);
+            let rect2of3 = GridRectangle(Xrectangle-radius, Yrectangle-radius*2/3, radius, radius*2/3, 0, true);
+
+            let rectangles = [];
+            for (let i=2; i<=5; i++) {
+                let toAppend = MultiObjects('polygon');
+                for (let j=1; j<=i-1; j++) {
+                    toAppend.push(
+                        GridRectangle(Xrectangle-radius*i, Yrectangle-radius*j, radius, radius, 0, true),
+                        GridRectangle(Xrectangle-radius*(i-j+1), Yrectangle-radius*i, radius, radius, 0, true),
+                    );
+                }
+                rectangles.push(toAppend);
+            }
+
+            let rectAnchor = Q.shift(Xrectangle, Yrectangle);
+            let rectBdries = [];
+            for (let i=1; i<=5; i++) {
+                rectBdries.push(
+                    MultiObjects('line', [
+                        Line(rectAnchor.shift(-i*radius, -i*radius), rectAnchor.shift(0, -i*radius)),
+                        Line(rectAnchor.shift(0, -i*radius), rectAnchor.shift(0, 0)),
+                        Line(rectAnchor.shift(0, 0), rectAnchor.shift(-i*radius, 0)),
+                        Line(rectAnchor.shift(-i*radius, 0), rectAnchor.shift(-i*radius, -i*radius)),
+                    ])
+                );
+            }
+
+            let rectGridL = MultiObjects('line');
+            for (let i=1; i<=5; i++) {
+                if (i == 3) {continue;}
+                rectGridL.push(
+                    Line(rectAnchor.shift(-2*radius,-radius*(i/3)), rectAnchor.shift(-radius,-radius*(i/3)))
+                );
+            }
+            rectGridL.push(
+                // Line(rectAnchor.shift(-radius, -radius*2/3), rectAnchor.shift(0, -radius*2/3)),
+                Line(rectAnchor.shift(-radius, -radius*1/3), rectAnchor.shift(0, -radius*1/3)),
+            );
+            let rectGridM = MultiObjects('line');
+            for (let i=1; i<=8; i++) {
+                if ( i % 3 == 0) {continue;}
+                rectGridM.push(
+                    Line(rectAnchor.shift(-3*radius,-radius*(i/3)), rectAnchor.shift(-2*radius,-radius*(i/3)))
+                );
+            }
+            rectGridM.push(
+                Line(rectAnchor.shift(-2*radius, -radius*(7/3)), rectAnchor.shift(-radius, -radius*(7/3))),
+                Line(rectAnchor.shift(-2*radius, -radius*(8/3)), rectAnchor.shift(-radius, -radius*(8/3)))
+            );
+
+            let flats = [];
+            for (let i=5; i>=3; i--) {
+                let toAppend = MultiObjects('polygon');
+                for (let j=1; j<i; j++) {
+                    for (let k=0; k<2; k++) {
+                        toAppend.push(
+                            GridRectangle(Xflat-(i-j)*radius, Yflat-(2-k)*radius+2*(i-5)*radius, radius, radius)
+                        );
+                    }
+                }
+                flats.push(toAppend);
+            }
+
+            let result = {
+                Q, A, B, G, D, E, 
+                lettK, lettL, lettM, lettN, lettC,
+                arche:[Q, archeEnd],
+                circK: circles[0], circL: circles[1], circM: circles[2], circN: circles[3], circC: circles[4],
+                rect1of3, rect2of3,
+                                    rectL: rectangles[0], rectM: rectangles[1], rectN: rectangles[2], rectC: rectangles[3],
+                bdryK: rectBdries[0], bdryL: rectBdries[1], bdryM: rectBdries[2], bdryN: rectBdries[3], bdryC: rectBdries[4],
+                rectGridL, rectGridM,
+                flatC: flats[0], flatN: flats[1], flatM: flats[2],
+                spiral,
+                K, L, M, N, C
+            };
+            return result;
+        },
+        (e) => Sequential(
+            ChangeStyle(0, e.lettK, 'black', 0),
+            ChangeStyle(0, e.lettL, 'black', 0),
+            ChangeStyle(0, e.lettM, 'black', 0),
+            ChangeStyle(0, e.lettN, 'black', 0),
+            ChangeStyle(0, e.lettC, 'black', 0),
+            Show(200, e.Q),
+            Parallel(
+                Draw(2000, e.spiral),
+                Draw(2000, e.arche),
+                Sequential(
+                    Show(200, e.K),
+                    Show(0, e.lettK),
+                    Show(200, e.A),
+
+                    Show(200, e.L),
+                    Show(0, e.lettL),
+                    Show(200, e.B),
+
+                    Show(200, e.M),
+                    Show(0, e.lettM),
+                    Show(200, e.G),
+
+                    Show(200, e.N),
+                    Show(0, e.lettN),
+                    Show(200, e.D),
+
+                    Show(200, e.C),
+                    Show(0, e.lettC),
+                    Show(200, e.E),
+                ),
+            ),
+        ),
+        [
+            // 0 -> 1
+            (e) => Sequential(
+                Parallel(
+                    ChangeParams(1200, {numRotation:2}),
+                    Sequential(
+                        Hide(200, e.C),
+                        Hide(0, e.lettC),
+                        Hide(200, e.E),
+
+                        Hide(200, e.N),
+                        Hide(0, e.lettN),
+                        Hide(200, e.D),
+
+                        Hide(200, e.M),
+                        Hide(0, e.lettM),
+                        Hide(200, e.G),
+                    ),
+                    ChangeCamera(1200, {centerX: 2}),
+                ),
+                Show(200, e.rectL),
+                Show(200, e.rect1of3),
+                Show(200, e.rect2of3),
+                ChangeStyle(0, e.circL, 'red', 1.5),
+                Parallel(
+                    Show(200, e.circL),
+                    ChangeStyle(200, e.K, 'blue'),
+                    ChangeStyle(200, e.L, 'blue'),
+                ),
+                ChangeStyle(0, e.bdryL, 'red', 1.5),
+                Parallel(
+                    Show(200, e.bdryL),
+                    ChangeStyle(200, e.rectL, 'blue'),
+                    ChangeStyle(200, e.rect1of3, 'blue'),
+                ),
+            ),
+            // 1->2
+            (e) => Sequential(
+                ChangeStyle(0, e.bdryK, 'green', 1.5),
+                ChangeStyle(0, e.circK, 'green', 1.5),
+                Parallel(
+                    Show(200, e.circK),
+                    ChangeStyle(200, e.K, 'brown')
+                ),
+                Parallel(
+                    Show(200, e.bdryK),
+                    ChangeStyle(200, e.rect1of3, 'brown')
+                ),
+                Show(200, e.rectGridL)
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+                ChangeStyle(0, e.M, 'blue'),
+                Parallel(
+                    ChangeParams(400, {numRotation: 3}),
+                    Sequential(
+                        Show(200, e.M),
+                        Show(0, e.lettM),
+                        Show(200, e.G)
+                    ),
+                    Hide(200, e.circL),
+                    Hide(200, e.circK),
+                    Hide(200, e.bdryL),
+                    Hide(200, e.bdryK),
+                    ChangeStyle(200, e.K, 'blue'),
+                    ChangeStyle(200, e.rect1of3, 'blue'),
+                    Hide(200, e.rectGridL),
+                ),
+                ChangeStyle(0, e.circM, 'red', 1.5),
+                ChangeStyle(0, e.bdryM, 'red', 1.5),
+                ChangeStyle(0, e.rectM, 'blue'),
+                Parallel(
+                    Show(200, e.circM)
+                ),
+                Parallel(
+                    Show(200, e.rectM),
+                    Show(200, e.bdryM)
+                )
+            ),
+            // 3 -> 4
+            (e) => Sequential(
+                ChangeStyle(0, e.circL, 'green', 1.5),
+                ChangeStyle(0, e.bdryL, 'green', 1.5),
+                Parallel(
+                    Show(200, e.circL),
+                    ChangeStyle(200, e.L, 'brown'),
+                    ChangeStyle(200, e.K, 'brown'),
+                ),
+                Parallel(
+                    Show(200, e.bdryL), 
+                    ChangeStyle(200, e.rectL, 'brown'),
+                    ChangeStyle(200, e.rect1of3, 'brown')
+                ),
+            ),
+            // 4 -> 5
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.K, 'yellow'),
+                    ChangeStyle(200, e.rect1of3, 'yellow'),
+                ),
+                Parallel(
+                    Show(200, e.rectGridL),
+                    Show(200, e.rectGridM),
+                )
+            ),
+            // 5 -> 6
+            (e) => Sequential(
+                ChangeStyle(0, e.N, 'blue'),
+                ChangeStyle(0, e.C, 'blue'),
+                ChangeStyle(0, e.rectN, 'blue'),
+                ChangeStyle(0, e.rectC, 'blue'),
+                Parallel(
+                    ChangeParams(800, {numRotation: 5, Xrectangle: 11, Yrectangle: 5}),
+                    ChangeCamera(800, {scale: 9, centerX:3}),
+                    Sequential(
+                        Show(200, e.N),
+                        Show(0, e.lettN),
+                        Show(200, e.D),
+
+                        Show(200, e.C),
+                        Show(0, e.lettC),
+                        Show(200, e.E)
+                    ),
+                    Sequential(
+                        Show(200, e.rectN),
+                        Wait(200),
+
+                        Show(200, e.rectC),
+                        // Wait(200),
+                    ),
+                    ChangeStyle(200, e.L, 'blue'),
+                    ChangeStyle(200, e.K, 'blue'),
+                    
+                    ChangeStyle(200, e.rectL, 'blue'),
+                    ChangeStyle(200, e.rect1of3, 'blue'),
+
+                    Hide(200, e.circM),
+                    Hide(200, e.circL),
+                    Hide(200, e.bdryM),
+                    Hide(200, e.bdryL),
+
+                    Hide(200, e.rectGridL),
+                    Hide(200, e.rectGridM),
+                ),
+                ChangeStyle(0, e.circC, 'red', 1.5),
+                ChangeStyle(0, e.bdryC, 'red', 1.5),
+                Parallel(
+                    Show(200, e.circC),
+                    Show(200, e.bdryC)
+                )
+            ),
+            // 6 -> 7
+            (e) => Sequential(
+                ChangeStyle(0, e.circN, 'green', 1.5),
+                ChangeStyle(0, e.bdryN, 'green', 1.5),
+                Parallel(
+                    Show(200, e.circN),
+                    ChangeStyle(200, e.N, 'brown'),
+                    ChangeStyle(200, e.M, 'brown'),
+                    ChangeStyle(200, e.L, 'brown'),
+                    ChangeStyle(200, e.K, 'brown'),
+                ),
+                Parallel(
+                    Show(200, e.bdryN),
+                    ChangeStyle(200, e.rectN, 'brown'),
+                    ChangeStyle(200, e.rectM, 'brown'),
+                    ChangeStyle(200, e.rectL, 'brown'),
+                    ChangeStyle(200, e.rect1of3, 'brown'),
+                ),
+                ChangeStyle(0, e.flatC, 'blue'),
+                Show(200, e.flatC)
+
+            ),
+            // 7 -> 8
+            (e) => Sequential(
+                ChangeStyle(0, e.circM, 'orange', 1.5),
+                ChangeStyle(0, e.bdryM, 'orange', 1.5),
+                Parallel(
+                    Show(200, e.circM),
+                    ChangeStyle(200, e.M, 'yellow'),
+                    ChangeStyle(200, e.L, 'yellow'),
+                    ChangeStyle(200, e.K, 'yellow'),
+                ),
+                Parallel(
+                    Show(200, e.bdryM),
+                    ChangeStyle(200, e.rectM, 'yellow'),
+                    ChangeStyle(200, e.rectL, 'yellow'),
+                    ChangeStyle(200, e.rect1of3, 'yellow'),
+                ),
+                ChangeStyle(0, e.flatN, 'brown'),
+                Show(200, e.flatN)
+            ),
+            // 8 -> 9
+            (e) => Sequential(
+                ChangeStyle(0, e.circL, 'cyan', 1.5),
+                ChangeStyle(0, e.bdryL, 'cyan', 1.5),
+                Parallel(
+                    Show(200, e.circL),
+                    ChangeStyle(200, e.L, 'purple'),
+                    ChangeStyle(200, e.K, 'purple'),
+                ),
+                Parallel(
+                    Show(200, e.bdryL),
+                    ChangeStyle(200, e.rectL, 'purple'),
+                    ChangeStyle(200, e.rect1of3, 'purple'),
+                ),
+                ChangeStyle(0, e.flatM, 'yellow'),
+                Show(200, e.flatM)
+            )
+        ],
+        {
+            Q:'Θ', E:'Ε', A:'Α', B:'Β', G:'Γ', D:'Δ',
+            lettK:'Κ', lettL:'Λ', lettM:'Μ', lettN:'Ν', lettC:'Ξ'
+        }
+    ),
+    Prop28: new DynamicDiagramConfiguration(
+        4,
+        new CameraSetting(
+            5, 
+            0, 0, 0
+        ),
+        {
+            radius: 4,
+            angleSpiralStart: -60,
+            angleSpiralEnd: -330,
+            angleSpiralRotation: -90,
+
+            Xrect: 9, Yrect: 2,
+            gapPiled: 1,
+            switchPiled: 0
+        },
+        function (params) {
+            let {
+                radius, angleSpiralStart, angleSpiralEnd, angleSpiralRotation,
+                Xrect, Yrect,
+                gapPiled, switchPiled,
+            } = params;
+            let Q = Vector();
+            let ABGD = Spiral(Q, radius, angleSpiralStart, angleSpiralEnd, angleSpiralRotation);
+            let G = ABGD.pick(angleSpiralEnd);
+            let A = ABGD.pick(angleSpiralStart);
+            let H = Q.toward(A, Math.abs(angleSpiralEnd/angleSpiralStart));
+            
+            let radiusA = radius*(-angleSpiralStart/360);
+            let circA = Circle(
+                Q, radiusA, 
+                -angleSpiralRotation+angleSpiralStart,
+                -angleSpiralRotation+angleSpiralStart-360,
+            );
+            let radiusG = radius*(-angleSpiralEnd/360);
+            let circG = Circle(
+                Q, radiusG, 
+                -angleSpiralRotation+angleSpiralEnd,
+                -angleSpiralRotation+angleSpiralEnd-360,
+            );
+            
+            let N = Sector(
+                Q, radiusA,
+                -angleSpiralRotation+angleSpiralStart,
+                -angleSpiralRotation+angleSpiralEnd,
+                true
+            );
+            let lettN = Q.shiftPolar(radiusA*0.5, -90);
+            let P = SpiralCircularSector(
+                Q, radiusA, 
+                -angleSpiralRotation+angleSpiralStart,
+                -angleSpiralRotation+angleSpiralEnd,
+                radiusG-radiusA,
+                true
+            );
+            let lettP = Q.shiftPolar((radiusA+radiusG)/2, 180);
+            let C = SpiralCircularSector(
+                Q, radiusG,
+                -angleSpiralRotation+angleSpiralEnd,
+                -angleSpiralRotation+angleSpiralStart,
+                radiusA-radiusG
+            );
+            let lettC = Q.shiftPolar((radiusA+radiusG)/2, 0);
+            
+            let arcHG = Circle(
+                Q, radiusG,
+                -angleSpiralRotation+angleSpiralEnd,
+                -angleSpiralRotation+angleSpiralStart
+            );
+            let lengthAH = radiusG-radiusA;
+            let anchor = Q.shift(Xrect, Yrect);
+            let rectQA = GridRectangle(
+                anchor.x-radiusG, anchor.y-radiusG, radiusA, radiusA, 0, true
+            );
+            let rectAQH = GridRectangle(
+                anchor.x-radiusG, anchor.y-lengthAH, radiusA, lengthAH, 0, true
+            );
+            let rect1of3 = GridRectangle(
+                anchor.x-lengthAH, anchor.y-lengthAH, lengthAH, lengthAH*1/3, 0, true
+            );
+            let rect2of3 = MultiObjects('polygon');
+            rect2of3.push(
+                GridRectangle(
+                    anchor.x-lengthAH, anchor.y-lengthAH*2/3, lengthAH, lengthAH*1/3, 0, true
+                ),
+                GridRectangle(
+                    anchor.x-lengthAH, anchor.y-lengthAH*1/3, lengthAH, lengthAH*1/3, 0, true
+                ),
+            );
+            let rectC = GridRectangle(
+                anchor.x-lengthAH, anchor.y-radiusG, lengthAH, radiusA, 0, true
+            );
+            let rectBdry = MultiObjects('line');
+            rectBdry.push(
+                Line(anchor.shift(0, 0), anchor.shift(-radiusG, 0)),
+                Line(anchor.shift(-radiusG, 0), anchor.shift(-radiusG, -radiusG)),
+                Line(anchor.shift(-radiusG, -radiusG), anchor.shift(0, -radiusG)),
+                Line(anchor.shift(0, -radiusG), anchor.shift(0, 0))
+            );
+
+            let piledP = GridRectangle(
+                anchor.x-gapPiled-(2-switchPiled)/2*lengthAH,
+                anchor.y-radiusG,
+                (1-switchPiled)*lengthAH,
+                radiusA+lengthAH*1/3, 1, false,
+            );
+            let piledC = GridRectangle(
+                anchor.x-(2-switchPiled)/2*lengthAH,
+                anchor.y-radiusG,
+                (1-switchPiled)*lengthAH,
+                radiusA+lengthAH*2/3, 1, false,
+            );
+
+            let piledGrid = MultiObjects('line');
+            for (let i=0; i<=3; i++) {
+                piledGrid.push(
+                    Line(
+                        anchor.shift(-(2-switchPiled)/2*lengthAH-gapPiled, -lengthAH*i/3), 
+                        anchor.shift(-switchPiled/2*lengthAH-gapPiled, -lengthAH*i/3)),
+                    Line(
+                        anchor.shift(-(2-switchPiled)/2*lengthAH, -lengthAH*i/3), 
+                        anchor.shift(-switchPiled/2*lengthAH, -lengthAH*i/3)),
+                );
+            }
+            piledGrid.push(
+                Line(
+                    anchor.shift(-(2-switchPiled)/2*lengthAH, -radiusG), 
+                    anchor.shift(-switchPiled/2*lengthAH, -radiusG)),
+                Line(
+                    anchor.shift(-(2-switchPiled)/2*lengthAH-gapPiled, -radiusG), 
+                    anchor.shift(-switchPiled/2*lengthAH-gapPiled, -radiusG)),
+                Line(
+                    anchor.shift(-(2-switchPiled)/2*lengthAH-gapPiled, -radiusG),
+                    anchor.shift(-(2-switchPiled)/2*lengthAH-gapPiled, 0)),
+                Line(
+                    anchor.shift(-(2-switchPiled)/2*lengthAH, -radiusG),
+                    anchor.shift(-(2-switchPiled)/2*lengthAH, 0)
+                )
+            );
+            let piledSideP = Line(
+                anchor.shift(-switchPiled/2*lengthAH-gapPiled, -radiusG),
+                anchor.shift(-switchPiled/2*lengthAH-gapPiled, -lengthAH*2/3),
+            );
+            let piledSideC = Line(
+                anchor.shift(-switchPiled/2*lengthAH, -radiusG),
+                anchor.shift(-switchPiled/2*lengthAH, -lengthAH*1/3),
+            );
+            let piledSideResidue = MultiObjects('line');
+            piledSideResidue.push(
+                Line(
+                    anchor.shift(-switchPiled/2*lengthAH-gapPiled, -lengthAH*2/3),
+                    anchor.shift(-switchPiled/2*lengthAH-gapPiled, 0)
+                ),
+                Line(
+                    anchor.shift(-switchPiled/2*lengthAH, -lengthAH*1/3),
+                    anchor.shift(-switchPiled/2*lengthAH, 0)
+                ),
+            );
+            let piledGridPts = MultiObjects('point');
+            for (let i=0; i<=3; i++) {
+                piledGridPts.push(
+                    anchor.shift(-switchPiled/2*lengthAH-gapPiled, -lengthAH*i/3),
+                    anchor.shift(-switchPiled/2*lengthAH, -lengthAH*i/3),
+                );
+            }
+            
+            let result = {
+                Q, A, G, H,
+                QG:[Q,G], QH:[Q,H],
+                ABGD, circA, circG, arcHG,
+                N, P, C, lettN, lettP, lettC,
+                rectQA, rectAQH, rect1of3, rect2of3, rectBdry, rectC,
+                piledC, piledP, piledGrid, piledGridPts, piledSideC, piledSideP, piledSideResidue,
+            };
+            return result;
+        },
+        (e) => Sequential(
+            Show(200, e.Q),
+            Draw(500, e.ABGD),
+            Show(200, e.A),
+            Draw(300, e.QH),
+            Show(0, e.H),
+            Show(200, e.G),
+            Draw(300, e.QG),
+            Draw(300, e.circA),
+            Draw(500, e.circG),
+            ChangeStyle(0, e.C, 'red'),
+            ChangeStyle(0, e.P, 'blue'),
+            ChangeStyle(0, e.lettC, 'black', 0),
+            ChangeStyle(0, e.lettP, 'black', 0),
+            Show(0, e.lettC),
+            Show(200, e.C),
+            Show(0, e.lettP),
+            Show(200, e.P),
+        ),
+        [
+            // 0 -> 1
+            (e) => Sequential(
+                ChangeStyle(0, e.N, 'blue'),
+                ChangeStyle(0, e.lettN, 'black', 0),
+                ChangeStyle(0, e.arcHG, 'red', 1.5),
+                Show(0, e.lettN),
+                Parallel(
+                    ChangeCamera(500, {scale: 7, centerX: 3}),
+                    // ChangeStyle(200, e.C, 'blue'),
+                    Hide(200, e.C),
+                    Show(200, e.N),
+                    Show(200, e.arcHG),
+                    ChangeStyle(200, e.QH, 'red', 1.5),
+                    ChangeStyle(200, e.QG, 'red', 1.5),
+                ),
+                ChangeStyle(0, e.rectQA, 'blue'),
+                ChangeStyle(0, e.rectAQH, 'blue'),
+                ChangeStyle(0, e.rect1of3, 'blue'),
+                ChangeStyle(0, e.rectBdry, 'red', 1.5),
+                Parallel(
+                    Show(200, e.rectQA),
+                    Show(200, e.rectAQH),
+                    Show(200, e.rect1of3),
+                    Show(200, e.rect2of3),
+                    Show(200, e.rectBdry),
+                )
+            ),
+            // 1 -> 2
+            (e) => Sequential(
+                ChangeStyle(0, e.C, 'green'),
+                ChangeStyle(0, e.rectC, 'green'),
+                Show(200, e.C),
+                Parallel(
+                    ChangeStyle(200, e.rect2of3, 'green'),
+                    Show(200, e.rectC)
+                )
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.N, 'yellow'),
+                    ChangeStyle(200, e.rectQA, 'yellow')
+                )
+            ),
+            // 3 -> 4
+            (e) => Sequential(
+                Hide(0, e.lettN),
+                Parallel(
+                    Hide(200, e.arcHG),
+                    ChangeStyle(200, e.QH, 'black', 1),
+                    ChangeStyle(200, e.QG, 'black', 1),
+                    Hide(200, e.rectBdry),
+                    Hide(200, e.N),
+                    ChangeStyle(200, e.rectQA, 'white'),
+                ),
+                Parallel(
+                    Hide(200, e.rectQA),
+                    Hide(200, e.rectAQH),
+                    Hide(200, e.rect1of3)
+                ),
+
+                ChangeStyle(0, e.piledP, 'blue'),
+                Parallel(
+                    Show(200, e.piledP),
+                    Show(200, e.piledGrid),
+                    Show(200, e.piledSideP),
+                    Show(200, e.piledSideResidue),
+                ),
+                Parallel(
+                    Hide(200, e.rect2of3),
+                    Hide(200, e.rectC),
+                ),
+                ChangeStyle(0, e.piledC, 'green'),
+                Parallel(
+                    Show(200, e.piledC),
+                    Show(200, e.piledSideC),
+                ),
+                Parallel(
+                    Hide(500, e.piledC),
+                    Hide(500, e.piledP),
+                    Hide(500, e.piledGrid),
+                    ChangeParams(500, {switchPiled: 1}),
+                    ChangeStyle(500, e.piledSideP, 'blue', 1.5),
+                    ChangeStyle(500, e.piledSideC, 'green', 1.5),
+                    Show(500, e.piledGridPts),
+                )
+            )
+        ],
+        {
+            A:'Α', G:'Γ', Q:'Θ', H:'Η',
+            lettC: 'Ξ', lettP: 'Π', lettN: 'Ν',
+        }
+    ),
 }
 
 export {ddcs};
