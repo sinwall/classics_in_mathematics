@@ -352,6 +352,7 @@ class DrawingFX extends BaseFX{
             new THREE.BufferAttribute(this._array, 3)
         );
         this._array = undefined;
+        this.entity.setVisibility(true);
     }
 
     reversed(state) {
@@ -603,6 +604,9 @@ class CameraChangeFX extends BaseFX {
     needCamset(t) {
         return (t >= 0);
     }
+    needBuild(t) {
+        return (t >= 0);
+    }
     needRender(t) {
         return (t >= 0);
     }
@@ -612,11 +616,28 @@ class CameraChangeFX extends BaseFX {
         for (let key in this.camSetting) {
             this._camsetsBefore[key] = this.geometer.camSetting[key];
         }
+        this.scaleRatio = 1;
+        if (('scale' in this.camSetting) && (this.camSetting['scale'] !== this._camsetsBefore['scale'])) {
+            this.scaleRatio = this.camSetting['scale'] / this._camsetsBefore['scale'];
+        }
     }
 
     onAction(t) {
         for (let key in this.camSetting) {
-            this.geometer.camSetting[key] = t*this.camSetting[key] + (1-t)*this._camsetsBefore[key];
+            if (key === 'scale') {
+                this.geometer.camSetting[key] = ((this.camSetting[key])**t)*(this._camsetsBefore[key]**(1-t));
+            } else if (key.startsWith('center')) {
+                if (this.scaleRatio != 1) {
+                    this.geometer.camSetting[key] = (
+                        this._camsetsBefore[key] 
+                        + (this.scaleRatio**t -1)/(this.scaleRatio-1)*(this.camSetting[key] - this._camsetsBefore[key])
+                    );
+                } else {
+                    this.geometer.camSetting[key] = t*this.camSetting[key] + (1-t)*this._camsetsBefore[key];
+                }
+            } else {
+                this.geometer.camSetting[key] = t*this.camSetting[key] + (1-t)*this._camsetsBefore[key];
+            }
         }
     }
 

@@ -3132,12 +3132,13 @@ let ddcs = {
             switchT: 0,
             switchR: 0,
         },
-        function (params) {
+        function (params, other) {
             let {
                 radius, angleSpiralRotation, angleB, angleG, angleD, angleT, angleR, angleN, angleDAI,
                 ratioLengthDE, ratioLengthDZ, 
                 switchFake, switchT, switchR
             } = params;
+            let {pixelSize} = other;
             let A = Vector();
             let spiral = Spiral(A, radius, 0, -720, angleSpiralRotation);
             let B = spiral.pick(angleB);
@@ -3158,14 +3159,13 @@ let ddcs = {
 
             let R = A.shiftPolar(radiusSmall, (1-switchR)*angleR + switchR*(angleD-angleDAI)-angleSpiralRotation);
             let T = A.shiftPolar(radiusSmall, -angleSpiralRotation);
-            let N = A.shiftPolar(radiusSmall, angleN);        
+            let N = A.shiftPolar(radiusSmall, angleN);
     
             let I = A.toward(R, 1/degCos(angleDAI));
             let DNT = Circle(A, radiusSmall*1.06, -angleSpiralRotation+angleD+360, -angleSpiralRotation);
             let DRarc = Circle(A, radiusSmall, -angleSpiralRotation+angleD-angleDAI, -angleSpiralRotation+angleD);
             let DRN = Circle(A, radiusSmall*1.04, 0, 360);
-
-            let AIshift = [A.shift(0.03, -0.03), I.shift(0.03, -0.03)];
+            let AIshift = [A.shift(2*pixelSize, -2*pixelSize), I.shift(2*pixelSize, -2*pixelSize)];
             let DNTinner = Circle(A, radiusSmall, -angleSpiralRotation+angleD+360, -angleSpiralRotation);
             let DRNinner = Circle(A, radiusSmall*0.98, 0, 360);
             let S = A.toward(R, 2*radius/radiusSmall);
@@ -3317,7 +3317,7 @@ let ddcs = {
         }
     ),
     Prop18: new DynamicDiagramConfiguration(
-        15,
+        16,
         new CameraSetting(
             4.2,
             -3, 0, 0
@@ -3330,16 +3330,20 @@ let ddcs = {
             angleD: -240,
             angleQ: -360,
             angleH: 135,
-            ratioLA: 0.9,
+            ratioLA: 0.96,
             ratioQN: 0.05,
             ratioMQ: 1.05,
             caseNum: 0,
+            switchS7: 0,
+            switchS15:0,
         },
-        function (params) {
+        function (params, other) {
             let {
                 radius, angleSpiralRotation, angleB, angleG, angleD, angleH, 
                 ratioLA, ratioQN, ratioMQ, caseNum,
+                switchS7, switchS15,
             } = params;
+            let {pixelSize} = other;
             let A = Vector();
     
             let circle = Circle(A, radius, 0, 360, 180+angleSpiralRotation);
@@ -3354,8 +3358,10 @@ let ddcs = {
             let N = Z.toward(Q, 1+ratioQN);
     
             let L = A.toward(Z, ratioLA);
-            let ZLmid = L.toward(Z, 0.5);
+            let ZLmid = L.toward(Z, -1);
             let QHmid = Q.toward(H, 0.5);
+            let qmark = ZLmid.shift(0, -0.5);
+            let qqmark = N.shift(0.2);
     
             let P = Vector();
             N = Z.toward(Q, 1+ratioQN);
@@ -3365,19 +3371,34 @@ let ddcs = {
             let R = A.toward(N, radius/A.distTo(N));
             let angleQAR = Q.sub(A).angleTo(R.sub(A));
             let QRarc = Circle(A, radius, 90-angleQAR, 90);
+            let QRarc_p = Circle(A, radius+3*pixelSize, 90, (1-switchS7)*(90-angleQAR) + switchS7*(-270));
+            let QRarc_pp = Circle(A, radius+5*pixelSize, 90, 90-angleQAR);
+            let NA_p = [N.shift(2*pixelSize,-2*pixelSize), A.shift(2*pixelSize,-2*pixelSize)];
             let X = A.shiftPolar(radius*(-360-angleQAR)/360, -angleQAR+angleSpiralRotation);
+
+            let XA_p = [X.shift(-3*pixelSize, 2*pixelSize), A.shift(-3*pixelSize, 2*pixelSize)]
     
             let M = Q.add(Z.sub(A).dilate(ratioMQ))
             if (caseNum >= 1) {
                 P = A.toward(R, (radius/A.distTo(N)));
+                angleQAR = Q.sub(A).angleTo(R.sub(A));
+                X = A.shiftPolar(radius*(-360+angleQAR)/360, angleQAR+angleSpiralRotation);
+                QRarc_p = Circle(A, radius-3*pixelSize, 90, 90+angleQAR-switchS15*360);
+                // QRarc_pp = Circle(A, radius-5*pixelSize, 90, 90+angleQAR);
+                XA_p = [X.shift(3*pixelSize, pixelSize), A.shift(3*pixelSize, pixelSize)];
+                qqmark = Q.shift(0, 0.03);
             }
-    
+            let RA_p = [R.shift(-2*pixelSize, -2*pixelSize), A.shift(-2*pixelSize, -2*pixelSize)];
+
             let result = {
                 A,B,G,D,H,Q,Z,L, N,R, X, M, P, 
+                qmark, qqmark,
                 AZ:[A,Z], AQ:[A,Q], ZN:[Z,N], LA:[A,L], ZL:[Z,L], QQHmid:[Q,QHmid], AQHmid:[A,QHmid],
                 NR:[N,R], AR:[A,R], QR:[Q,R], XR:[X,R],
                 MP:[M,P], QP:[Q,P], ZQ:[Z,Q], AZLmid:[A,ZLmid],
-                QRarc, 
+                QM:[Q,M], AN:[A,N], RP:[R,P],
+                QRarc, QRarc_p, QRarc_pp,
+                NA_p, XA_p, RA_p,
                 circle, spiral,
             };
             return result;
@@ -3399,15 +3420,18 @@ let ddcs = {
         [
             // 0 -> 1
             (e) => Sequential(
-                Show(1, e.L),
-                Show(1, e.AZLmid),
+                ChangeStyle(0, e.qmark, 'black', 0),
+                Show(0, e.L),
+                Show(0, e.AZLmid),
                 Parallel(
                     ChangeStyle(200, e.AZLmid, 'red', 1.5),
                     ChangeStyle(200, e.circle, 'red', 1.5),
+                    Show(200, e.qmark),
                 )
             ), 
             // 1 -> 2
             (e) => Sequential(
+                Hide(0, e.qmark),
                 Parallel(
                     Hide(200, e.AZLmid),
                     ChangeStyle(200, e.AZ, 'black', 1),
@@ -3476,14 +3500,15 @@ let ddcs = {
                     ChangeStyle(200, e.QR, 'red', 1.5),
                     ChangeStyle(200, e.LA, 'DarkRed', 1.5),
                 ),
+                ChangeStyle(0, e.QRarc_p, 'blue', 1.5),
                 Parallel(
-                    ChangeStyle(200, e.QRarc, 'blue', 1.5),
+                    Draw(200, e.QRarc_p),
                     ChangeStyle(200, e.circle, 'DarkBlue', 1.5),
-                )
+                ),
+                ChangeCamera(500, {scale: 1.3, centerX:0}),
             ),
             // 5 -> 6
             (e) => Sequential(
-                ChangeCamera(500, {scale: 1.3, centerX:0}),
                 Parallel(
                     ChangeStyle(200, e.QR, 'black', 1),
                     ChangeStyle(200, e.LA, 'black', 1),
@@ -3495,21 +3520,580 @@ let ddcs = {
             ),
             // 6-> 7 
             (e) => Sequential(
+                ChangeStyle(200, e.NR, 'black', 1),
+                ChangeStyle(0, e.NA_p, 'red', 1.5),
+                ChangeStyle(0, e.QRarc_pp, 'blue', 1.5),
+                // Parallel(
+                    Draw(500, e.NA_p),
+                    Sequential(
+                        ChangeParams(600, {switchS7:1}),
+                        Draw(200, e.QRarc_pp)
+                    )
+                // )
+            ),
+            // 7 -> 8
+            (e) => Sequential(
+                ChangeStyle(200, e.circle, 'black', 1),
+                ChangeStyle(200, e.AQ, 'DarkBlue', 1.5),
                 Parallel(
-                    Show(200, e.X),
-                    ChangeStyle(200, e.NR, 'black', 1),
-                    ChangeStyle(200, e.AR, 'black', 1),
+                    Hide(200, e.QRarc_p),
+                    Hide(200, e.QRarc_pp),
                 ),
-                Show(1, e.XR),
+                ChangeStyle(0, e.XA_p, 'blue', 1.5),
+                Show(0, e.X),
+                Draw(200, e.XA_p),
+                ChangeStyle(0, e.qqmark, 'black', 0),
+                Show(0, e.qqmark),
+                // Parallel(
+                //     Show(200, e.X),
+                //     ChangeStyle(200, e.NR, 'black', 1),
+                //     ChangeStyle(200, e.AR, 'black', 1),
+                // ),
+                // Show(1, e.XR),
+                // Parallel(
+                //     ChangeStyle(200, e.XR, 'red', 1.5),
+                //     ChangeStyle(200, e.AR, 'red', 1.5),
+                //     ChangeStyle(200, e.AQ, 'DarkRed', 1.5),
+                // )
+            ),
+
+            // 8 -> 9
+            (e) => Sequential(
+                Hide(0, e.qqmark),
+                Hide(0, e.L),
+                ChangeParams(0, {ratioLA: 1.05}),
                 Parallel(
-                    ChangeStyle(200, e.XR, 'red', 1.5),
-                    ChangeStyle(200, e.AR, 'red', 1.5),
-                    ChangeStyle(200, e.AQ, 'DarkRed', 1.5),
+                    ChangeCamera(500, {scale: 4.2, centerX: -3}),
+                    Hide(200, e.XA_p),
+                    Hide(200, e.NA_p),
+                    ChangeStyle(200, e.AQ, 'black', 1),
+                    ChangeStyle(200, e.AR, 'black', 1),
+
+                    Hide(200, e.N),
+                    Hide(200, e.X),
+                    Hide(200, e.R),
+                    Hide(200, e.NR),
+                    Hide(200, e.AR),
+                    Hide(200, e.XR),
+                    Hide(200, e.QR),
+                    // Hide(e.QN)
+                ),
+                Show(0, e.L),
+                Show(0, e.AZLmid),
+                Parallel(
+                    ChangeStyle(200, e.AZLmid, 'red', 1.5),
+                    ChangeStyle(200, e.circle, 'red', 1.5),
+                    Show(200, e.qmark),
+                ),
+                Draw(300, e.QM),
+                Show(0, e.M),
+            ),
+            // 9 -> 10
+            (e) => Sequential(
+                Hide(0, e.qmark),
+                Parallel(
+                    ChangeStyle(200, e.AZLmid, 'black', 1),
+                    ChangeStyle(200, e.circle, 'black', 1),
+                ),
+                Hide(0, e.AZLmid),
+                Hide(0, e.ZL),
+                Parallel(
+                    ChangeStyle(200, e.AQ, 'red', 1.5),
+                    ChangeStyle(200, e.LA, 'DarkRed', 1.5),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.QQHmid, 'blue', 1.5),
+                    ChangeStyle(200, e.AQHmid, 'DarkBlue', 1.5),
+                ),
+                ChangeCamera(500, {scale: 0.6, centerX: -0.5, centerY: 0.5}),
+                ChangeParams(0, {caseNum: 1})
+            ),
+            // 10 -> 11
+            (e) => Sequential(
+                Show(0, e.N),
+                Draw(200, e.NR),
+                Show(0, e.R),
+                Draw(200, e.RP),
+                Show(0, e.P),
+                Show(0, e.QP),
+                Parallel(
+                    ChangeStyle(200, e.QQHmid, 'black', 1),
+                    ChangeStyle(200, e.AQHmid, 'black', 1),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.NR, 'blue', 2),
+                    ChangeStyle(200, e.QP, 'DarkBlue', 2),
+                ),
+                Show(0, e.X),
+            ),
+            // 11 -> 12
+            (e) => Sequential(
+                ChangeStyle(0, e.RA_p, 'red', 1.5),
+                Draw(300, e.RA_p),
+                ChangeStyle(200, e.AQ, 'black', 1),
+                Parallel(
+                    ChangeStyle(200, e.RA_p, 'DarkBlue', 1.5),
+                    ChangeStyle(200, e.QP, 'red', 2)
                 )
-            )
+            ),
+            // 12 -> 13
+            (e) => Sequential(
+                Parallel(
+                    Hide(200, e.RA_p),
+                    ChangeStyle(200, e.NR, 'black', 1)
+                ),
+                ChangeStyle(0, e.QRarc_p, 'blue', 2),
+                Draw(200, e.QRarc_p),
+                ChangeStyle(200, e.circle, 'DarkBlue', 1.5)
+            ),
+            // 13 -> 14
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.QP, 'black', 1),
+                    ChangeStyle(200, e.LA, 'black', 1)
+                ),
+                Show(0, e.RA_p),
+                Parallel(
+                    ChangeStyle(200, e.NR, 'red', 2),
+                    ChangeStyle(200, e.RA_p, 'DarkRed', 1)
+                ),
+                ChangeCamera(500, {scale: 0.3, centerX: -0.2, centerY: 0.8})
+            ),
+            // 14 -> 15
+            (e) => Sequential(
+                ChangeStyle(200, e.NR, 'black', 1),
+                Show(0, e.AN),
+                ChangeStyle(200, e.AN, 'red', 1.5),
+                ChangeStyle(200, e.RA_p, 'DarkRed', 1.5),
+                ChangeParams(500, {switchS15: 1}),
+            ),
+            // 15 -> 16
+            (e) => Sequential(
+                Hide(200, e.QRarc_p),
+                ChangeStyle(0, e.XA_p, 'blue', 1.5),
+                Draw(300, e.XA_p),
+                ChangeStyle(200, e.circle, 'black', 1),
+                ChangeStyle(200, e.AQ, 'DarkBlue', 1.5),
+                Show(0, e.qqmark)
+            ),
         ],
         {
             A:'Α', B:'Β', G:'Γ', D:'Δ', Q:'Θ', Z:'Ζ', H:'Η', L:'Λ', N:'Ν', R:'Ρ', X:'Χ', M:'Μ', P:'Π',
+            qmark: '?', qqmark: '??',
+        }
+    ),
+    Prop19: new DynamicDiagramConfiguration(
+        8,
+        new CameraSetting(
+            14.4,
+            -11.5, 0, 0
+        ),
+        {
+            radius: 1,
+            angleSpiralRotation: -90,
+            angleB: -120,
+            angleG: -210,
+            angleD: -240,
+            angleE: -420,
+            angleH: 135,
+            ratioLA: 0.98,
+            ratioQN: 0.05,
+            switchS7: 0,
+        },
+        function (params, other) {
+            let {
+                radius, angleSpiralRotation, angleB, angleG, angleD, angleE, angleH, 
+                ratioLA, ratioQN, 
+                switchS7, 
+            } = params;
+            let {pixelSize} = other;
+            let A = Vector();
+    
+            let QKH = Circle(A, radius, 0, 360, 180+angleSpiralRotation);
+            let TMN = Circle(A, 2*radius, 0, 360, 180+angleSpiralRotation);
+            let spiral = Spiral(A, radius, 0, -760, angleSpiralRotation);
+            let B = spiral.pick(angleB);
+            let G = spiral.pick(angleG);
+            let D = spiral.pick(angleD);
+            let E = spiral.pick(angleE);
+            let Q = spiral.pick(-360);
+            let T = spiral.pick(-720);
+    
+            let H = A.shiftPolar(radius, angleH);
+            let Z = A.shiftPolar(-2*2*radius*2*Math.PI, angleSpiralRotation+90);
+            let Na = Z.toward(T, 1+ratioQN);
+    
+            let L = A.toward(Z, ratioLA);
+            let LAmid = A.toward(L, 0.5);
+            let ZLmid = L.toward(Z, -1);
+            let qmark = ZLmid.shift(0, -1.5);
+    
+            let P = Vector();
+            let N = A.shiftPolar(2*radius, -angleSpiralRotation+9.0997306);
+            let TNmid = T.toward(N, 0.5);
+            
+            let angleQAR = 10;
+            let R = A.shiftPolar(2*radius, -angleSpiralRotation-angleQAR);
+            let lenRS = degSin(4.549865+angleQAR/2)*(4*radius*degSin(angleQAR/2)) /degCos(4.549865+angleQAR);
+            let S = A.toward(R, (2*radius+lenRS)/(2*radius));
+            let TRarc_p = Circle(A, 2*radius+3*pixelSize, 90, (1-switchS7)*(90-angleQAR) + switchS7*(-270));
+            let TRarc_pp = Circle(A, 2*radius+6*pixelSize, 90, 90-angleQAR);
+            let TMN_p = Circle(A, 2*radius-4*pixelSize, 0, 360);
+            let TMN_pp = Circle(A, 2*radius-7*pixelSize, 0, 360);
+            let SA_p = [S.shift(3*pixelSize,-2*pixelSize), A.shift(3*pixelSize,-2*pixelSize)];
+            let X = A.shiftPolar(radius*(-720-angleQAR)/360, -angleQAR+angleSpiralRotation);
+
+            let XA_p = [X.shift(-3*pixelSize, 2*pixelSize), A.shift(-3*pixelSize, 2*pixelSize)];
+            let qqmark = T.shift(0.1, 0.1);
+    
+            let result = {
+                A,B,G,D,H,Q,Z,L,T,  N,R,S, X, P, 
+                qmark, qqmark, LAmid,
+                AZ:[A,Z], AQ:[A,Q], AT:[A,T],  AS:[A,S], TR:[T,R], AR:[A,R], RS:[R,S], 
+                ZN:[Z,Na], LA:[A,L], ZL:[Z,L], 
+                TN:[T,N], TTNmid:[T,TNmid], ATNmid:[A,TNmid],
+                XR:[X,R],
+                QP:[Q,P], ZQ:[Z,Q], 
+                ALhalf1:[A,A.toward(LAmid,0.98)], ALhalf2:[ZLmid,A.toward(LAmid,1.02)],
+                RP:[R,P],
+                TRarc_p, TRarc_pp,  TMN_p, TMN_pp,
+                SA_p, XA_p,
+                QKH, TMN, spiral,
+            };
+            return result;
+        },
+        (e) => Sequential(
+            Show(200, e.A),
+            Draw(200, e.AT),
+            Show(0, e.T),
+            // Show(200, e.B),
+            // Show(200, e.G),
+            // Show(200, e.D),
+            // Show(200, e.Q),
+            Draw(500, e.spiral),
+            // Show(200, e.H),
+            // Draw(500, e.QKH),
+            Draw(500, e.TMN),
+            Draw(300, e.ZN),
+            Draw(500, e.AZ),
+            Show(0, e.Z),
+        ),
+        [
+            // 0 -> 1
+            (e) => Sequential(
+                ChangeStyle(0, e.qmark, 'black', 0),
+                Show(0, e.L),
+                Show(0, e.ALhalf1),
+                Show(0, e.ALhalf2),
+                // Show(0, e.AZLmid),
+                Show(0, e.LAmid),
+                Parallel(
+                    ChangeStyle(200, e.ALhalf1, 'red', 1.5),
+                    ChangeStyle(200, e.ALhalf2, 'red', 1.5),
+                    // ChangeStyle(200, e.AZLmid, 'red', 1.5),
+                    ChangeStyle(200, e.TMN, 'red', 1.5),
+                    Show(200, e.qmark),
+                )
+            ), 
+            // 1 -> 2
+            (e) => Sequential(
+                Hide(0, e.qmark),
+                Hide(0, e.LAmid),
+                Parallel(
+                    Hide(200, e.ALhalf1),
+                    Hide(200, e.ALhalf2),
+                    ChangeStyle(200, e.TMN, 'black', 1)
+                ),
+                Show(0, e.LA),
+                Parallel(
+                    ChangeStyle(200, e.AT, 'red', 1.5),
+                    ChangeStyle(200, e.LA, 'DarkRed', 1.5),
+                ),
+                ChangeCamera(500, {scale: 1.4, centerX:0, centerY: 1}),
+                ChangeStyle(200, e.TTNmid, 'blue', 2),
+                ChangeStyle(200, e.ATNmid, 'DarkBlue', 1.5),
+                Show(0, e.N),
+                Draw(200, e.TTNmid),
+                Draw(200, e.ATNmid),
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.TTNmid, 'black', 1),
+                    ChangeStyle(200, e.ATNmid, 'black', 1),
+                ),
+                Draw(300, e.AR),
+                Show(0, e.S),
+                ChangeStyle(0, e.RS, 'blue', 2),
+                Draw(200, e.RS),
+                ChangeStyle(0, e.TR, 'DarkBlue', 2),
+                Draw(300, e.TR),
+                Show(0, e.R),
+            ),
+            // 3 -> 4
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.TR, 'black', 1),
+                    ChangeStyle(200, e.AT, 'black', 1),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.AT, 'DarkBlue', 1.5),
+                    ChangeStyle(200, e.TR, 'red', 2),
+                )
+            ),
+            // 4 -> 5 
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.RS, 'black', 1),
+                    ChangeStyle(200, e.AT, 'black', 1),
+                    // ChangeStyle(200, e.AR, 'black', 1),
+                    // ChangeStyle(200, e.QR, 'black', 1),
+                ),
+                ChangeStyle(0, e.TRarc_p, 'blue', 2),
+                Draw(200, e.TRarc_p),
+                ChangeStyle(0, e.TMN_p, 'DarkBlue', 1.5),
+                ChangeStyle(0, e.TMN_pp, 'DarkBlue', 1.5),
+                Show(300, e.TMN_p),
+                Show(300, e.TMN_pp),
+            ),
+            // 5 -> 6
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.TR, 'black', 1),
+                    ChangeStyle(200, e.LA, 'black', 1),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.RS, 'red', 2),
+                    ChangeStyle(200, e.AR, 'DarkRed', 1.5),
+                ),
+            ),
+            // 6-> 7 
+            (e) => Sequential(
+                ChangeStyle(200, e.RS, 'black', 1),
+                ChangeStyle(0, e.SA_p, 'red', 1.5),
+                ChangeStyle(0, e.TRarc_pp, 'blue', 1.5),
+                Draw(500, e.SA_p),
+                ChangeStyle(300, e.TMN, 'blue', 1.5),
+                Sequential(
+                    ChangeParams(600, {switchS7:1}),
+                    Draw(200, e.TRarc_pp)
+                )
+            ),
+            // 7 -> 8
+            (e) => Sequential(
+                Parallel(
+                    Hide(200, e.TMN_p, ),
+                    Hide(200, e.TMN_pp ),
+                ),
+                ChangeStyle(200, e.AT, 'DarkBlue', 1.5),
+                Parallel(
+                    ChangeStyle(200, e.TMN, 'black', 1),
+                    Hide(200, e.TRarc_p),
+                    Hide(200, e.TRarc_pp),
+                ),
+                ChangeStyle(0, e.XA_p, 'blue', 1.5),
+                Show(0, e.X),
+                Draw(200, e.XA_p),
+                ChangeCamera(500, {scale: 0.3, centerX: 0.1, centerY: 2}),
+                ChangeStyle(0, e.qqmark, 'black', 0),
+                Show(0, e.qqmark),
+            ),
+        ],
+        {
+            A:'Α', B:'Β', G:'Γ', D:'Δ', Q:'Θ', Z:'Ζ', H:'Η', T:'Τ',
+            L:'Λ', N:'Ν', R:'Ρ', X:'Χ', S:'Σ',
+            qmark: '?', qqmark: '??',
+        }
+    ),
+    Prop20: new DynamicDiagramConfiguration(
+        8,
+        new CameraSetting(
+            1.6,
+            0.7, -0.2, 0
+        ),
+        {
+            radius: 1,
+            angleSpiralRotation: -90,
+            angleB: -120,
+            angleG: -150,
+            angleD: -210,
+            angleH: 135,
+            ratioLA: 0.96,
+            ratioDE: 0.12,
+            switchS7: 0,
+        },
+        function (params, other) {
+            let {
+                radius, angleSpiralRotation, angleB, angleG, angleD, angleE, angleH, 
+                ratioLA, ratioDE, 
+                switchS7, 
+            } = params;
+            let {pixelSize} = other;
+            let A = Vector();
+            
+            let rDMN = Math.abs(angleD/360)*radius;
+            let DMN = Circle(A, rDMN, 0, 360, 180+angleSpiralRotation);
+            let spiral = Spiral(A, radius, 0, angleD-30, angleSpiralRotation);
+            let B = spiral.pick(angleB);
+            let G = spiral.pick(angleG);
+            let D = spiral.pick(angleD);
+            let Z = A.shiftPolar(radius*2*Math.PI*((angleD/360)**2), -angleSpiralRotation+angleD+90);
+            let E = Z.toward(D, 1+ratioDE);
+            let K = A.shiftPolar(rDMN, -angleSpiralRotation);
+
+            let KMND = Circle(A, rDMN, -angleSpiralRotation, -angleSpiralRotation+angleD);
+            let L = A.toward(Z, ratioLA);
+
+            let ZLmid = L.toward(Z, -1);
+            let qmark = ZLmid.shift(3*pixelSize, 3*pixelSize);
+
+            let N = A.shiftPolar(rDMN, -angleSpiralRotation+angleD+2*(180/Math.PI)*Math.atan(radius/(2*Math.PI*rDMN)));
+            let DNmid = D.toward(N, 0.5);
+
+            let angleDAR = D.sub(A).angleTo(E.sub(A));
+            let R = A.shiftPolar(rDMN, -angleSpiralRotation+angleD-angleDAR);
+            
+            let DRarc_p = Circle(
+                A, rDMN+3*pixelSize, 
+                -angleSpiralRotation+angleD-angleDAR, 
+                -angleSpiralRotation+angleD+switchS7*(-angleD));
+            // let KMD_p = Circle(A, rDMN+3*pixelSize, -angleSpiralRotation, -angleSpiralRotation+angleD);
+            let EA_p = [E.shift(-2*pixelSize,2*pixelSize), A.shift(-2*pixelSize,2*pixelSize)];
+
+            let X = spiral.pick(angleD-angleDAR);
+            let XA_p = [X.shift(2*pixelSize, -2*pixelSize), A.shift(2*pixelSize, -2*pixelSize)];
+            let qqmark = D.shift(-16*pixelSize, 12*pixelSize);
+    
+            let result = {
+                A,B,G,D,E, Z, K, L,  N,R, X,
+                qmark, qqmark,
+                AZ:[A,Z], AD:[A,D], AK:[A,K],  AZLmid:[A,ZLmid],
+                AE:[A,E], DR:[D,R], AR:[A,R], RE:[R,E], 
+                ZE:[Z,E], LA:[A,L], ZL:[Z,L], 
+                DN:[D,N], DDNmid:[D,DNmid], ADNmid:[A,DNmid],
+                XR:[X,R],
+                DRarc_p, 
+                EA_p, XA_p,
+                DMN, KMND, spiral,
+            };
+            return result;
+        },
+        (e) => Sequential(
+            Show(200, e.A),
+            Draw(200, e.AD),
+            Show(0, e.D),
+            // Show(200, e.B),
+            // Show(200, e.G),
+            Draw(500, e.spiral),
+            Draw(500, e.DMN),
+            Draw(300, e.ZE),
+            Draw(500, e.AZ),
+            Show(0, e.Z),
+            Draw(300, e.AK),
+            Show(0, e.K),
+        ),
+        [
+            // 0 -> 1
+            (e) => Sequential(
+                ChangeStyle(0, e.qmark, 'black', 0),
+                Show(0, e.L),
+                Show(0, e.KMND),
+                Show(0, e.AZLmid),
+                Parallel(
+                    ChangeStyle(200, e.AZLmid, 'red', 1.5),
+                    ChangeStyle(200, e.KMND, 'red', 1.5),
+                    Show(200, e.qmark),
+                )
+            ), 
+            // 1 -> 2
+            (e) => Sequential(
+                Hide(0, e.qmark),
+                Parallel(
+                    Hide(200, e.AZLmid),
+                    ChangeStyle(200, e.KMND, 'black', 1)
+                ),
+                Show(0, e.LA),
+                Parallel(
+                    ChangeStyle(200, e.AD, 'red', 1.5),
+                    ChangeStyle(200, e.LA, 'DarkRed', 1.5),
+                ),
+                ChangeStyle(200, e.DDNmid, 'blue', 2),
+                ChangeStyle(200, e.ADNmid, 'DarkBlue', 1.5),
+                Show(0, e.N),
+                Draw(200, e.DDNmid),
+                Draw(200, e.ADNmid),
+            ),
+            // 2 -> 3
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.DDNmid, 'black', 1),
+                    ChangeStyle(200, e.ADNmid, 'black', 1),
+                ),
+                Draw(300, e.AR),
+                Show(0, e.E),
+                ChangeStyle(0, e.RE, 'blue', 1.5),
+                Draw(200, e.RE),
+                ChangeStyle(0, e.DR, 'DarkBlue', 1.5),
+                Draw(300, e.DR),
+                Show(0, e.R),
+            ),
+            // 3 -> 4
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.DR, 'black', 1),
+                    ChangeStyle(200, e.AD, 'black', 1),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.AR, 'DarkBlue', 1.5),
+                    ChangeStyle(200, e.DR, 'red', 2),
+                )
+            ),
+            // 4 -> 5 
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.RE, 'black', 1),
+                    ChangeStyle(200, e.AR, 'black', 1),
+                ),
+                ChangeStyle(0, e.DRarc_p, 'blue', 1.5),
+                Draw(200, e.DRarc_p),
+                ChangeStyle(0, e.KMND, 'DarkBlue', 1.5),
+                Draw(400, e.KMND),
+            ),
+            // 5 -> 6
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.DR, 'black', 1),
+                    ChangeStyle(200, e.LA, 'black', 1),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.RE, 'red', 1.5),
+                    ChangeStyle(200, e.AR, 'DarkRed', 1.5),
+                ),
+            ),
+            // 6 -> 7 
+            (e) => Sequential(
+                ChangeStyle(200, e.RE, 'black', 1),
+                ChangeStyle(0, e.EA_p, 'red', 1.5),
+                Draw(500, e.EA_p),
+                ChangeParams(600, {switchS7:1}),
+            ),
+            // 7 -> 8
+            (e) => Sequential(
+                ChangeStyle(200, e.KMND, 'black', 1),
+                ChangeStyle(200, e.AD, 'DarkBlue', 1.5),
+                Hide(200, e.DRarc_p),
+                ChangeStyle(0, e.XA_p, 'blue', 1.5),
+                Show(0, e.X),
+                Draw(200, e.XA_p),
+                ChangeCamera(500, {scale: 0.6, centerX: 0, centerY: 0}),
+                ChangeStyle(0, e.qqmark, 'black', 0),
+                Show(0, e.qqmark),
+            ),
+        ],
+        {
+            A:'Α', B:'Β', G:'Γ', D:'Δ', E:'Ε', Q:'Θ', Z:'Ζ', H:'Η', T:'Τ',
+            L:'Λ', N:'Ν', R:'Ρ', X:'Χ', M:'Μ', K:'Κ', S:'Σ',
+            qmark: '?', qqmark: '??',
         }
     ),
     Prop21: new DynamicDiagramConfiguration(
@@ -5043,7 +5627,7 @@ let ddcs = {
                     Show(200, e.spiralSector),
                     Show(200, e.ABGDE),
                     Show(200, e.disk),
-                )
+                ),
             )
         ],
         {

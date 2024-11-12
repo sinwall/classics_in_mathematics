@@ -313,6 +313,8 @@ class LineEntity extends GeometricEntity {
         } else {
             this._obj3d.geometry.setFromPoints([value.begin, value.end]);
         }
+        this._obj3d.geometry.computeBoundingBox();
+        this._obj3d.geometry.computeBoundingSphere();
     }
 
     setSize(value) {
@@ -362,6 +364,8 @@ class CircleEntity extends GeometricEntity {
             }
         }
         this._obj3d.geometry.setFromPoints(pointsOnCircle);
+        this._obj3d.geometry.computeBoundingBox();
+        this._obj3d.geometry.computeBoundingSphere();
     }
 
     setSize(value) {
@@ -396,6 +400,8 @@ class SpiralEntity extends GeometricEntity {
             pointsOnSpiral.push(value.pick(theta));
         }
         this._obj3d.geometry.setFromPoints(pointsOnSpiral);
+        this._obj3d.geometry.computeBoundingBox();
+        this._obj3d.geometry.computeBoundingSphere();
     }
 
     setSize(value) {
@@ -853,7 +859,7 @@ class Geometer {
         this.pixelSize = (2*this.ddc.initialCamSet.scale) / getRendererSize(this.renderer).width;
         this.stepMax = this.ddc.stepMax;
         this.cameraReady(this.ddc.initialCamSet);
-        let built = this.ddc.calculation(this.ddc.initialParams);
+        let built = this.ddc.calculation(this.ddc.initialParams, {pixelSize: this.pixelSize});
         this._previousBuiltData = built;
         for (let key in built) {
             let type;
@@ -902,7 +908,7 @@ class Geometer {
 
     build(params=null) {
         if (params === null) {params = this.params;}
-        let entityDatas = this.ddc.calculation(params);
+        let entityDatas = this.ddc.calculation(params, {pixelSize: this.pixelSize});
 
         for (let key in this._objectsDict) {
             let gObj = this._objectsDict[key];
