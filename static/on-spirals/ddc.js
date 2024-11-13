@@ -797,7 +797,7 @@ let ddcs = {
         },
     ),
     Prop08: new DynamicDiagramConfiguration(
-        6,
+        11,
         new CameraSetting(
             5,
             0, 0, 0
@@ -816,13 +816,16 @@ let ddcs = {
             switchC: 0,
             ratioDistortIN: 1,
             switchB: 0,
+            rectGap: 0.3
         },
-        function (params) {
+        function (params, other) {
             let {
                 radius, angleAKQ, angleBKQ, ratioLengthCG, 
                 ratioPosZ, ratioLengthZ, ratioPosH, ratioLengthH, ratioSmallerRatio,
-                switchKLleft, switchC, ratioDistortIN, switchB
+                switchKLleft, switchC, ratioDistortIN, switchB,
+                rectGap,
             } = params;
+            let {pixelSize} = other;
             let K = Vector();
             let A = K.shiftPolar(radius, 90+angleAKQ);
             let G = K.shiftPolar(radius, 90-angleAKQ);
@@ -864,11 +867,67 @@ let ddcs = {
             let E = K.toward(I, degCos(angleGKI)*degCos(angleAKQ)/degCos((angleAKQ-angleGKI)));
             angleBKQ = (1-switchB)*angleBKQ + switchB*(angleAKQ-angleGKI);
             let B = K.shiftPolar(radius, 90-angleBKQ);
+
+            let lenGM = ratioLengthGM * radius;
+            let lenCI = C.distTo(I);
+            let lenIL = I.distTo(L);
+            let lenKE = K.distTo(E);
+
+            let corner = K.shift(-radius,-1.3*radius);
+            let rectCIL = GridRectangle(
+                corner.x, corner.y-lenCI, lenIL, lenCI, 0, false
+            );
+            let rectKEIL = GridRectangle(
+                corner.x, corner.y-lenCI-lenKE, lenIL, lenKE, 0, false
+            );
+            let grid1 = MultiObjects('line');
+            grid1.push(
+                Line(corner, corner.shift(lenIL)),
+                Line(corner.shift(0,-lenCI-lenKE), corner.shift(lenIL,-lenCI-lenKE)),
+                Line(corner.shift(lenIL,-lenCI-lenKE),corner.shift(lenIL))
+            );
+            let gridIL = Line(corner.shift(0,-lenCI), corner.shift(lenIL,-lenCI));
+            let gridCI = Line(corner, corner.shift(0,-lenCI));
+            let gridKE = Line(corner.shift(0,-lenCI), corner.shift(0,-lenCI-lenKE));
+
+            let lenKI = lenKE + E.distTo(I);
+            let lenIN = lenGM;
+            let lenGL = G.distTo(L);
+
+            let corner2 = corner.shift(lenIL+rectGap, lenIN-lenCI);
+            let rectKIN = GridRectangle(
+                corner2.x, corner2.y-lenIN, lenKI, lenIN, 0, false
+            );
+            let rectKIGL = GridRectangle(
+                corner2.x, corner2.y-lenIN-lenGL, lenKI, lenGL, 0, false
+            );
+            let grid2 = MultiObjects('line');
+            grid2.push(
+                Line(corner2, corner2.shift(lenKI)),
+                Line(corner2.shift(0,-lenIN-lenGL), corner2.shift(lenKI,-lenIN-lenGL)),
+                Line(corner2.shift(lenKI,-lenIN-lenGL), corner2.shift(lenKI)),
+            );
+            let gridIN = Line(corner2, corner2.shift(0, -lenIN));
+            let gridGM = Line(corner2, corner2.shift(0, -lenIN));
+            let gridGL = Line(corner2.shift(0, -lenIN), corner2.shift(0,-lenIN-lenGL));
+            let gridKI = Line(corner2.shift(0,-lenIN), corner2.shift(lenKI,-lenIN));
+
+            let CI_p = Line(C.shift(2*pixelSize, 2*pixelSize), I.shift(2*pixelSize, 2*pixelSize));
+            let KE_p = Line(K.shift(-2*pixelSize, 2*pixelSize), E.shift(-2*pixelSize, 2*pixelSize));
+            let corner3 = corner.shift(0.5*(corner2.x-corner.x), I.distTo(G));
+            let gridCG = Line(corner3, corner3.shift(0, -C.distTo(G)));
+            let gridKG = Line(corner3.shift(0, -C.distTo(G)), corner3.shift(0, -C.distTo(G)-radius));
+
             let result = {
                 K, A, B, G, Q, L, C, M, I, N, E,
                 Z:[Zbot,Ztop], H:[Hbot,Htop], AG:[A,G], GQ:[G,Q], QK:[Q,K], GK:[G,K], GL:[G,L], 
                 KL:[KLleft,L], CL:[C,L], GM:[G,M], IN:[I,N], KN:[K,N], CI:[C,I], KE:[K,E], IL:[I,L], KI:[K,I], 
-                CG:[C,G], KB:[K,B], IG:[I,G], BE:[B,E], 
+                CG:[C,G], KB:[K,B], IG:[I,G], BE:[B,E], EI:[E,I],
+                AQ:[A,Q], QE:[Q,E], EG:[E,G], BI:[B,I],
+
+                rectCIL, rectKEIL, grid1, gridIL, gridCI, gridKE,
+                rectKIN, rectKIGL, grid2, gridIN, gridGL, gridKI, gridGM,
+                CI_p, KE_p, gridCG, gridKG,
                 ABGD:Circle(K, radius), KLC:Circle(centerKLC, radiusKLC)
             }
             return result;
@@ -951,16 +1010,265 @@ let ddcs = {
             ),
             // 5 -> 6
             (e) => Sequential(
-                Show(200, e.E),
+                Parallel(
+                    ChangeCamera(300, {centerY: -1}),
+                    Show(200, e.E),
+                    ChangeStyle(200, e.GM, 'black', 1),
+                    ChangeStyle(200, e.IN, 'black', 1)
+                ),
+                // Hide(0, e.IL),
+                Hide(0, e.KI),
+                Show(0, e.KE),
+                Show(0, e.EI),
+                Hide(0, e.CG),
+                Show(0, e.CI),
+                Show(0, e.IG),
+                Parallel(
+                    Show(200, e.grid1),
+                    Show(200, e.rectCIL),
+                    Show(200, e.rectKEIL),
+                    Show(200, e.gridCI),
+                    Show(200, e.gridKE),
+                    Show(200, e.gridIL),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectCIL, 'red'),
+                    ChangeStyle(200, e.rectKEIL, 'blue'),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.gridCI, 'red', 1.5),
+                    ChangeStyle(200, e.CI, 'red', 1.5),
+                    ChangeStyle(200, e.gridKE, 'blue', 1.5),
+                    ChangeStyle(200, e.KE, 'blue', 1.5),
+                )
+            ),
+            // 6 -> 7
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.rectCIL, 'black'),
+                    ChangeStyle(200, e.rectKEIL, 'black'),
+                    ChangeStyle(200, e.gridCI, 'black', 1),
+                    ChangeStyle(200, e.CI, 'black', 1),
+                    ChangeStyle(200, e.gridKE, 'black', 1),
+                    ChangeStyle(200, e.KE, 'black', 1),
+                ),
+                Parallel(
+                    Show(200, e.grid2),
+                    Show(200, e.rectKIN),
+                    Show(200, e.rectKIGL),
+                    Show(200, e.gridGL),
+                    Show(200, e.gridKI),
+                    Show(200, e.gridIN),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectKIN, 'DarkRed'),
+                    ChangeStyle(200, e.rectKIGL, 'DarkBlue'),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.IN, 'DarkRed', 1.5),
+                    ChangeStyle(200, e.gridIN, 'DarkRed', 1.5),
+                    ChangeStyle(200, e.GL, 'DarkBlue', 1.5),
+                    ChangeStyle(200, e.gridGL, 'DarkBlue', 1.5),
+                ),
+            ),
+            // 7 -> 8
+            (e) => Sequential(
+                Hide(0, e.CL),
+                Hide(0, e.AG),
+                Hide(0, e.GQ),
+                Show(0, e.AQ),
+                Show(0, e.QE),
+                Show(0, e.EG),
+                Parallel(
+                    ChangeStyle(200, e.IN, 'black', 1),
+                    ChangeStyle(200, e.gridIN, 'black', 1),
+                    ChangeStyle(200, e.GL, 'black', 1),
+                    ChangeStyle(200, e.gridGL, 'black', 1),
+                    ChangeStyle(200, e.rectKIN, 'black'),
+                    ChangeStyle(200, e.rectKIGL, 'black')
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectCIL, 'red'),
+                    ChangeStyle(200, e.rectKIN, 'red'),
+                    ChangeStyle(200, e.gridCI, 'red', 1.5),
+                    ChangeStyle(200, e.gridIL, 'red', 1.5),
+                    ChangeStyle(200, e.gridIN, 'DarkRed', 1.5),
+                    ChangeStyle(200, e.gridKI, 'DarkRed', 1.5),
 
+                    ChangeStyle(200, e.CI, 'red', 1.5),
+                    ChangeStyle(200, e.IG, 'red', 1.5),
+                    ChangeStyle(200, e.GL, 'red', 1.5),
+                    ChangeStyle(200, e.KE, 'DarkRed', 1.5),
+                    ChangeStyle(200, e.EI, 'DarkRed', 1.5),
+                    ChangeStyle(200, e.IN, 'DarkRed', 1.5),
+                    ChangeStyle(200, e.KLC, 'black', 1.5),
+
+                    ChangeStyle(200, e.I, 'black', 1.5),
+                    Wait(1000)
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectCIL, 'black'),
+                    ChangeStyle(200, e.rectKIN, 'black'),
+                    ChangeStyle(200, e.gridCI, 'black', 1),
+                    ChangeStyle(200, e.gridIL, 'black', 1),
+                    ChangeStyle(200, e.gridIN, 'black', 1),
+                    ChangeStyle(200, e.gridKI, 'black', 1),
+
+                    ChangeStyle(200, e.CI, 'black', 1),
+                    ChangeStyle(200, e.IG, 'black', 1),
+                    ChangeStyle(200, e.GL, 'black', 1),
+                    ChangeStyle(200, e.KE, 'black', 1),
+                    ChangeStyle(200, e.EI, 'black', 1),
+                    ChangeStyle(200, e.IN, 'black', 1),
+                    ChangeStyle(200, e.KLC, 'black', 1),
+
+                    ChangeStyle(200, e.I, 'black', 1),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectKEIL, 'blue'),
+                    ChangeStyle(200, e.rectKIGL, 'blue'),
+                    
+                    ChangeStyle(200, e.gridKE, 'blue', 1.5),
+                    ChangeStyle(200, e.gridIL, 'DarkBlue', 1.5),
+                    ChangeStyle(200, e.gridGL, 'blue', 1.5),
+                    ChangeStyle(200, e.gridKI, 'DarkBlue', 1.5),
+                    
+                    ChangeStyle(200, e.KE, 'blue', 1.5),
+                    ChangeStyle(200, e.IG, 'blue', 1.5),
+                    ChangeStyle(200, e.EI, 'DarkBlue', 1.5),
+                    ChangeStyle(200, e.GL, 'blue', 1.5),
+                    ChangeStyle(200, e.EG, 'black', 1.5),
+                    ChangeStyle(200, e.KL, 'black', 1.5),
+                    Wait(1000)
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectKEIL, 'black'),
+                    ChangeStyle(200, e.rectKIGL, 'black'),
+
+                    ChangeStyle(200, e.gridKE, 'black', 1),
+                    ChangeStyle(200, e.gridIL, 'black', 1),
+                    ChangeStyle(200, e.gridGL, 'black', 1),
+                    ChangeStyle(200, e.gridKI, 'black', 1),
+                    
+                    ChangeStyle(200, e.KE, 'black', 1),
+                    ChangeStyle(200, e.EI, 'black', 1),
+                    ChangeStyle(200, e.IG, 'black', 1),
+                    ChangeStyle(200, e.GL, 'black', 1),
+
+                    ChangeStyle(200, e.EG, 'black', 1),
+                    ChangeStyle(200, e.KL, 'black', 1),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.gridCI, 'red', 1.5),
+                    ChangeStyle(200, e.gridIN, 'red', 1.5),
+                    ChangeStyle(200, e.CI, 'red', 1.5),
+                    ChangeStyle(200, e.IN, 'red', 1.5),
+                    ChangeStyle(200, e.gridKE, 'blue', 1.5),
+                    ChangeStyle(200, e.gridGL, 'blue', 1.5),
+                    ChangeStyle(200, e.KE, 'blue', 1.5),
+                    ChangeStyle(200, e.GL, 'blue', 1.5),
+                )
+            ),
+            // 8 -> 9
+            (e) => Sequential(
+                Parallel(
+                    ChangeParams(200, {switchB: 1}),
+                    Hide(200, e.rectCIL),
+                    Hide(200, e.rectKEIL),
+                    Hide(200, e.rectKIN),
+                    Hide(200, e.rectKIGL),
+                    Hide(200, e.grid1),
+                    Hide(200, e.grid2),
+                    Hide(200, e.gridIL),
+                    Hide(200, e.gridKI),
+                ),
+                ChangeStyle(0, e.gridGM, 'red', 1.5),
+                Hide(0, e.gridIN),
+                Show(0, e.gridGM),
+                ChangeStyle(0, e.gridCG, 'DarkRed', 1.5),
+                ChangeStyle(0, e.gridKG, 'DarkBlue', 1.5),
+                Parallel(
+                    ChangeStyle(200, e.CI, 'black', 1),
+                    ChangeStyle(200, e.KE, 'black', 1),
+                    ChangeStyle(200, e.gridCI, 'black', 1),
+                    ChangeStyle(200, e.gridKE, 'black', 1),
+
+                    ChangeStyle(200, e.IN, 'black', 1),
+                    ChangeStyle(200, e.GM, 'red', 1.5),
+
+                    ChangeStyle(200, e.CI, 'DarkRed', 1.5),
+                    ChangeStyle(200, e.IG, 'DarkRed', 1.5),
+                    ChangeStyle(200, e.GK, 'DarkBlue', 1.5),
+                    Show(200, e.gridCG),
+                    Show(200, e.gridKG),
+                    ChangeStyle(200, e.KLC, 'black', 1.5),
+                    ChangeStyle(200, e.G, 'black', 1.5)
+                )
+            ),
+            // 9 -> 10
+            (e) => Sequential(
+                Hide(0, e.EI),
+                Show(0, e.BE),
+                Show(0, e.BI),
+                Show(0, e.CI_p),
+                Show(0, e.KE_p),
+                Parallel(
+                    ChangeStyle(200, e.KLC, 'black', 1),
+                    ChangeStyle(200, e.G, 'black', 1),
+                    ChangeStyle(200, e.CI_p, 'red', 1.5),
+                    ChangeStyle(200, e.gridCI, 'red', 1.5),
+                    ChangeStyle(200, e.KE_p, 'blue', 1.5),
+                    ChangeStyle(200, e.gridKE, 'blue', 1.5),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.GM, 'black', 1),
+                    ChangeStyle(200, e.GL, 'black', 1),
+                    ChangeStyle(200, e.gridGM, 'black', 1),
+                    ChangeStyle(200, e.gridGL, 'black', 1),
+
+                    ChangeStyle(200, e.GK, 'black', 1),
+                    ChangeStyle(200, e.KE, 'DarkBlue', 1.5),
+                    ChangeStyle(200, e.BE, 'DarkBlue', 1.5),
+                )
+            ),
+            // 10 -> 11
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.Z, 'DarkBlue', 1.5),
+                    ChangeStyle(200, e.H, 'DarkRed', 1.5),
+                ),
+                Parallel(
+                    Hide(200, e.CI_p),
+                    Hide(200, e.KE_p),
+                    ChangeStyle(200, e.CI, 'black', 1),
+                    ChangeStyle(200, e.IG, 'black', 1),
+                    ChangeStyle(200, e.KE, 'black', 1),
+                    ChangeStyle(200, e.BE, 'black', 1),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.IG, 'red', 1.5),
+                    ChangeStyle(200, e.BE, 'blue', 1.5),
+                ),
+                Parallel(
+                    Hide(200, e.gridCI),
+                    Hide(200, e.gridKE),
+                    Hide(200, e.gridCG),
+                    Hide(200, e.gridKG),
+                    Hide(200, e.gridGM),
+                    Hide(200, e.gridGL),
+                ),
+                ChangeCamera(400, {centerY:0})
             )
         ],
         {
-            K:'Κ', A:'Α', B:'Β', G:'Γ', Q:'Θ', L:'Λ', C:'Ξ', M:'Μ', I:'Ι', N:'Ν', E:'Ε', Z:'Ζ', H:'Η'
+            K:'Κ', A:'Α', B:'Β', G:'Γ', Q:'Θ', L:'Λ', C:'Ξ', M:'Μ', I:'Ι', N:'Ν', E:'Ε', Z:'Ζ', H:'Η',
+            gridCI:'ΞΙ', gridKE:'ΚΕ', gridIL:'ΙΛ',
+            gridGL:'ΓΛ', gridKI:'ΚΙ', gridIN:'ΙΝ', gridGM:'ΓΜ',
+            gridCG:'ΞΓ', gridKG:'ΚΓ'
         }
     ),
     Prop09: new DynamicDiagramConfiguration(
-        5,
+        12,
         new CameraSetting(
             5, 
             0, 0, 0
@@ -979,13 +1287,17 @@ let ddcs = {
             switchC: 0,
             ratioDistortIN: 1,
             switchB: 0,
+            rectGap:0.3,
         },
-        function (params) {
+        function (params, other) {
             let {
                 radiusABGD, angleAKQ, angleBKQ, ratioLengthCG, 
                 ratioPosZ, ratioLengthZ, ratioPosH, ratioLengthH, ratioBiggerRatio,
-                switchKLleft, switchC, ratioDistortIN, switchB
+                switchKLleft, switchC, ratioDistortIN, switchB,
+                rectGap,
             } = params;
+            let {pixelSize} = other;
+            let radius = radiusABGD;
             let K = Vector();
             let A = K.shiftPolar(radiusABGD, 90+angleAKQ);
             let G = K.shiftPolar(radiusABGD, 90-angleAKQ);
@@ -1025,15 +1337,75 @@ let ddcs = {
             let I = K.shiftPolar((radiusABGD/degCos(angleGKI)), 90-(angleAKQ+angleGKI));
             let N = I.toward(K, -ratioDistortIN*ratioLengthGM*degCos(angleGKI));
             let E = K.toward(I, degCos(angleGKI)*degCos(angleAKQ)/degCos(angleAKQ+angleGKI));
-            angleBKQ = (1-switchB)*angleBKQ + switchB*(angleAKQ-angleGKI);
+            angleBKQ = (1-switchB)*angleBKQ + switchB*(angleAKQ+angleGKI);
             let B = K.shiftPolar(radiusABGD, 90-angleBKQ);
-    
+
+            let lenGM = ratioLengthGM * radius;
+            let lenCI = C.distTo(I);
+            let lenIL = I.distTo(L);
+            let lenKE = K.distTo(E);
+
+            let corner1 = K.shift(-0.3*radius,-1.3*radius-lenIL);
+            let rectCIL = GridRectangle(
+                corner1.x-lenCI, corner1.y, lenCI, lenIL, 0, false
+            );
+            let rectKEIL = GridRectangle(
+                corner1.x, corner1.y, lenKE, lenIL, 0, false
+            );
+            let grid1 = MultiObjects('line');
+            grid1.push(
+                Line(corner1.shift(-lenCI), corner1.shift(-lenCI, lenIL)),
+                Line(corner1.shift(lenKE), corner1.shift(lenKE, lenIL)),
+                Line(corner1.shift(-lenCI, lenIL),corner1.shift(lenKE, lenIL))
+            );
+            let gridIL = Line(corner1, corner1.shift(0, lenIL));
+            let gridCI = Line(corner1.shift(-lenCI), corner1);
+            let gridKE = Line(corner1, corner1.shift(lenKE));
+
+            let lenKI = K.distTo(I);
+            let lenIN = lenGM;
+            let lenGL = G.distTo(L);
+
+            let corner2 = corner1.shift(0, -rectGap-lenKI);
+            let rectKIN = GridRectangle(
+                corner2.x-lenIN, corner2.y, lenIN, lenKI, 0, false
+            );
+            let rectKIGL = GridRectangle(
+                corner2.x, corner2.y, lenGL, lenKI, 0, false
+            );
+            let grid2 = MultiObjects('line');
+            grid2.push(
+                Line(corner2.shift(-lenIN,lenKI), corner2.shift(lenGL,lenKI)),
+                Line(corner2.shift(-lenIN), corner2.shift(-lenIN, lenKI)),
+                Line(corner2.shift(lenGL), corner2.shift(lenGL, lenKI)),
+            );
+            let gridIN = Line(corner2, corner2.shift(-lenIN));
+            let gridGM = Line(corner2, corner2.shift(-lenIN));
+            let gridGL = Line(corner2, corner2.shift(lenGL));
+            let gridKI = Line(corner2, corner2.shift(0,lenKI));
+            
+            let CI_p = Line(C.shift(2*pixelSize, 2*pixelSize), I.shift(2*pixelSize, 2*pixelSize));
+            // let GL_p = Line(G.shift(-2*pixelSize,-2*pixelSize), L.shift(-2*pixelSize,-2*pixelSize));
+            let IN_p = Line(I.shift(-pixelSize,2*pixelSize),N.shift(-pixelSize,2*pixelSize));
+            let KB_p = Line(K.shift(-pixelSize,2*pixelSize), B.shift(-pixelSize,2*pixelSize));
+
+            let KE_p = Line(K.shift(-2*pixelSize, 2*pixelSize), E.shift(-2*pixelSize, 2*pixelSize));
+            let corner3 = corner1.shift(0, 0.5*(corner2.y-corner1.y));
+            let gridCG = Line(corner3, corner3.shift(-C.distTo(G)));
+            let gridKG = Line(corner3, corner3.shift(radius));
+
             let result = {
                 K, A, B, G, Q, L, C, M, I, N, E,
                 Z:[Zbot,Ztop], H:[Hbot,Htop], AG:[A,G], GQ:[G,Q], 
                 QK:[Q,K], GK:[G,K], GL:[G,L], KL, CL:[C,L], GM:[G,M], 
                 IN:[I,N], KN:[K,N], CI:[C,I], KE:[K,E], GE:[G,E], 
                 IL:[I,L], KI:[K,I], CG:[C,G], KB:[K,B], IG:[I,G], BE:[B,E], 
+                NE:[N,E], IB:[I,B],
+                rectCIL, rectKEIL, grid1, gridCI, gridIL, gridKE,
+                rectKIN, rectKIGL, grid2, gridKI, gridGM, gridGL, gridIN,
+                gridCG, gridKG,
+                // GL_p, 
+                IN_p, CI_p,KB_p,
                 ABGD, KLC
             };
             return result;
@@ -1116,12 +1488,274 @@ let ddcs = {
             ),
             // 5 -> 6
             (e) => Sequential(
-                Show(200, e.E),
+                Parallel(
+                    ChangeCamera(300, {centerY: -2}),
+                    Show(200, e.E),
+                    ChangeStyle(200, e.GM, 'black', 1),
+                    ChangeStyle(200, e.IN, 'black', 1)
+                ),
+                // Hide(0, e.IL),
+                // Hide(0, e.KI),
+                // Show(0, e.KE),
+                // Show(0, e.EI),
+                // Hide(0, e.CG),
+                Hide(0, e.CI),
+                Show(0, e.IG),
+                Parallel(
+                    Show(200, e.grid1),
+                    Show(200, e.rectCIL),
+                    Show(200, e.rectKEIL),
+                    Show(200, e.gridCI),
+                    Show(200, e.gridKE),
+                    Show(200, e.gridIL),
+                    
+                    Show(200, e.NE),
+                    Show(200, e.GE),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.rectCIL, 'red'),
+                    ChangeStyle(200, e.rectKEIL, 'blue'),
+                ),
+                Parallel(
+                    ChangeStyle(200, e.gridCI, 'red', 1.5),
+                    ChangeStyle(200, e.CG, 'red', 1.5),
+                    ChangeStyle(200, e.IG, 'red', 1.5),
+                    ChangeStyle(200, e.gridKE, 'blue', 1.5),
+                    ChangeStyle(200, e.KI, 'blue', 1.5),
+                    ChangeStyle(200, e.IN, 'blue', 1.5),
+                    ChangeStyle(200, e.NE, 'blue', 1.5),
+                )
+            ),
+            // 6 -> 7
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.rectKEIL, 'black'),
+                    ChangeStyle(200, e.gridKE, 'black', 1),
+                    ChangeStyle(200, e.KI, 'black', 1),
+                    ChangeStyle(200, e.IN, 'black', 1),
+                    ChangeStyle(200, e.NE, 'black', 1),
 
+                    ChangeStyle(200, e.CG, 'black', 1),
+                    ChangeStyle(200, e.IG, 'black', 1),
+                    ChangeStyle(200, e.gridCI, 'black', 1),
+                ),
+                Parallel(
+                    Show(200, e.rectKIN),
+                    Show(200, e.rectKIGL),
+                    Show(200, e.grid2),
+                    Show(200, e.gridKI),
+                    Show(200, e.gridIN),
+                    Show(200, e.gridGL),
+                ),
+                Hide(0, e.CL),
+                Show(0, e.IL),
+                Parallel(
+                    ChangeStyle(200, e.rectKIN, 'red'),
+
+                    ChangeStyle(200, e.CG, 'red', 1.5),
+                    ChangeStyle(200, e.IG, 'red', 1.5),
+                    ChangeStyle(200, e.IL, 'red', 1.5),
+                    ChangeStyle(200, e.gridIL, 'red', 1.5),
+                    ChangeStyle(200, e.gridCI, 'red', 1.5),
+                    
+                    ChangeStyle(200, e.KI, 'DarkRed', 1.5),
+                    ChangeStyle(200, e.IN, 'DarkRed', 1.5),
+                    ChangeStyle(200, e.gridKI, 'DarkRed', 1.5),
+                    ChangeStyle(200, e.gridIN, 'DarkRed', 1.5),
+                    
+                    ChangeStyle(200, e.KLC, 'black', 1.5),
+                    ChangeStyle(200, e.I, 'black', 1.5),
+                )
+            ),
+            // 7 -> 8
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.rectCIL, 'black'),
+                    ChangeStyle(200, e.rectKIN, 'black'),
+                    
+                    ChangeStyle(200, e.CG, 'black', 1),
+                    ChangeStyle(200, e.IG, 'black', 1),
+                    ChangeStyle(200, e.IL, 'black', 1),
+                    ChangeStyle(200, e.gridCI, 'black', 1),
+                    ChangeStyle(200, e.gridIL, 'black', 1),
+                    
+                    ChangeStyle(200, e.KI, 'black', 1),
+                    ChangeStyle(200, e.IN, 'black', 1),
+                    ChangeStyle(200, e.gridKI, 'black', 1),
+                    ChangeStyle(200, e.gridIN, 'black', 1),
+                    
+                    ChangeStyle(200, e.KLC, 'black', 1),
+                    ChangeStyle(200, e.I, 'black', 1),
+                ),
+                // Hide(0, e.AE),
+                Parallel(
+                    ChangeStyle(200, e.rectKEIL, 'blue', 1.5),
+                    ChangeStyle(200, e.rectKIGL, 'blue', 1.5),
+
+                    ChangeStyle(200, e.IL, 'blue', 1.5),
+                    ChangeStyle(200, e.gridIL, 'blue', 1.5),
+                    ChangeStyle(200, e.KI, 'blue', 1.5),
+                    ChangeStyle(200, e.gridKI, 'blue', 1.5),
+                    
+                    ChangeStyle(200, e.IN, 'DarkBlue', 1.5),
+                    ChangeStyle(200, e.NE, 'DarkBlue', 1.5),
+                    ChangeStyle(200, e.gridKE, 'DarkBlue', 1.5),
+                    ChangeStyle(200, e.IG, 'DarkBlue', 1.5),
+                    ChangeStyle(200, e.gridGL, 'DarkBlue', 1.5),
+
+                    ChangeStyle(200, e.KL, 'black', 1.5),
+                    ChangeStyle(200, e.GE, 'black', 1.5),
+                )
+            ),
+            // 8 -> 9
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.rectKEIL, 'black'),
+                    ChangeStyle(200, e.rectKIGL, 'black'),
+
+                    ChangeStyle(200, e.IL, 'black', 1),
+                    ChangeStyle(200, e.gridIL, 'black', 1),
+                    ChangeStyle(200, e.KI, 'black', 1),
+                    ChangeStyle(200, e.gridKI, 'black', 1),
+                    
+                    ChangeStyle(200, e.IN, 'black', 1),
+                    ChangeStyle(200, e.NE, 'black', 1),
+                    ChangeStyle(200, e.gridKE, 'black', 1),
+                    ChangeStyle(200, e.IG, 'black', 1),
+                    ChangeStyle(200, e.gridGL, 'black', 1),
+                    
+                    ChangeStyle(200, e.KL, 'black', 1),
+                    ChangeStyle(200, e.GE, 'black', 1),
+                ),
+                Show(0, e.CI_p),
+                Show(0, e.IN_p),
+                Parallel(
+                    ChangeStyle(200, e.CI_p, 'red', 1.5),
+                    // ChangeStyle(200, e.CG, 'red', 1.5),
+                    // ChangeStyle(200, e.IG, 'red', 1.5),
+                    ChangeStyle(200, e.gridCI, 'red', 1.5),
+                    ChangeStyle(200, e.IN_p, 'red', 1.5),
+                    ChangeStyle(200, e.gridIN, 'red', 1.5),
+                    
+                    ChangeStyle(200, e.KI, 'blue', 1.5),
+                    ChangeStyle(200, e.IN, 'blue', 1.5),
+                    ChangeStyle(200, e.NE, 'blue', 1.5),
+                    ChangeStyle(200, e.gridKE, 'blue', 1.5),
+                    
+                    // ChangeStyle(200, e.GL_p, 'blue', 1.5),
+                    ChangeStyle(200, e.IG, 'blue', 1.5),
+                    ChangeStyle(200, e.IL, 'blue', 1.5),
+                    ChangeStyle(200, e.gridGL, 'blue', 1.5),
+                )
+            ),
+            // 9 -> 10
+            (e) => Sequential(
+                Parallel(
+                    Hide(200, e.rectCIL),
+                    Hide(200, e.rectKEIL),
+                    Hide(200, e.rectKIN),
+                    Hide(200, e.rectKIGL),
+                    
+                    Hide(200, e.grid1),
+                    Hide(200, e.grid2),
+                    Hide(200, e.gridIL),
+                    Hide(200, e.gridKI),
+
+                    Hide(200, e.CI_p),
+                    Hide(200, e.IN_p),
+                    ChangeStyle(200, e.GM, 'red', 1.5),
+
+                    ChangeStyle(200, e.gridCI, 'black', 1),
+                    ChangeStyle(200, e.gridKE, 'black', 1),
+                    ChangeStyle(200, e.KI, 'black', 1),
+                    ChangeStyle(200, e.IN, 'black', 1),
+                    ChangeStyle(200, e.NE, 'black', 1),
+                ),
+                ChangeStyle(0, e.gridGM, 'red', 1.5),
+                Hide(0, e.gridIN),
+                Show(0, e.gridGM),
+                ChangeStyle(0, e.gridCG, 'DarkRed', 1.5),
+                ChangeStyle(0, e.gridKG, 'DarkBlue', 1.5),
+                Parallel(
+                    ChangeStyle(200, e.CG, 'DarkRed', 1.5),
+                    Show(200, e.gridCG),
+                    ChangeStyle(200, e.GK, 'DarkBlue', 1.5),
+                    Show(200, e.gridKG),
+
+                    ChangeStyle(200, e.KLC, 'black', 1.5),
+                    ChangeStyle(200, e.G, 'black', 1.5),
+                )
+            ),
+            // 10 -> 11
+            (e) => Sequential(
+                Parallel(
+                    ChangeParams(200, {switchB:1}),
+                    ChangeStyle(200, e.KLC, 'black', 1),
+                    ChangeStyle(200, e.G, 'black', 1),
+                    ChangeStyle(200, e.GM, 'black', 1),
+                    ChangeStyle(200, e.gridGM, 'black', 1),
+                    ChangeStyle(200, e.IG, 'black', 1),
+                    ChangeStyle(200, e.IL, 'black', 1),
+                    ChangeStyle(200, e.gridGL, 'black', 1),
+
+                ),
+                Hide(0, e.KI),
+                Show(0, e.KB),
+                Show(0, e.IB),
+                ChangeStyle(0, e.KB_p, 'DarkBlue', 1.5),
+                Show(0, e.IB),
+                Parallel(
+                    ChangeStyle(200, e.GK, 'black', 1),
+                    
+                    Show(200, e.CI_p),
+                    // ChangeStyle(200, e.gridCI, 'red', 1.5),
+                    // ChangeStyle(200, e.CI_p, 'red', 1.5),
+                    ChangeStyle(200, e.gridKE, 'blue', 1.5),
+                    ChangeStyle(200, e.KB, 'blue', 1.5),
+                    ChangeStyle(200, e.IB, 'blue', 1.5),
+                    ChangeStyle(200, e.IN, 'blue', 1.5),
+                    ChangeStyle(200, e.NE, 'blue', 1.5),
+                    Show(200, e.KB_p),
+                    ChangeStyle(200, e.gridCI, 'red', 1.5),
+                )
+            ),
+            // 11 -> 12
+            (e) => Sequential(
+                Parallel(
+                    ChangeStyle(200, e.Z, 'DarkBlue', 1.5),
+                    ChangeStyle(200, e.H, 'DarkRed', 1.5),
+                ),
+                Parallel(
+                    Hide(200, e.CI_p),
+                    Hide(200, e.KB_p),
+                    // ChangeStyle(200, e.CI, 'black', 1),
+                    ChangeStyle(200, e.IG, 'red', 1.5),
+                    ChangeStyle(200, e.CG, 'black', 1),
+                    ChangeStyle(200, e.KE, 'black', 1),
+                    ChangeStyle(200, e.KB, 'black', 1),
+                ),
+                // Parallel(
+                //     ChangeStyle(200, e.IG, 'red', 1.5),
+                //     ChangeStyle(200, e.IB, 'blue', 1.5),
+                //     ChangeStyle(200, e.IN, 'blue', 1.5),
+                //     ChangeStyle(200, e.NE, 'blue', 1.5),
+                // ),
+                Parallel(
+                    Hide(200, e.gridCI),
+                    Hide(200, e.gridKE),
+                    Hide(200, e.gridCG),
+                    Hide(200, e.gridKG),
+                    Hide(200, e.gridGM),
+                    Hide(200, e.gridGL),
+                ),
+                ChangeCamera(400, {centerY:0})
             )
         ],
         {
-            K:'Κ', A:'Α', B:'Β', G:'Γ', Q:'Θ', L:'Λ', C:'Ξ', M:'Μ', I:'Ι', N:'Ν', E:'Ε', Z:'Ζ', H:'Η'
+            K:'Κ', A:'Α', B:'Β', G:'Γ', Q:'Θ', L:'Λ', C:'Ξ', M:'Μ', I:'Ι', N:'Ν', E:'Ε', Z:'Ζ', H:'Η',
+            gridCI:'ΞΙ', gridIL:'ΙΛ', gridKE:'ΚΕ',
+            gridKI:'ΚΙ', gridIN:'ΙΝ', gridGL:'ΓΛ', gridGM:'ΓΜ',
+            gridCG:'ΞΓ', gridKG:'ΚΓ'
         }
     ),
     Prop10: new DynamicDiagramConfiguration(

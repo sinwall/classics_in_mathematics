@@ -599,7 +599,8 @@ class CameraChangeFX extends BaseFX {
     constructor(duration, camSetting, timing) {
         super(duration);
         this.camSetting = camSetting;
-        this.timing = timing;
+        this.timing = DefaultEasedClock;
+        // this.timing = timing;
     }
     needCamset(t) {
         return (t >= 0);
@@ -623,6 +624,7 @@ class CameraChangeFX extends BaseFX {
     }
 
     onAction(t) {
+        t = this.timing.warp(t);
         for (let key in this.camSetting) {
             if (key === 'scale') {
                 this.geometer.camSetting[key] = ((this.camSetting[key])**t)*(this._camsetsBefore[key]**(1-t));
